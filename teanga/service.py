@@ -7,7 +7,6 @@ class Service(ABC):
     def __init__(self):
         pass
 
-    @abstractmethod
     def setup(self):
         """Sets up this service, including downloading any models."""
         pass
