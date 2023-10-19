@@ -116,7 +116,7 @@ impl Corpus {
         Ok(())
     }
 
-    pub fn add_doc(&mut self, content : HashMap<String, PyLayer>) -> PyResult<()> {
+    pub fn add_doc(&mut self, content : HashMap<String, PyLayer>) -> PyResult<String> {
         for key in content.keys() {
             if !self.meta.contains_key(key) {
                 return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
@@ -130,7 +130,7 @@ impl Corpus {
             let layer_meta = self.meta.get(&k).ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
                 format!("No meta information for layer {}", k)))?;
             doc_content.insert(k, 
-                Layer::from_py(v, layer_meta, &|u : &String| {
+                Layer::from_py(v, layer_meta, &|u : &str| {
                         let mut id_bytes = Vec::new();
                         id_bytes.push(STR2ID_PREFIX);
                         id_bytes.extend(u.as_bytes());
@@ -153,7 +153,7 @@ impl Corpus {
         id_bytes.extend(id.as_bytes());
         db.insert(id_bytes, data).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
             format!("Cannot write document {}", e)))?;
-        Ok(())
+        Ok(id)
     }
 
     pub fn get_doc_by_id(&mut self, id : &str) -> PyResult<HashMap<String, PyLayer>> {
@@ -226,119 +226,254 @@ impl Layer {
         match self {
             Layer::Characters(val) => Ok(PyLayer::CharacterLayer(val.clone())),
             Layer::Seq(val) => {
-                let mut result = Vec::new();
-                let metadata = meta.data.as_ref().ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                    format!("Layer contains data but has no data type")))?;
-                for id in val {
-                    result.push(PyDocData::from(*id, metadata, &idx2str)?);
+                match meta.data {
+                    None => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                        format!("Layer contains data but not data type"))),
+                    Some(DataType::String) => {
+                        let mut result = Vec::new();
+                        for id in val {
+                            result.push(u32_into_py_str(*id, &DataType::String, idx2str)?);
+                        }
+                        Ok(PyLayer::LS(result))
+                    },
+                    Some(DataType::Enum(ref vals)) => {
+                        let mut result = Vec::new();
+                        for id in val {
+                            result.push(vals[*id as usize].clone());
+                        }
+                        Ok(PyLayer::LS(result))
+                    },
+                    Some(DataType::Link) => {
+                        Ok(PyLayer::L1(val.clone()))
+                    },
+                    Some(DataType::TypedLink(ref vals)) => {
+                        let mut result = Vec::new();
+                        for id in val {
+                            result.push(u32_into_py_u32_str(*id, &DataType::TypedLink(vals.clone()))?);
+                        }
+                        Ok(PyLayer::L1S(result))
+                    }
                 }
-                Ok(PyLayer::DataLayer(result))
             },
             Layer::Div(val) => {
-                let mut result = Vec::new();
-                let metadata = meta.data.as_ref().ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                    format!("Layer contains data but has no data type")))?;
-                for (start, data) in val {
-                    result.push((start.clone(), PyDocData::from(*data, metadata, &idx2str)?));
+                match meta.data {
+                    None => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                        format!("Layer contains data but no data type"))),
+                    Some(DataType::String) => {
+                        let mut result = Vec::new();
+                        for (start, data) in val {
+                            result.push((*start, u32_into_py_str(*data, &DataType::String, idx2str)?));
+                        }
+                        Ok(PyLayer::L1S(result))
+                    },
+                    Some(DataType::Enum(ref vals)) => {
+                        let mut result = Vec::new();
+                        for (start, data) in val {
+                            result.push((*start, vals[*data as usize].clone()));
+                        }
+                        Ok(PyLayer::L1S(result))
+                    },
+                    Some(DataType::Link) => {
+                        Ok(PyLayer::L2(val.clone()))
+                    },
+                    Some(DataType::TypedLink(ref vals)) => {
+                        let mut result = Vec::new();
+                        for (start, data) in val {
+                            let tl = u32_into_py_u32_str(*data, &DataType::TypedLink(vals.clone()))?;
+                            result.push((*start, tl.0, tl.1));
+                        }
+                        Ok(PyLayer::L2S(result))
+                    }
                 }
-                Ok(PyLayer::IndexDataLayer(result))
+            },
+            Layer::Element(val) => {
+                match meta.data {
+                    None => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                        format!("Layer contains data but no data type"))),
+                    Some(DataType::String) => {
+                        let mut result = Vec::new();
+                        for (start, data) in val {
+                            result.push((*start, u32_into_py_str(*data, &DataType::String, idx2str)?));
+                        }
+                        Ok(PyLayer::L1S(result))
+                    },
+                    Some(DataType::Enum(ref vals)) => {
+                        let mut result = Vec::new();
+                        for (start, data) in val {
+                            result.push((*start, vals[*data as usize].clone()));
+                        }
+                        Ok(PyLayer::L1S(result))
+                    },
+                    Some(DataType::Link) => {
+                        Ok(PyLayer::L2(val.clone()))
+                    },
+                    Some(DataType::TypedLink(ref vals)) => {
+                        let mut result = Vec::new();
+                        for (start, data) in val {
+                            let tl = u32_into_py_u32_str(*data, &DataType::TypedLink(vals.clone()))?;
+                            result.push((*start, tl.0, tl.1));
+                        }
+                        Ok(PyLayer::L2S(result))
+                    }
+                }
+            },
+            Layer::Span(val) => {
+                match meta.data {
+                    None => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                        format!("Layer contains data but no data type"))),
+                    Some(DataType::String) => {
+                        let mut result = Vec::new();
+                        for (start, end, data) in val {
+                            result.push((*start, *end, u32_into_py_str(*data, &DataType::String, idx2str)?));
+                        }
+                        Ok(PyLayer::L2S(result))
+                    },
+                    Some(DataType::Enum(ref vals)) => {
+                        let mut result = Vec::new();
+                        for (start, end, data) in val {
+                            result.push((*start, *end, vals[*data as usize].clone()));
+                        }
+                        Ok(PyLayer::L2S(result))
+                    },
+                    Some(DataType::Link) => {
+                        Ok(PyLayer::L3(val.clone()))
+                    },
+                    Some(DataType::TypedLink(ref vals)) => {
+                        let mut result = Vec::new();
+                        for (start, end, data) in val {
+                            let tl = u32_into_py_u32_str(*data, &DataType::TypedLink(vals.clone()))?;
+                            result.push((*start, *end, tl.0, tl.1));
+                        }
+                        Ok(PyLayer::L3S(result))
+                    }
+                }
             },
             Layer::DivNoData(val) => {
                 let mut result = Vec::new();
                 for start in val {
                     result.push(*start);
                 }
-                Ok(PyLayer::IndexLayer(result))
-            },
-            Layer::Element(val) => {
-                let mut result = Vec::new();
-                let metadata = meta.data.as_ref().ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                    format!("Layer contains data but has no data type")))?;
-                for (start, data) in val {
-                    result.push((start.clone(), PyDocData::from(*data, metadata, &idx2str)?));
-                }
-                Ok(PyLayer::IndexDataLayer(result))
+                Ok(PyLayer::L1(result))
             },
             Layer::ElementNoData(val) => {
                 let mut result = Vec::new();
                 for start in val {
                     result.push(*start);
                 }
-                Ok(PyLayer::IndexLayer(result))
-            },
-            Layer::Span(val) => {
-                let mut result = Vec::new();
-                let metadata = meta.data.as_ref().ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                    format!("Layer contains data but has no data type")))?;
-                for (start, end, data) in val {
-                    result.push((start.clone(), end.clone(), PyDocData::from(*data, metadata, &idx2str)?));
-                }
-                Ok(PyLayer::SpanDataLayer(result))
+                Ok(PyLayer::L1(result))
             },
             Layer::SpanNoData(val) => {
                 let mut result = Vec::new();
                 for (start, end) in val {
                     result.push((*start, *end));
                 }
-                Ok(PyLayer::SpanLayer(result))
+                Ok(PyLayer::L2(result))
             }
         }
     }
 
     fn from_py<F>(obj : PyLayer, meta : &LayerDesc, str2idx : &F) -> PyResult<Layer> 
-        where F : Fn(&String) -> u32 {
+        where F : Fn(&str) -> u32 {
         match obj {
             PyLayer::CharacterLayer(val) => Ok(Layer::Characters(val)),
-            PyLayer::DataLayer(val) => {
+            PyLayer::L1(val) => {
+                match meta.data {
+                    Some(_) => {
+                        Ok(Layer::Seq(val))
+                    },
+                    None => {
+                        match meta.type_ {
+                            LayerType::div => Ok(Layer::DivNoData(val)),
+                            LayerType::element => Ok(Layer::ElementNoData(val)),
+                            _ => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                                format!("Cannot convert data layer to {}", meta.type_)))
+                        }
+                    }
+                }
+            },
+            PyLayer::L2(val) => {   
+                match meta.data {
+                    Some(_) => {
+                        match meta.type_ {
+                            LayerType::div => Ok(Layer::Div(val)),
+                            LayerType::element => Ok(Layer::Element(val)),
+                            _ => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                                format!("Cannot convert data layer to {}", meta.type_)))
+                        }
+                    },
+                    None => {
+                        Ok(Layer::SpanNoData(val))
+                    }
+                }
+            },
+            PyLayer::L3(val) => {
+                Ok(Layer::Span(val))
+            },
+            PyLayer::LS(val) => {
                 let mut result = Vec::new();
-                let metadata = meta.data.as_ref().ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                    format!("Layer contains data but has no data type")))?;
                 for data in val {
-                    result.push(data.into_u32(metadata, str2idx)?);
+                    result.push(py_str_into_u32(&data, meta.data.as_ref().unwrap(), str2idx)?);
                 }
                 Ok(Layer::Seq(result))
             },
-            PyLayer::IndexDataLayer(val) => {
-                let mut result = Vec::new();
-                let metadata = meta.data.as_ref().ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                    format!("Layer contains data but has no data type")))?;
-                for (start, data) in val {
-                    result.push((start.clone(), data.into_u32(metadata, str2idx)?));
-                }
-                match meta.type_ {
-                    LayerType::div => Ok(Layer::Div(result)),
-                    LayerType::element => Ok(Layer::Element(result)),
-                    _ => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                        format!("Cannot convert data layer to {}", meta.type_)))
+            PyLayer::L1S(val) => {
+                match meta.data {
+                    Some(ref metadata @ DataType::TypedLink(_)) => {
+                        let mut result = Vec::new();
+                        for (idx, link) in val {
+                            result.push(py_u32_str_into_u32(idx, link, &metadata)?);
+                        }
+                        Ok(Layer::Seq(result))
+                    },
+                    Some(ref metadata) => {
+                        let mut result = Vec::new();
+                        for (start, data) in val {
+                            result.push((start, py_str_into_u32(&data, metadata, str2idx)?));
+                        }
+                        match meta.type_ {
+                            LayerType::div => Ok(Layer::Div(result)),
+                            LayerType::element => Ok(Layer::Element(result)),
+                            _ => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                                format!("Cannot convert data layer to {}", meta.type_)))
+                        }
+                    },
+                    None => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                        format!("String in data, but data type is none")))
                 }
             },
-            PyLayer::SpanDataLayer(val) => {
-                let mut result = Vec::new();
+            PyLayer::L2S(val) => {
                 let metadata = meta.data.as_ref().ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                    format!("Layer contains data but has no data type")))?;
-                for (start, end, data) in val {
-                    result.push((start.clone(), end.clone(), data.into_u32(metadata, &str2idx)?));
+                    format!("Cannot convert data layer to {}", meta.type_)))?;
+                match meta.data {
+                    Some(ref metadata @ DataType::TypedLink(_)) => {
+                        let mut result = Vec::new();
+                        for (start, idx, link) in val {
+                            result.push((start, py_u32_str_into_u32(idx, link, &metadata)?));
+                        }
+                        match meta.type_ {
+                            LayerType::div => Ok(Layer::Div(result)),
+                            LayerType::element => Ok(Layer::Element(result)),
+                            _ => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                                format!("Cannot convert data layer to {}", meta.type_)))
+                        }
+                    },
+                    _ => {
+                        let mut result = Vec::new();
+                        for (start, end, data) in val {
+                            result.push((start, end, py_str_into_u32(&data, metadata, str2idx)?));
+                        }
+                        Ok(Layer::Span(result))
+                    }
+                }
+            },
+            PyLayer::L3S(val) => {
+                let metadata = meta.data.as_ref().ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                    format!("Cannot convert data layer to {}", meta.type_)))?;
+                let mut result = Vec::new();
+                for (start, end, idx, link) in val {
+                    result.push((start, end, py_u32_str_into_u32(idx, link, metadata)?));
                 }
                 Ok(Layer::Span(result))
-            },
-            PyLayer::IndexLayer(val) => {
-                let mut result = Vec::new();
-                for start in val {
-                    result.push(start.clone());
-                }
-                match meta.type_ {
-                    LayerType::div => Ok(Layer::DivNoData(result)),
-                    LayerType::element => Ok(Layer::ElementNoData(result)),
-                    _ => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                        format!("Cannot convert data layer to {}", meta.type_)))
-                }
-            },
-            PyLayer::SpanLayer(val) => {
-                let mut result = Vec::new();
-                for (start, end) in val {
-                    result.push((start.clone(), end.clone()));
-                }
-                Ok(Layer::SpanNoData(result))
             }
         }
     }
@@ -348,118 +483,92 @@ impl Layer {
 #[derive(FromPyObject)]
 pub enum PyLayer {
     CharacterLayer(String),
-    DataLayer(Vec<PyDocData>),
-    IndexDataLayer(Vec<(u32,PyDocData)>),
-    SpanDataLayer(Vec<(u32,u32,PyDocData)>),
-    IndexLayer(Vec<u32>),
-    SpanLayer(Vec<(u32,u32)>)
+    L1(Vec<u32>),
+    L2(Vec<(u32,u32)>),
+    L3(Vec<(u32,u32,u32)>),
+    LS(Vec<String>),
+    L1S(Vec<(u32,String)>),
+    L2S(Vec<(u32,u32,String)>),
+    L3S(Vec<(u32,u32,u32,String)>)
 }
 
 impl IntoPy<PyObject> for PyLayer {
     fn into_py(self, py: Python) -> PyObject {
         match self {
             PyLayer::CharacterLayer(val) => val.into_py(py),
-            PyLayer::DataLayer(val) => val.into_py(py),
-            PyLayer::IndexDataLayer(val) => val.into_py(py),
-            PyLayer::SpanDataLayer(val) => val.into_py(py),
-            PyLayer::IndexLayer(val) => val.into_py(py),
-            PyLayer::SpanLayer(val) => val.into_py(py)
+            PyLayer::L1(val) => val.into_py(py),
+            PyLayer::L2(val) => val.into_py(py),
+            PyLayer::L3(val) => val.into_py(py),
+            PyLayer::LS(val) => val.into_py(py),
+            PyLayer::L1S(val) => val.into_py(py),
+            PyLayer::L2S(val) => val.into_py(py),
+            PyLayer::L3S(val) => val.into_py(py)
         }
     }
 }
 
-#[derive(Debug,Clone,PartialEq)]
-#[derive(FromPyObject)]
-pub enum PyDocData {
-    String(String),
-    Enum(String),
-    Link(u32),
-    TypedLink((u32,String))
-}
-
-impl PyDocData {
-    fn from<F>(val : u32, type_ : &DataType, f : &F) -> PyResult<PyDocData>
-        where F : Fn(u32) -> String {
-        match type_ {
-            DataType::String => Ok(PyDocData::String(f(val))),
-            DataType::Enum(vals) => {
-                if val < vals.len() as u32 {
-                    Ok(PyDocData::Enum(vals[val as usize].clone()))
-                } else {
-                    Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                            format!("Enum data is out of range of enum")))
-                }
-            }
-            DataType::Link => Ok(PyDocData::Link(val)),
-            DataType::TypedLink(vals) => {
-                let n = (vals.len() as f64).log2().ceil() as u32;
-                let link_targ = val >> n;
-                let link_type = val & ((1 << n) - 1);
-                if link_type < vals.len() as u32 {
-                    Ok(PyDocData::TypedLink((link_targ, vals[link_type as usize].clone())))
-                } else {
-                    Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                            format!("Link type is out of range of enum")))
-                }
+fn u32_into_py_str<F>(val : u32, type_ : &DataType, f : &F) -> PyResult<String> 
+    where F : Fn(u32) -> String {
+    match type_ {
+        DataType::String => Ok(f(val)),
+        DataType::Enum(vals) => {
+            if val < vals.len() as u32 {
+                Ok(vals[val as usize].clone())
+            } else {
+                Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                        format!("Enum data is out of range of enum")))
             }
         }
-    }
-
-    fn into_u32<F>(&self, type_ : &DataType, f : &F) -> PyResult<u32> 
-        where F : Fn(&String) -> u32 {
-        match self {
-            PyDocData::String(val) => {
-                match type_ {
-                    DataType::String => Ok(f(val)),
-                    _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                        format!("Cannot convert string to {}", type_)))
-                }
-            },
-            PyDocData::Enum(val) => {
-                match type_ {
-                    DataType::Enum(vals) => {
-                        match vals.iter().position(|x| x == val) {
-                            Some(idx) => Ok(idx as u32),
-                            None => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                                format!("Cannot convert enum {} to {}", val, vals.iter().join(","))))
-                        }
-                    },
-                    _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                        format!("Cannot convert enum to {}", type_)))
-                }
-            },
-            PyDocData::Link(val) => {
-                match type_ {
-                    DataType::Link => Ok(*val),
-                    _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                        format!("Cannot convert link to {}", type_)))
-                }
-            },
-            PyDocData::TypedLink((link_targ, link_type)) => {
-                match type_ {
-                    DataType::TypedLink(vals) => {
-                        match vals.iter().position(|x| x == link_type) {
-                            Some(idx) => Ok((idx as u32) << ((vals.len() as f64).log2().ceil() as u32) | link_targ),
-                            None => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                                format!("Cannot convert link type {} to {}", link_type, vals.iter().join(","))))
-                        }
-                    },
-                    _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                        format!("Cannot convert link type to {}", type_)))
-                }
-            }
-        }
+        _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                format!("Cannot convert {} to string", type_)))
     }
 }
 
-impl IntoPy<PyObject> for PyDocData {
-    fn into_py(self, py: Python) -> PyObject {
-        match self {
-            PyDocData::String(val) => val.into_py(py),
-            PyDocData::Enum(val) => val.into_py(py),
-            PyDocData::Link(val) => val.into_py(py),
-            PyDocData::TypedLink(val) => val.into_py(py)
+fn u32_into_py_u32_str(val : u32, type_ : &DataType) -> PyResult<(u32,String)> {
+    match type_ {
+        DataType::TypedLink(vals) => {
+            let n = (vals.len() as f64).log2().ceil() as u32;
+            let link_targ = val >> n;
+            let link_type = val & ((1 << n) - 1);
+            if link_type < vals.len() as u32 {
+                Ok((link_targ, vals[link_type as usize].clone()))
+            } else {
+                Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                        format!("Link type is out of range of enum")))
+            }
         }
+        _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                format!("Cannot convert {} to string", type_)))
+    }
+}
+
+fn py_str_into_u32<F>(val : &str, type_ : &DataType, f : &F) -> PyResult<u32> 
+    where F : Fn(&str) -> u32 {
+    match type_ {
+        DataType::String => Ok(f(val)),
+        DataType::Enum(vals) => {
+            match vals.iter().position(|x| x == val) {
+                Some(idx) => Ok(idx as u32),
+                None => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                        format!("Cannot convert enum {} to {}", val, vals.iter().join(","))))
+            }
+        },
+        _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                format!("Cannot convert string to {}", type_)))
+    }
+}
+
+fn py_u32_str_into_u32(link_targ : u32, link_type : String, type_ : &DataType) -> PyResult<u32> {
+    match type_ {
+        DataType::TypedLink(vals) => {
+            match vals.iter().position(|x| *x == link_type) {
+                Some(idx) => Ok((idx as u32) << ((vals.len() as f64).log2().ceil() as u32) | link_targ),
+                None => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                        format!("Cannot convert link type {} to {}", link_type, vals.iter().join(","))))
+            }
+        },
+        _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+            format!("Cannot convert string and int to {}", type_)))
     }
 }
 
@@ -559,7 +668,7 @@ impl IntoPy<PyObject> for DataType {
     fn into_py(self, py: Python) -> PyObject {
         match self {
             DataType::String => "string".into_py(py),
-            DataType::Enum(vals) => "string".into_py(py),
+            DataType::Enum(_) => "string".into_py(py),
             DataType::Link => "link".into_py(py),
             DataType::TypedLink(_) => "link".into_py(py)
         }
