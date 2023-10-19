@@ -14,6 +14,8 @@ use itertools::Itertools;
 const DOCUMENT_PREFIX : u8 = 0x00;
 const ID2STR_PREFIX : u8 = 0x01;
 const STR2ID_PREFIX : u8 = 0x02;
+const META_PREFIX : u8 = 0x03;
+const ORDER_BYTES : [u8;1] = [0x04];
 
 #[pyclass]
 #[derive(Debug,Clone)]
@@ -27,7 +29,7 @@ pub struct Corpus {
 }
 
 #[pyclass]
-#[derive(Debug,Clone)]
+#[derive(Debug,Clone,Readable,Writable)]
 /// A layer description
 struct LayerDesc {
     #[pyo3(get)]
@@ -57,16 +59,35 @@ impl Corpus {
     /// # Returns
     /// A new corpus object
     ///
-    pub fn new(path : String) -> Corpus {
-        Corpus {
-            meta: HashMap::new(),
-            order: Vec::new(),
-            path
+    pub fn new(path : String) -> PyResult<Corpus> {
+        let db = sled::open(&path).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+            format!("Cannot open database {}", e)))?;
+        let mut meta = HashMap::new();
+        for m in db.scan_prefix(&[META_PREFIX]) {
+            let (_, v) = m.map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                format!("Error reading metadata: {}", e)))?;
+            let layer_desc = LayerDesc::read_from_buffer(v.as_ref()).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                format!("Cannot read metadata {}", e)))?;
+            meta.insert(layer_desc.name.clone(), layer_desc);
         }
+        let order = match db.get(ORDER_BYTES.to_vec())
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                format!("Error reading order: {}", e)))? {
+            Some(bytes) => Vec::read_from_buffer(bytes.as_ref()).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                format!("Cannot read order {}", e)))?,
+            None => Vec::new()
+        };
+        Ok(Corpus {
+            meta,
+            order,
+            path
+        })
     }
 
     /// Add a layer to the corpus
+    ///
     /// # Arguments
+    ///
     /// * `name` - The name of the layer
     /// * `type_` - The type of the layer
     /// * `on` - The layer that this layer is on
@@ -77,10 +98,6 @@ impl Corpus {
     pub fn add_layer_meta(&mut self, name: String, type_: LayerType, 
         on: String, data: Option<DataType>, values: Option<Vec<String>>, 
         target: Option<String>, default: Option<Vec<String>>) -> PyResult<()> {
-        if self.meta.contains_key(&name) {
-            return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                format!("Layer {} already exists", name)))
-        }
         if type_ == LayerType::characters && on != "" {
             return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
                 format!("Layer {} of type characters cannot be based on another layer", name)))
@@ -104,7 +121,7 @@ impl Corpus {
             _ => data
         };
 
-        self.meta.insert(name.clone(), LayerDesc {
+        let layer_desc = LayerDesc {
             name,
             type_,
             on,
@@ -112,10 +129,30 @@ impl Corpus {
             values,
             target,
             default
-        });
-        Ok(())
+         };
+
+        let db = sled::open(&self.path).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+            format!("Cannot open database {}", e)))?;
+        let mut id_bytes = Vec::new();
+        id_bytes.push(META_PREFIX);
+        id_bytes.extend(layer_desc.name.clone().as_bytes());
+        db.insert(id_bytes, layer_desc.write_to_vec().map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+            format!("Cannot write layer meta {}", e)))?).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+            format!("Cannot write layer meta {}", e)))?;
+
+        self.meta.insert(layer_desc.name.clone(), layer_desc);
+         Ok(())
     }
 
+    /// Add or update a document in the corpus
+    ///
+    /// # Arguments
+    ///
+    /// * `content` - The content of the document
+    ///
+    /// # Returns
+    ///
+    /// The ID of the document
     pub fn add_doc(&mut self, content : HashMap<String, PyLayer>) -> PyResult<String> {
         for key in content.keys() {
             if !self.meta.contains_key(key) {
@@ -145,7 +182,13 @@ impl Corpus {
         }
         let doc = Document::new(doc_content);
         let id = teanga_id(&self.order, &doc);
+    
         self.order.push(id.clone());
+
+        db.insert(ORDER_BYTES.to_vec(), self.order.write_to_vec().map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+            format!("Cannot write order {}", e)))?).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+            format!("Cannot write order {}", e)))?;
+
         let data = doc.write_to_vec().map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
             format!("Cannot write document {}", e)))?;
         let mut id_bytes = Vec::new();
@@ -156,6 +199,35 @@ impl Corpus {
         Ok(id)
     }
 
+    /// Remove a document from the corpus
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the document
+    pub fn remove_doc(&mut self, id : &str) -> PyResult<()> {
+        let db = sled::open(&self.path).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+            format!("Cannot open database {}", e)))?;
+        let mut id_bytes = Vec::new();
+        id_bytes.push(DOCUMENT_PREFIX);
+        id_bytes.extend(id.as_bytes());
+        db.remove(id_bytes).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+            format!("Cannot remove document {}", e)))?;
+        self.order.retain(|x| x != id);
+        db.insert(ORDER_BYTES.to_vec(), self.order.write_to_vec().map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+            format!("Cannot write order {}", e)))?).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+            format!("Cannot write order {}", e)))?;
+        Ok(())
+    }
+
+    /// Get a document by its ID
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the document
+    ///
+    /// # Returns
+    ///
+    /// The document as a map from layers names to layers
     pub fn get_doc_by_id(&mut self, id : &str) -> PyResult<HashMap<String, PyLayer>> {
         let db = sled::open(&self.path).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
             format!("Cannot open database {}", e)))?;
@@ -191,6 +263,15 @@ impl Corpus {
 
         }
         Ok(result)
+    }
+
+    /// Get the documents in the corpus
+    ///
+    /// # Returns
+    ///
+    /// The documents IDs in order
+    pub fn get_docs(&self) -> &Vec<String> {
+        &self.order
     }
 }
 
@@ -594,7 +675,7 @@ fn teanga_id(existing_keys : &Vec<String>, doc : &Document) -> String {
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Debug,Clone,PartialEq)]
+#[derive(Debug,Clone,PartialEq,Readable,Writable)]
 pub enum LayerType {
     characters,
     seq,
@@ -641,7 +722,7 @@ impl Display for LayerType {
     }
 }
 
-#[derive(Debug,Clone,PartialEq)]
+#[derive(Debug,Clone,PartialEq,Readable,Writable)]
 pub enum DataType {
     String,
     Enum(Vec<String>),
