@@ -113,33 +113,38 @@ class Document:
                     for start, end in indexes)
 
 
-def teanga_id_for_doc(*args, **kwargs):
+def teanga_id_for_doc(ids, *args, **kwargs):
     """Return the Teanga ID for a document.
 
     Parameters:
     -----------
+    ids: str
+        The IDs already generated and not to be repeated
+
     This works as the add_doc method, but returns the Teanga ID for the document.
     It is not necessary to call this method directly but instead you can use it
     via the Corpus class.
 
     Examples:
     ---------
-    >>> teanga_id_for_doc("This is a document.")
-    'NE/Q'
-    >>> teanga_id_for_doc(en="This is a document.", nl="Dit is een document.")
-    '7HPP'
+    >>> teanga_id_for_doc(set(), text="This is a document.")
+    'Kjco'
+    >>> teanga_id_for_doc(set(), en="This is a document.", nl="Dit is een document.")
+    'Nnrd'
     """
     text = ""
-    if len(args) == 0:
-        if len(kwargs) == 0:
-            raise Exception("No arguments given.")
-        for key in sorted(kwargs.keys()):
-            text += kwargs[key]
-    elif len(args) == 1:
-        text = str(args[0])
-    else:
-        raise Exception("Too many arguments given.")
-    return b64encode(sha256(text.encode("utf-8")).digest()).decode("utf-8")[0:4]
+    if len(kwargs) == 0:
+        raise Exception("No arguments given.")
+    for key in sorted(kwargs.keys()):
+        text += key
+        text += "\x00"
+        text += kwargs[key]
+        text += "\x00"
+    code = b64encode(sha256(text.encode("utf-8")).digest()).decode("utf-8")
+    n = 4
+    while code[:n] in ids and n < len(code):
+        n += 1
+    return code[:n]
 
 class Layer(ABC):
     """A layer of annotation"""
@@ -462,7 +467,7 @@ class Corpus:
 
     def add_layer_meta(self, name:str=None,
                   type:str="characters", on:str=None, 
-                  data=None, link_types:list[str]=None,
+                  data=None, values:list[str]=None,
                   target:str=None, default=None):
         """Add a layer to the corpus.
         
@@ -478,7 +483,7 @@ class Corpus:
         data: list
             The data of the layer, this can be the value "string", "link" or 
             a list of strings, for an enumeration of values
-        link_types: list
+        values: list
             The types of the links, if the data is links.
         target: str
             The name of the target layer, if the data is links.
@@ -509,8 +514,8 @@ class Corpus:
         if data:
             self.meta[name]["data"] = data
         if data == "links":
-            if link_types is not None:
-                self.meta[name]["link_types"] = link_types
+            if values is not None:
+                self.meta[name]["values"] = values
             if target is not None:
                 self.meta[name]["target"] = target
             else:
@@ -549,11 +554,12 @@ class Corpus:
         elif len(char_layers) == 1:
             if len(args) == 1:
                 doc = Document(self.meta, **{char_layers[0]: args[0]})
-                self.docs.append((teanga_id_for_doc(args[0]), doc))
+                self.docs.append((teanga_id_for_doc(self._doc_keys(), 
+                        **{ char_layers[0]: args[0]}), doc))
                 return doc
             elif len(kwargs) == 1 and list(kwargs.keys())[0] == char_layers[0]["name"]:
                 doc = Document(self.meta, **kwargs)
-                self.docs.append((teanga_id_for_doc(**kwargs), doc))
+                self.docs.append((teanga_id_for_doc(self._doc_keys(), **kwargs), doc))
                 return doc
             else:
                 raise Exception("Invalid arguments, please specify the text " +
@@ -561,7 +567,7 @@ class Corpus:
         else:
             if set(kwargs.keys()) == set(char_layers):
                 doc = Document(self.meta, **kwargs)
-                self.docs.append((teanga_id_for_doc(**kwargs),  doc))
+                self.docs.append((teanga_id_for_doc(self._doc_keys(), **kwargs),  doc))
                 return doc
             else:
                 raise Exception("Invalid arguments, please specify the text " +
@@ -591,3 +597,6 @@ class Corpus:
         if layer not in self.meta:
             raise Exception("Layer with name " + layer + " does not exist.")
         return (doc[1].get_layer(layer) for doc in self.docs)
+
+    def _doc_keys(self):
+        return [doc[0] for doc in self.docs]

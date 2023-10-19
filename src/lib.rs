@@ -3,11 +3,22 @@
 // License: Apache 2.0
 use pyo3::prelude::*;
 use std::collections::HashMap;
+use std::fmt::{self, Display, Formatter};
+use sled;
+use speedy::{Writable,Readable};
+use sha2::{Digest, Sha256};
+use base64::Engine;
+use base64::engine::general_purpose::STANDARD;
+use itertools::Itertools;
+
+const DOCUMENT_PREFIX : u8 = 0x00;
+const ID2STR_PREFIX : u8 = 0x01;
+const STR2ID_PREFIX : u8 = 0x02;
 
 #[pyclass]
 #[derive(Debug,Clone)]
 /// A corpus object
-struct Corpus {
+pub struct Corpus {
     #[pyo3(get)]
     meta: HashMap<String, LayerDesc>,
     #[pyo3(get)]
@@ -26,9 +37,9 @@ struct LayerDesc {
     #[pyo3(get)]
     on: String,
     #[pyo3(get)]
-    data: Option<String>,
+    data: Option<DataType>,
     #[pyo3(get)]
-    link_types: Option<Vec<String>>,
+    values: Option<Vec<String>>,
     #[pyo3(get)]
     target: Option<String>,
     #[pyo3(get)]
@@ -39,7 +50,14 @@ struct LayerDesc {
 impl Corpus {
     #[new]
     /// Create a new corpus
-    fn new(path : String) -> Corpus {
+    ///
+    /// # Arguments
+    /// * `path` - The path to the database
+    ///
+    /// # Returns
+    /// A new corpus object
+    ///
+    pub fn new(path : String) -> Corpus {
         Corpus {
             meta: HashMap::new(),
             order: Vec::new(),
@@ -53,32 +71,422 @@ impl Corpus {
     /// * `type_` - The type of the layer
     /// * `on` - The layer that this layer is on
     /// * `data` - The data file for this layer
-    /// * `link_types` - The link types for this layer
+    /// * `values` - The values for this layer
     /// * `target` - The target layer for this layer
     /// * `default` - The default values for this layer
-    fn add_layer_meta(&mut self, name: String, type_: LayerType, 
-        on: String, data: Option<String>, link_types: Option<Vec<String>>, 
+    pub fn add_layer_meta(&mut self, name: String, type_: LayerType, 
+        on: String, data: Option<DataType>, values: Option<Vec<String>>, 
         target: Option<String>, default: Option<Vec<String>>) -> PyResult<()> {
         if self.meta.contains_key(&name) {
             return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
                 format!("Layer {} already exists", name)))
         }
+        if type_ == LayerType::characters && on != "" {
+            return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                format!("Layer {} of type characters cannot be based on another layer", name)))
+        }
+
+        if type_ != LayerType::characters && on == "" {
+            return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                format!("Layer {} of type {} must be based on another layer", name, type_)))
+        }
+
+        let data = match data {
+            None => None,
+            Some(DataType::String) => match values {
+                Some(ref values) => Some(DataType::Enum(values.clone())),
+                None => data
+            },
+            Some(DataType::Link) => match values {
+                Some(ref values) => Some(DataType::TypedLink(values.clone())),
+                None => data
+            },
+            _ => data
+        };
+
         self.meta.insert(name.clone(), LayerDesc {
             name,
             type_,
             on,
             data,
-            link_types,
+            values,
             target,
             default
         });
         Ok(())
     }
+
+    pub fn add_doc(&mut self, content : HashMap<String, PyLayer>) -> PyResult<()> {
+        for key in content.keys() {
+            if !self.meta.contains_key(key) {
+                return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                    format!("Layer {} does not exist", key)))
+            }
+        }
+        let db = sled::open(&self.path).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+            format!("Cannot open database {}", e)))?;
+        let mut doc_content = HashMap::new();
+        for (k, v) in content {
+            let layer_meta = self.meta.get(&k).ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                format!("No meta information for layer {}", k)))?;
+            doc_content.insert(k, 
+                Layer::from_py(v, layer_meta, &|u : &String| {
+                        let mut id_bytes = Vec::new();
+                        id_bytes.push(STR2ID_PREFIX);
+                        id_bytes.extend(u.as_bytes());
+                        let b = db.get(id_bytes)
+                            .expect("Error reading string index")
+                            .unwrap_or_else(|| panic!("String index not found"));
+                        if b.len() != 4 {
+                            panic!("String index is not 4 bytes");
+                        }
+                        u32::from_be_bytes(b.as_ref().try_into().unwrap())
+                    })?);
+        }
+        let doc = Document::new(doc_content);
+        let id = teanga_id(&self.order, &doc);
+        self.order.push(id.clone());
+        let data = doc.write_to_vec().map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+            format!("Cannot write document {}", e)))?;
+        let mut id_bytes = Vec::new();
+        id_bytes.push(DOCUMENT_PREFIX);
+        id_bytes.extend(id.as_bytes());
+        db.insert(id_bytes, data).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+            format!("Cannot write document {}", e)))?;
+        Ok(())
+    }
+
+    pub fn get_doc_by_id(&mut self, id : &str) -> PyResult<HashMap<String, PyLayer>> {
+        let db = sled::open(&self.path).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+            format!("Cannot open database {}", e)))?;
+        
+        let mut id_bytes = Vec::new();
+        id_bytes.push(DOCUMENT_PREFIX);
+        id_bytes.extend(id.as_bytes());
+        let data = db.get(id_bytes)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                format!("Error reading document: {}", e)))?
+            .ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                format!("Document not found")))?;
+        let doc = Document::read_from_buffer(data.as_ref()).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+            format!("Cannot read document {}", e)))?;
+        let mut result = HashMap::new();
+        for (key, layer) in doc.content {
+            let layer_desc : &LayerDesc = self.meta.get(&key).
+                    ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                        format!("Serialized document contains undeclared layer {}", key)))?;
+            result.insert(key, layer.into_py(
+                    layer_desc,
+                    &|u| {
+                        let mut id_bytes = Vec::new();
+                        id_bytes.push(ID2STR_PREFIX);
+                        id_bytes.extend(u.to_be_bytes());
+                        String::from_utf8(
+                            db.get(id_bytes)
+                            .expect("Error reading string index")
+                            .unwrap_or_else(|| panic!("String index not found"))
+                            .as_ref().to_vec())
+                            .expect("Unicode error in string index")
+                    })?);
+
+        }
+        Ok(result)
+    }
+}
+
+#[derive(Debug,Clone,Readable,Writable)]
+/// A document object
+struct Document {
+    content: HashMap<String, Layer>
+}
+
+impl Document {
+    fn new(content : HashMap<String, Layer>) -> Document {
+        Document {
+            content
+        }
+    }
+}
+
+#[derive(Debug,Clone,Readable,Writable)]
+enum Layer {
+    Characters(String),
+    Seq(Vec<u32>),
+    Div(Vec<(u32,u32)>),
+    DivNoData(Vec<u32>),
+    Element(Vec<(u32,u32)>),
+    ElementNoData(Vec<u32>),
+    Span(Vec<(u32,u32,u32)>),
+    SpanNoData(Vec<(u32,u32)>)
+}
+
+impl Layer {
+    fn into_py<F>(&self, meta : &LayerDesc, idx2str : &F) -> PyResult<PyLayer> 
+        where F : Fn(u32) -> String {
+        match self {
+            Layer::Characters(val) => Ok(PyLayer::CharacterLayer(val.clone())),
+            Layer::Seq(val) => {
+                let mut result = Vec::new();
+                let metadata = meta.data.as_ref().ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                    format!("Layer contains data but has no data type")))?;
+                for id in val {
+                    result.push(PyDocData::from(*id, metadata, &idx2str)?);
+                }
+                Ok(PyLayer::DataLayer(result))
+            },
+            Layer::Div(val) => {
+                let mut result = Vec::new();
+                let metadata = meta.data.as_ref().ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                    format!("Layer contains data but has no data type")))?;
+                for (start, data) in val {
+                    result.push((start.clone(), PyDocData::from(*data, metadata, &idx2str)?));
+                }
+                Ok(PyLayer::IndexDataLayer(result))
+            },
+            Layer::DivNoData(val) => {
+                let mut result = Vec::new();
+                for start in val {
+                    result.push(*start);
+                }
+                Ok(PyLayer::IndexLayer(result))
+            },
+            Layer::Element(val) => {
+                let mut result = Vec::new();
+                let metadata = meta.data.as_ref().ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                    format!("Layer contains data but has no data type")))?;
+                for (start, data) in val {
+                    result.push((start.clone(), PyDocData::from(*data, metadata, &idx2str)?));
+                }
+                Ok(PyLayer::IndexDataLayer(result))
+            },
+            Layer::ElementNoData(val) => {
+                let mut result = Vec::new();
+                for start in val {
+                    result.push(*start);
+                }
+                Ok(PyLayer::IndexLayer(result))
+            },
+            Layer::Span(val) => {
+                let mut result = Vec::new();
+                let metadata = meta.data.as_ref().ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                    format!("Layer contains data but has no data type")))?;
+                for (start, end, data) in val {
+                    result.push((start.clone(), end.clone(), PyDocData::from(*data, metadata, &idx2str)?));
+                }
+                Ok(PyLayer::SpanDataLayer(result))
+            },
+            Layer::SpanNoData(val) => {
+                let mut result = Vec::new();
+                for (start, end) in val {
+                    result.push((*start, *end));
+                }
+                Ok(PyLayer::SpanLayer(result))
+            }
+        }
+    }
+
+    fn from_py<F>(obj : PyLayer, meta : &LayerDesc, str2idx : &F) -> PyResult<Layer> 
+        where F : Fn(&String) -> u32 {
+        match obj {
+            PyLayer::CharacterLayer(val) => Ok(Layer::Characters(val)),
+            PyLayer::DataLayer(val) => {
+                let mut result = Vec::new();
+                let metadata = meta.data.as_ref().ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                    format!("Layer contains data but has no data type")))?;
+                for data in val {
+                    result.push(data.into_u32(metadata, str2idx)?);
+                }
+                Ok(Layer::Seq(result))
+            },
+            PyLayer::IndexDataLayer(val) => {
+                let mut result = Vec::new();
+                let metadata = meta.data.as_ref().ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                    format!("Layer contains data but has no data type")))?;
+                for (start, data) in val {
+                    result.push((start.clone(), data.into_u32(metadata, str2idx)?));
+                }
+                match meta.type_ {
+                    LayerType::div => Ok(Layer::Div(result)),
+                    LayerType::element => Ok(Layer::Element(result)),
+                    _ => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                        format!("Cannot convert data layer to {}", meta.type_)))
+                }
+            },
+            PyLayer::SpanDataLayer(val) => {
+                let mut result = Vec::new();
+                let metadata = meta.data.as_ref().ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                    format!("Layer contains data but has no data type")))?;
+                for (start, end, data) in val {
+                    result.push((start.clone(), end.clone(), data.into_u32(metadata, &str2idx)?));
+                }
+                Ok(Layer::Span(result))
+            },
+            PyLayer::IndexLayer(val) => {
+                let mut result = Vec::new();
+                for start in val {
+                    result.push(start.clone());
+                }
+                match meta.type_ {
+                    LayerType::div => Ok(Layer::DivNoData(result)),
+                    LayerType::element => Ok(Layer::ElementNoData(result)),
+                    _ => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                        format!("Cannot convert data layer to {}", meta.type_)))
+                }
+            },
+            PyLayer::SpanLayer(val) => {
+                let mut result = Vec::new();
+                for (start, end) in val {
+                    result.push((start.clone(), end.clone()));
+                }
+                Ok(Layer::SpanNoData(result))
+            }
+        }
+    }
+}
+
+#[derive(Debug,Clone,PartialEq)]
+#[derive(FromPyObject)]
+pub enum PyLayer {
+    CharacterLayer(String),
+    DataLayer(Vec<PyDocData>),
+    IndexDataLayer(Vec<(u32,PyDocData)>),
+    SpanDataLayer(Vec<(u32,u32,PyDocData)>),
+    IndexLayer(Vec<u32>),
+    SpanLayer(Vec<(u32,u32)>)
+}
+
+impl IntoPy<PyObject> for PyLayer {
+    fn into_py(self, py: Python) -> PyObject {
+        match self {
+            PyLayer::CharacterLayer(val) => val.into_py(py),
+            PyLayer::DataLayer(val) => val.into_py(py),
+            PyLayer::IndexDataLayer(val) => val.into_py(py),
+            PyLayer::SpanDataLayer(val) => val.into_py(py),
+            PyLayer::IndexLayer(val) => val.into_py(py),
+            PyLayer::SpanLayer(val) => val.into_py(py)
+        }
+    }
+}
+
+#[derive(Debug,Clone,PartialEq)]
+#[derive(FromPyObject)]
+pub enum PyDocData {
+    String(String),
+    Enum(String),
+    Link(u32),
+    TypedLink((u32,String))
+}
+
+impl PyDocData {
+    fn from<F>(val : u32, type_ : &DataType, f : &F) -> PyResult<PyDocData>
+        where F : Fn(u32) -> String {
+        match type_ {
+            DataType::String => Ok(PyDocData::String(f(val))),
+            DataType::Enum(vals) => {
+                if val < vals.len() as u32 {
+                    Ok(PyDocData::Enum(vals[val as usize].clone()))
+                } else {
+                    Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                            format!("Enum data is out of range of enum")))
+                }
+            }
+            DataType::Link => Ok(PyDocData::Link(val)),
+            DataType::TypedLink(vals) => {
+                let n = (vals.len() as f64).log2().ceil() as u32;
+                let link_targ = val >> n;
+                let link_type = val & ((1 << n) - 1);
+                if link_type < vals.len() as u32 {
+                    Ok(PyDocData::TypedLink((link_targ, vals[link_type as usize].clone())))
+                } else {
+                    Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                            format!("Link type is out of range of enum")))
+                }
+            }
+        }
+    }
+
+    fn into_u32<F>(&self, type_ : &DataType, f : &F) -> PyResult<u32> 
+        where F : Fn(&String) -> u32 {
+        match self {
+            PyDocData::String(val) => {
+                match type_ {
+                    DataType::String => Ok(f(val)),
+                    _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                        format!("Cannot convert string to {}", type_)))
+                }
+            },
+            PyDocData::Enum(val) => {
+                match type_ {
+                    DataType::Enum(vals) => {
+                        match vals.iter().position(|x| x == val) {
+                            Some(idx) => Ok(idx as u32),
+                            None => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                                format!("Cannot convert enum {} to {}", val, vals.iter().join(","))))
+                        }
+                    },
+                    _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                        format!("Cannot convert enum to {}", type_)))
+                }
+            },
+            PyDocData::Link(val) => {
+                match type_ {
+                    DataType::Link => Ok(*val),
+                    _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                        format!("Cannot convert link to {}", type_)))
+                }
+            },
+            PyDocData::TypedLink((link_targ, link_type)) => {
+                match type_ {
+                    DataType::TypedLink(vals) => {
+                        match vals.iter().position(|x| x == link_type) {
+                            Some(idx) => Ok((idx as u32) << ((vals.len() as f64).log2().ceil() as u32) | link_targ),
+                            None => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                                format!("Cannot convert link type {} to {}", link_type, vals.iter().join(","))))
+                        }
+                    },
+                    _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                        format!("Cannot convert link type to {}", type_)))
+                }
+            }
+        }
+    }
+}
+
+impl IntoPy<PyObject> for PyDocData {
+    fn into_py(self, py: Python) -> PyObject {
+        match self {
+            PyDocData::String(val) => val.into_py(py),
+            PyDocData::Enum(val) => val.into_py(py),
+            PyDocData::Link(val) => val.into_py(py),
+            PyDocData::TypedLink(val) => val.into_py(py)
+        }
+    }
+}
+
+fn teanga_id(existing_keys : &Vec<String>, doc : &Document) -> String {
+    let mut hasher = Sha256::new();
+    for key in doc.content.keys().sorted() {
+        match doc.content.get(key).unwrap() {
+            Layer::Characters(val) => {
+                hasher.update(key.as_bytes());
+                hasher.update(vec![0u8]);
+                hasher.update(val.as_bytes());
+                hasher.update(vec![0u8]);
+            }
+            _ => ()
+        }
+    }
+    let code = STANDARD.encode(hasher.finalize().as_slice());
+    let mut n = 4;
+    while existing_keys.contains(&code[..n].to_string()) && n < code.len() {
+        n += 1;
+    }
+    return code[..n].to_string();
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Debug,Clone)]
-enum LayerType {
+#[derive(Debug,Clone,PartialEq)]
+pub enum LayerType {
     characters,
     seq,
     div,
@@ -88,7 +496,7 @@ enum LayerType {
 
 impl FromPyObject<'_> for LayerType {
     fn extract(ob: &PyAny) -> PyResult<Self> {
-        match ob.extract::<String>()?.as_str() {
+        match ob.extract::<String>()?.to_lowercase().as_str() {
             "characters" => Ok(LayerType::characters),
             "seq" => Ok(LayerType::seq),
             "div" => Ok(LayerType::div),
@@ -112,10 +520,83 @@ impl IntoPy<PyObject> for LayerType {
     }
 }
 
+impl Display for LayerType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            LayerType::characters => write!(f, "characters"),
+            LayerType::seq => write!(f, "seq"),
+            LayerType::div => write!(f, "div"),
+            LayerType::element => write!(f, "element"),
+            LayerType::span => write!(f, "span")
+        }
+    }
+}
+
+#[derive(Debug,Clone,PartialEq)]
+pub enum DataType {
+    String,
+    Enum(Vec<String>),
+    Link,
+    TypedLink(Vec<String>)
+}
+
+impl FromPyObject<'_> for DataType {
+    fn extract(ob: &PyAny) -> PyResult<Self> {
+        match ob.extract::<Vec<String>>() {
+            Ok(vals) => return Ok(DataType::Enum(vals)),
+            Err(_) => ()
+        };
+        match ob.extract::<String>()?.to_lowercase().as_str() {
+            "string" => Ok(DataType::String),
+            "link" => Ok(DataType::Link),
+            _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                format!("Unknown data type {}", ob.extract::<String>()?)))
+        }
+    }
+}
+
+impl IntoPy<PyObject> for DataType {
+    fn into_py(self, py: Python) -> PyObject {
+        match self {
+            DataType::String => "string".into_py(py),
+            DataType::Enum(vals) => "string".into_py(py),
+            DataType::Link => "link".into_py(py),
+            DataType::TypedLink(_) => "link".into_py(py)
+        }
+    }
+}
+
+impl Display for DataType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            DataType::String => write!(f, "string"),
+            DataType::Enum(vals) => write!(f, "enum({})", vals.iter().join(",")),
+            DataType::Link => write!(f, "link"),
+            DataType::TypedLink(vals) => write!(f, "link({})", vals.iter().join(","))
+        }
+    }
+}
+
 /// A Python module implemented in Rust.
 #[pymodule]
 #[pyo3(name="teangadb")]
 fn teangadb(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Corpus>()?;
     Ok(())
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_teanga_id_1() {
+        let existing_keys = Vec::new();
+        let doc = Document {
+            content: vec![("text".to_string(), 
+                         Layer::Characters("This is a document.".to_string()))].into_iter().collect()
+        };
+        let expected = "Kjco";
+        assert_eq!(teanga_id(&existing_keys, &doc), expected);
+    }
 }
