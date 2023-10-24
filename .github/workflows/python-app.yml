@@ -35,9 +35,9 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Install Maturin
-        pip install -u maturin
+      run: pip install -u maturin
     - name: Build Rust code
-        maturin develop
+      run: maturin develop
     - name: Test with pytest
       run: |
         pytest --doctest-modules
