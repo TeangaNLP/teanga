@@ -7,9 +7,11 @@ from .utils import teanga_id_for_doc
 
 class Document:
     """Document class for storing and processing text data."""
-    def __init__(self, meta, *args, **kwargs):
+    def __init__(self, meta, corpus=None, id=None, *args, **kwargs):
         self.meta = meta
         self.layers = {}
+        self.corpus = corpus
+        self.id = id
         for key in kwargs:
             self.add_layer(key, kwargs[key])
 
@@ -25,35 +27,38 @@ class Document:
         """
         if name not in self.meta:
             raise Exception("Layer with name " + name + " does not exist.")
-        if value is None and self.meta["default"] is not None:
-            value = self.meta["default"]
-        if self.meta[name]["type"] == "characters":
+        if value is None and self.meta[name].default is not None:
+            value = self.meta[name].default
+        if self.meta[name].layer_type == "characters":
             self.layers[name] = CharacterLayer(name, self.meta[name], str(value))
-        elif self.meta[name]["on"] not in self.layers:
+        elif self.meta[name].on not in self.layers:
             raise Exception("Cannot add layer " + name + " because sublayer " +
-            self.meta[name]["on"] + " does not exist.")
-        elif self.meta[name]["type"] == "seq":
+            self.meta[name].on + " does not exist.")
+        elif self.meta[name].layer_type == "seq":
             if not isinstance(value, list):
                 raise Exception("Value of layer " + name + " must be a list.")
-            if len(value) != len(self.layers[self.meta[name]["on"]]):
+            if len(value) != len(self.layers[self.meta[name].on]):
                 raise Exception("Value of layer " + name + " must have the " +
-                "same length as layer " + self.meta[name]["on"] + ".")
+                "same length as layer " + self.meta[name].on + ".")
             self.layers[name] = SeqLayer(name, self.meta[name], value)
-        elif self.meta[name]["type"] == "span":
+        elif self.meta[name].layer_type == "span":
             if not isinstance(value, list):
                 raise Exception("Value of layer " + name + " must be a list.")
             self.layers[name] = SpanLayer(name, self.meta[name], value)
-        elif self.meta[name]["type"] == "div":
+        elif self.meta[name].layer_type == "div":
             if not isinstance(value, list):
                 raise Exception("Value of layer " + name + " must be a list.")
             self.layers[name] = DivLayer(name, self.meta[name], value)
-        elif self.meta[name]["type"] == "element":
+        elif self.meta[name].layer_type == "element":
             if not isinstance(value, list):
                 raise Exception("Value of layer " + name + " must be a list.")
             self.layers[name] = ElementLayer(name, self.meta[name], value)
         else:
-            raise Exception("Unknown layer type " + self.meta[name]["type"] + 
+            raise Exception("Unknown layer type " + self.meta[name].layer_type + 
             " for layer " + name + ".")
+        if self.corpus and self.id:
+            self.corpus.update_layer(self.id, 
+                     {name: layer.data() for (name,layer) in self.layers.items()})
         return self.layers[name]
 
     def get_layer(self, name:str):
@@ -87,8 +92,8 @@ class Document:
         >>> from teanga import Corpus
         >>> corpus = Corpus()
         >>> corpus.add_layer_meta("text")
-        >>> corpus.add_layer_meta("words", type="span", on="text")
-        >>> corpus.add_layer_meta("pos", type="seq", on="words")
+        >>> corpus.add_layer_meta("words", layer_type="span", on="text")
+        >>> corpus.add_layer_meta("pos", layer_type="seq", on="words")
         >>> doc = corpus.add_doc("This is a document.")
         >>> layer = doc.add_layer("words", [[0,4], [5,7], [8,9], [10,18], [18,19]])
         >>> layer = doc.add_layer("pos", ["DT", "VBZ", "DT", "NN", "."])
@@ -102,12 +107,12 @@ class Document:
         """
         if layer_name not in self.meta:
             raise Exception("Layer with name " + layer_name + " does not exist.")
-        if self.meta[layer_name]["type"] == "characters":
+        if self.meta[layer_name].layer_type == "characters":
             return self.layers[layer_name].text(self)
         else:
             text_layer = layer_name
-            while self.meta[text_layer]["type"] != "characters":
-                text_layer = self.meta[text_layer]["on"]
+            while self.meta[text_layer].layer_type != "characters":
+                text_layer = self.meta[text_layer].on
             indexes = self.layers[layer_name].indexes(text_layer, self)
             return (self.layers[text_layer].text(self)[start:end]
                     for start, end in indexes)
@@ -162,12 +167,12 @@ class CharacterLayer(Layer):
 
         Examples:
         ---------
-        >>> layer = CharacterLayer("text", {"type": "characters"}, 
+        >>> layer = CharacterLayer("text", {"layer_type": "characters"}, 
         ...     "This is a document.")
         >>> layer.data(None)
-        []
+        'This is a document.'
         """
-        return []
+        return self._text
 
     def text(self, doc:Document):
         """
@@ -175,7 +180,7 @@ class CharacterLayer(Layer):
 
         Examples:
         ---------
-        >>> layer = CharacterLayer("text", {"type": "characters"},
+        >>> layer = CharacterLayer("text", {"layer_type": "characters"},
         ...     "This is a document.")
         >>> layer.text(None)
         'This is a document.'
@@ -188,7 +193,8 @@ class CharacterLayer(Layer):
 
         Examples:
         ---------
-        >>> layer = CharacterLayer("text", {"type": "characters"}, 
+        >>> from .corpus import LayerDesc
+        >>> layer = CharacterLayer("text", LayerDesc(layer_type="characters"),
         ...     "This")
         >>> list(layer.indexes("text", None))
         [(0, 1), (1, 2), (2, 3), (3, 4)]
@@ -216,7 +222,7 @@ class SeqLayer(Layer):
 
         Examples:
         ---------
-        >>> layer = SeqLayer("words", {"type": "seq", "on": "text"}, 
+        >>> layer = SeqLayer("words", {"layer_type": "seq", "on": "text"}, 
         ...     ["This", "is", "a", "document", "."])
         >>> layer.data(None)
         ['This', 'is', 'a', 'document', '.']
@@ -229,8 +235,10 @@ class SeqLayer(Layer):
 
         Examples:
         ---------
-        >>> doc = Document({"text": {"type": "characters"},
-        ...  "words": { "type": "seq", "on": "text"}}, text="This")
+        >>> from .corpus import LayerDesc
+        >>> doc = Document({"text": LayerDesc(layer_type="characters"),
+        ... "words": LayerDesc(layer_type="seq", on="text")},
+        ... text="This")
         >>> layer = doc.add_layer("words", ["A", "B", "C", "D"])
         >>> list(layer.text(doc))
         ['T', 'h', 'i', 's']
@@ -243,8 +251,10 @@ class SeqLayer(Layer):
 
         Examples:
         ---------
-        >>> doc = Document({"text": {"type": "characters"},
-        ...  "words": { "type": "seq", "on": "text"}}, text="This")
+        >>> from .corpus import LayerDesc
+        >>> doc = Document({"text": LayerDesc(layer_type="characters"),
+        ... "words": LayerDesc(layer_type="seq", on="text")},
+        ... text="This")
         >>> layer = doc.add_layer("words", ["A", "B", "C", "D"])
         >>> list(layer.indexes("words", doc))
         [(0, 1), (1, 2), (2, 3), (3, 4)]
@@ -252,7 +262,7 @@ class SeqLayer(Layer):
         if layer == self._name:
             return ((i, i+1) for i in range(len(self.seq)))
         else:
-            return doc.layers[self._meta["on"]].indexes(layer, doc)
+            return doc.layers[self._meta.on].indexes(layer, doc)
 
     def __repr__(self):
         return "SeqLayer(" + repr(self.seq) + ")"
@@ -270,15 +280,16 @@ class StandoffLayer(Layer):
 
         Examples:
         ---------
-        >>> doc = Document({"text": {"type": "characters"},
-        ... "words": { "type": "span", "on": "text", "data": "string"}}, 
+        >>> from .corpus import LayerDesc
+        >>> doc = Document({"text": LayerDesc(layer_type="characters"),
+        ... "words": LayerDesc(layer_type="span", on="text", data="string")},
         ... text="This is an example.")
         >>> layer = doc.add_layer("words", [[0,4,"A"], [5,7,"B"], [8,10,"C"], 
         ... [11,18,"D"]])
         >>> list(layer.data(doc))
         ['A', 'B', 'C', 'D']
         """
-        if self._meta["data"] is not None:
+        if self._meta.data is not None:
             return (s[2] for s in self._data)
 
     def text(self, doc:Document):
@@ -287,8 +298,9 @@ class StandoffLayer(Layer):
 
         Examples:
         ---------
-        >>> doc = Document({"text": {"type": "characters"},
-        ... "words": { "type": "span", "on": "text", "data": "string"}}, 
+        >>> from .corpus import LayerDesc
+        >>> doc = Document({"text": LayerDesc(layer_type="characters"),
+        ... "words": LayerDesc(layer_type="span", on="text", data="string")}, 
         ... text="This is an example.")
         >>> layer = doc.add_layer("words", [[0,4,"A"], [5,7,"B"], [8,10,"C"], 
         ... [11,18,"D"]])
@@ -318,8 +330,9 @@ class SpanLayer(StandoffLayer):
 
         Examples:
         ---------
-        >>> doc = Document({"text": {"type": "characters"},
-        ... "words": { "type": "span", "on": "text", "data": "string"}}, 
+        >>> from .corpus import LayerDesc
+        >>> doc = Document({"text": LayerDesc(layer_type="characters"),
+        ... "words": LayerDesc(layer_type="span", on="text", data="string")},
         ... text="This is an example.")
         >>> layer = doc.add_layer("words", [[0,4,"A"], [5,7,"B"], [8,10,"C"], 
         ... [11,18,"D"]])
@@ -330,10 +343,10 @@ class SpanLayer(StandoffLayer):
         """
         if layer == self._name:
             return zip(range(len(self._data)), range(1, len(self._data) + 1))
-        elif layer == self._meta["on"]:
+        elif layer == self._meta.on:
             return ((s[0], s[1]) for s in self._data)
         else:
-            subindexes = list(doc.layers[self._meta["on"]].indexes(layer, doc))
+            subindexes = list(doc.layers[self._meta.on].indexes(layer, doc))
             return ((subindexes[s[0]], subindexes[s[1]]) for s in self._data)
 
     def __repr__(self):
@@ -357,8 +370,9 @@ class DivLayer(StandoffLayer):
 
         Examples:
         ---------
-        >>> doc = Document({"text": {"type": "characters"},
-        ... "sentences": { "type": "div", "on": "text" }},
+        >>> from .corpus import LayerDesc
+        >>> doc = Document({"text": LayerDesc(layer_type="characters"),
+        ... "sentences": LayerDesc(layer_type="div", on="text")},
         ... text="This is an example. This is another example.")
         >>> layer = doc.add_layer("sentences", [[0], [19]])
         >>> list(layer.indexes("sentences", doc))
@@ -368,13 +382,13 @@ class DivLayer(StandoffLayer):
         """
         if layer == self._name:
             return zip(range(len(self._data)), range(1, len(self._data) + 1))
-        elif layer == self._meta["on"]:
+        elif layer == self._meta.on:
             return pairwise(chain((s[0] for s in self._data), 
-                                  [len(doc.layers[self._meta["on"]])]))
+                                  [len(doc.layers[self._meta.on])]))
         else:
-            subindexes = list(doc.layers[self._meta["on"]].indexes(layer, doc))
+            subindexes = list(doc.layers[self._meta.on].indexes(layer, doc))
             return pairwise(chain((subindexes[s[0]] for s in self._data), 
-                                  [len(doc.layers[self._meta["on"]])]))
+                                  [len(doc.layers[self._meta.on])]))
 
     def __repr__(self):
         return "DivLayer(" + repr(self._data) + ")"
@@ -397,8 +411,9 @@ class ElementLayer(StandoffLayer):
 
         Examples:
         ---------
-        >>> doc = Document({"text": {"type": "characters"},
-        ... "alts": { "type": "element", "on": "text", "data": "string" }},
+        >>> from .corpus import LayerDesc
+        >>> doc = Document({"text": LayerDesc(layer_type="characters"),
+        ... "alts": LayerDesc(layer_type="element", on="text", data="string" )},
         ... text="Tá sé seo mar shampla.")
         >>> layer = doc.add_layer("alts", [[1, "́a"], [4, "́e"]])
         >>> list(layer.indexes("alts", doc))
@@ -408,10 +423,10 @@ class ElementLayer(StandoffLayer):
         """
         if layer == self._name:
             return zip(range(len(self._data)), range(1, len(self._data) + 1))
-        elif layer == self._meta["on"]:
+        elif layer == self._meta.on:
             return ((s[0], s[0] + 1) for s in self._data)
         else:
-            subindexes = list(doc.layers[self._meta["on"]].indexes(layer, doc))
+            subindexes = list(doc.layers[self._meta.on].indexes(layer, doc))
             return ((subindexes[s[0]], subindexes[s[0]] + 1) for s in self._data)
 
     def __repr__(self):

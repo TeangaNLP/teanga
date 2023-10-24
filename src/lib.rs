@@ -35,7 +35,7 @@ struct LayerDesc {
     #[pyo3(get)]
     name: String,
     #[pyo3(get)]
-    type_: LayerType,
+    layer_type: LayerType,
     #[pyo3(get)]
     on: String,
     #[pyo3(get)]
@@ -89,23 +89,23 @@ impl Corpus {
     /// # Arguments
     ///
     /// * `name` - The name of the layer
-    /// * `type_` - The type of the layer
+    /// * `layer_type` - The type of the layer
     /// * `on` - The layer that this layer is on
     /// * `data` - The data file for this layer
     /// * `values` - The values for this layer
     /// * `target` - The target layer for this layer
     /// * `default` - The default values for this layer
-    pub fn add_layer_meta(&mut self, name: String, type_: LayerType, 
+    pub fn add_layer_meta(&mut self, name: String, layer_type: LayerType, 
         on: String, data: Option<DataType>, values: Option<Vec<String>>, 
         target: Option<String>, default: Option<Vec<String>>) -> PyResult<()> {
-        if type_ == LayerType::characters && on != "" {
+        if layer_type == LayerType::characters && on != "" {
             return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
                 format!("Layer {} of type characters cannot be based on another layer", name)))
         }
 
-        if type_ != LayerType::characters && on == "" {
+        if layer_type != LayerType::characters && on == "" {
             return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                format!("Layer {} of type {} must be based on another layer", name, type_)))
+                format!("Layer {} of type {} must be based on another layer", name, layer_type)))
         }
 
         let data = match data {
@@ -123,7 +123,7 @@ impl Corpus {
 
         let layer_desc = LayerDesc {
             name,
-            type_,
+            layer_type,
             on,
             data,
             values,
@@ -533,11 +533,11 @@ impl Layer {
                         Ok(Layer::Seq(val))
                     },
                     None => {
-                        match meta.type_ {
+                        match meta.layer_type {
                             LayerType::div => Ok(Layer::DivNoData(val)),
                             LayerType::element => Ok(Layer::ElementNoData(val)),
                             _ => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                                format!("Cannot convert data layer to {}", meta.type_)))
+                                format!("Cannot convert data layer to {}", meta.layer_type)))
                         }
                     }
                 }
@@ -545,11 +545,11 @@ impl Layer {
             PyLayer::L2(val) => {   
                 match meta.data {
                     Some(_) => {
-                        match meta.type_ {
+                        match meta.layer_type {
                             LayerType::div => Ok(Layer::Div(val)),
                             LayerType::element => Ok(Layer::Element(val)),
                             _ => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                                format!("Cannot convert data layer to {}", meta.type_)))
+                                format!("Cannot convert data layer to {}", meta.layer_type)))
                         }
                     },
                     None => {
@@ -581,11 +581,11 @@ impl Layer {
                         for (start, data) in val {
                             result.push((start, py_str_into_u32(&data, metadata, str2idx)?));
                         }
-                        match meta.type_ {
+                        match meta.layer_type {
                             LayerType::div => Ok(Layer::Div(result)),
                             LayerType::element => Ok(Layer::Element(result)),
                             _ => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                                format!("Cannot convert data layer to {}", meta.type_)))
+                                format!("Cannot convert data layer to {}", meta.layer_type)))
                         }
                     },
                     None => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
@@ -594,18 +594,18 @@ impl Layer {
             },
             PyLayer::L2S(val) => {
                 let metadata = meta.data.as_ref().ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                    format!("Cannot convert data layer to {}", meta.type_)))?;
+                    format!("Cannot convert data layer to {}", meta.layer_type)))?;
                 match meta.data {
                     Some(ref metadata @ DataType::TypedLink(_)) => {
                         let mut result = Vec::new();
                         for (start, idx, link) in val {
                             result.push((start, py_u32_str_into_u32(idx, link, &metadata)?));
                         }
-                        match meta.type_ {
+                        match meta.layer_type {
                             LayerType::div => Ok(Layer::Div(result)),
                             LayerType::element => Ok(Layer::Element(result)),
                             _ => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                                format!("Cannot convert data layer to {}", meta.type_)))
+                                format!("Cannot convert data layer to {}", meta.layer_type)))
                         }
                     },
                     _ => {
@@ -619,7 +619,7 @@ impl Layer {
             },
             PyLayer::L3S(val) => {
                 let metadata = meta.data.as_ref().ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                    format!("Cannot convert data layer to {}", meta.type_)))?;
+                    format!("Cannot convert data layer to {}", meta.layer_type)))?;
                 let mut result = Vec::new();
                 for (start, end, idx, link) in val {
                     result.push((start, end, py_u32_str_into_u32(idx, link, metadata)?));
@@ -658,9 +658,9 @@ impl IntoPy<PyObject> for PyLayer {
     }
 }
 
-fn u32_into_py_str<F>(val : u32, type_ : &DataType, f : &F) -> PyResult<String> 
+fn u32_into_py_str<F>(val : u32, layer_type : &DataType, f : &F) -> PyResult<String> 
     where F : Fn(u32) -> String {
-    match type_ {
+    match layer_type {
         DataType::String => Ok(f(val)),
         DataType::Enum(vals) => {
             if val < vals.len() as u32 {
@@ -671,12 +671,12 @@ fn u32_into_py_str<F>(val : u32, type_ : &DataType, f : &F) -> PyResult<String>
             }
         }
         _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                format!("Cannot convert {} to string", type_)))
+                format!("Cannot convert {} to string", layer_type)))
     }
 }
 
-fn u32_into_py_u32_str(val : u32, type_ : &DataType) -> PyResult<(u32,String)> {
-    match type_ {
+fn u32_into_py_u32_str(val : u32, layer_type : &DataType) -> PyResult<(u32,String)> {
+    match layer_type {
         DataType::TypedLink(vals) => {
             let n = (vals.len() as f64).log2().ceil() as u32;
             let link_targ = val >> n;
@@ -689,13 +689,13 @@ fn u32_into_py_u32_str(val : u32, type_ : &DataType) -> PyResult<(u32,String)> {
             }
         }
         _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                format!("Cannot convert {} to string", type_)))
+                format!("Cannot convert {} to string", layer_type)))
     }
 }
 
-fn py_str_into_u32<F>(val : &str, type_ : &DataType, f : &F) -> PyResult<u32> 
+fn py_str_into_u32<F>(val : &str, layer_type : &DataType, f : &F) -> PyResult<u32> 
     where F : Fn(&str) -> u32 {
-    match type_ {
+    match layer_type {
         DataType::String => Ok(f(val)),
         DataType::Enum(vals) => {
             match vals.iter().position(|x| x == val) {
@@ -705,12 +705,12 @@ fn py_str_into_u32<F>(val : &str, type_ : &DataType, f : &F) -> PyResult<u32>
             }
         },
         _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                format!("Cannot convert string to {}", type_)))
+                format!("Cannot convert string to {}", layer_type)))
     }
 }
 
-fn py_u32_str_into_u32(link_targ : u32, link_type : String, type_ : &DataType) -> PyResult<u32> {
-    match type_ {
+fn py_u32_str_into_u32(link_targ : u32, link_type : String, layer_type : &DataType) -> PyResult<u32> {
+    match layer_type {
         DataType::TypedLink(vals) => {
             match vals.iter().position(|x| *x == link_type) {
                 Some(idx) => Ok((idx as u32) << ((vals.len() as f64).log2().ceil() as u32) | link_targ),
@@ -719,7 +719,7 @@ fn py_u32_str_into_u32(link_targ : u32, link_type : String, type_ : &DataType) -
             }
         },
         _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-            format!("Cannot convert string and int to {}", type_)))
+            format!("Cannot convert string and int to {}", layer_type)))
     }
 }
 
