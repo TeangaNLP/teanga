@@ -199,6 +199,76 @@ impl Corpus {
         Ok(id)
     }
 
+    /// Update a document
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the document
+    /// * `content` - The content of the document
+    ///
+    /// # Returns
+    ///
+    /// The new ID of the document (if no text layers are changed this will be the same as input)
+    pub fn update_doc(&mut self, id : &str, content : HashMap<String, PyLayer>) -> PyResult<String> {
+        let db = sled::open(&self.path).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+            format!("Cannot open database {}", e)))?;
+        for key in content.keys() {
+            if !self.meta.contains_key(key) {
+                return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                    format!("Layer {} does not exist", key)))
+            }
+        }
+
+        let mut doc_content = HashMap::new();
+        for (k, v) in content {
+            let layer_meta = self.meta.get(&k).ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                format!("No meta information for layer {}", k)))?;
+            doc_content.insert(k, 
+                Layer::from_py(v, layer_meta, &|u : &str| {
+                        let mut id_bytes = Vec::new();
+                        id_bytes.push(STR2ID_PREFIX);
+                        id_bytes.extend(u.as_bytes());
+                        let b = db.get(id_bytes)
+                            .expect("Error reading string index")
+                            .unwrap_or_else(|| panic!("String index not found"));
+                        if b.len() != 4 {
+                            panic!("String index is not 4 bytes");
+                        }
+                        u32::from_be_bytes(b.as_ref().try_into().unwrap())
+                    })?);
+        }
+
+        let doc = Document::new(doc_content);
+        let new_id = teanga_id(&self.order, &doc);
+        if id != new_id {
+        
+            let n = self.order.iter().position(|x| x == id).ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                format!("Cannot find document in order vector: {}", id)))?;
+            self.order.remove(n);
+            self.order.insert(n, new_id.clone());
+
+            db.insert(ORDER_BYTES.to_vec(), self.order.write_to_vec().map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                format!("Cannot write order {}", e)))?).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                format!("Cannot write order {}", e)))?;
+
+            let mut old_id_bytes = Vec::new();
+            old_id_bytes.push(DOCUMENT_PREFIX);
+            old_id_bytes.extend(id.as_bytes());
+            db.remove(old_id_bytes).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                format!("Cannot remove document {}", e)))?;
+        }
+
+        let data = doc.write_to_vec().map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+            format!("Cannot write document {}", e)))?;
+        let mut id_bytes = Vec::new();
+        id_bytes.push(DOCUMENT_PREFIX);
+        id_bytes.extend(new_id.as_bytes());
+        db.insert(id_bytes, data).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+            format!("Cannot write document {}", e)))?;
+        Ok(new_id)
+    }
+
+ 
     /// Remove a document from the corpus
     ///
     /// # Arguments
@@ -270,8 +340,8 @@ impl Corpus {
     /// # Returns
     ///
     /// The documents IDs in order
-    pub fn get_docs(&self) -> &Vec<String> {
-        &self.order
+    pub fn get_docs(&self) -> Vec<String> {
+        self.order.clone()
     }
 }
 

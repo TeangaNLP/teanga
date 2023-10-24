@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from teanga.model import Document
+from .document import Document
 
 class Service(ABC):
     """A service that can do some work on documents in a Teanga corpus."""
