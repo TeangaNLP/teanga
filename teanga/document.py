@@ -12,8 +12,7 @@ class Document:
         self.layers = {}
         self.corpus = corpus
         self.id = id
-        for key in kwargs:
-            self.add_layer(key, kwargs[key])
+        self.add_layers(kwargs)
 
     def add_layer(self, name:str, value) -> 'Layer':
         """Add a layer to the document.
@@ -24,6 +23,25 @@ class Document:
             Name of the layer.
         value: str
             Value of the layer.
+
+        Examples:
+        ---------
+        >>> from teanga import Corpus
+        >>> corpus = Corpus("tmp", new=True)
+        >>> corpus.add_layer_meta("text")
+        >>> corpus.add_layer_meta("words", layer_type="span", on="text")
+        >>> corpus.add_layer_meta("pos", layer_type="seq", on="words", data="string")
+        >>> doc = corpus.add_doc("This is a document.")
+        >>> layer = doc.add_layer("words", [(0,4), (5,7), (8,9), (10,18), (18,19)])
+        >>> layer = doc.add_layer("pos", ["DT", "VBZ", "DT", "NN", "."])
+        >>> doc
+        Document('Kjco', {'text': CharacterLayer('This is a document.'), \
+'words': SpanLayer([(0, 4), (5, 7), (8, 9), (10, 18), (18, 19)]), \
+'pos': SeqLayer(['DT', 'VBZ', 'DT', 'NN', '.'])})
+        >>> corpus.get_doc_by_id("Kjco")
+        Document('Kjco', {'text': CharacterLayer('This is a document.'), \
+'words': SpanLayer([(0, 4), (5, 7), (8, 9), (10, 18), (18, 19)]), \
+'pos': SeqLayer(['DT', 'VBZ', 'DT', 'NN', '.'])})
         """
         if name not in self.meta:
             raise Exception("Layer with name " + name + " does not exist.")
@@ -57,9 +75,40 @@ class Document:
             raise Exception("Unknown layer type " + self.meta[name].layer_type + 
             " for layer " + name + ".")
         if self.corpus and self.id:
-            self.corpus.update_layer(self.id, 
-                     {name: layer.data() for (name,layer) in self.layers.items()})
+            data_fields = {name: layer.repr(self)
+                           for (name,layer) in self.layers.items()}
+            self.corpus.update_doc(self.id, data_fields)
+                     
         return self.layers[name]
+
+    def add_layers(self, layers:dict):
+        """Add multiple layers in one go.
+
+        Parameters:
+        -----------
+
+        layers: dict
+            A dictionary of layer names and values.
+
+        Examples:
+        ---------
+
+        >>> from teanga import Corpus
+        >>> corpus = Corpus("tmp", new=True)
+        >>> corpus.add_layer_meta("text")
+        >>> corpus.add_layer_meta("words", layer_type="span", on="text")
+        >>> corpus.add_layer_meta("pos", layer_type="seq", on="words", data="string")
+        >>> doc = corpus.add_doc("This is a document.")
+        >>> doc.add_layers({"words": [(0,4), (5,7), (8,9), (10,18), (18,19)], \
+"pos": ["DT", "VBZ", "DT", "NN", "."]})
+        """
+        added = set(self.layers.keys())
+
+        while len(added) < len(layers):
+            for name, data in layers.items():
+                if self.meta[name].on is None or self.meta[name].on in added:
+                    self.add_layer(name, data)
+                    added.add(name)
 
     def get_layer(self, name:str):
         """Return the value of a layer.
@@ -117,6 +166,9 @@ class Document:
             return (self.layers[text_layer].text(self)[start:end]
                     for start, end in indexes)
 
+    def __repr__(self):
+        return "Document(" + repr(self.id) + ", " + repr(self.layers) + ")"
+
 class Layer(ABC):
     """A layer of annotation"""
     
@@ -127,6 +179,11 @@ class Layer(ABC):
     @abstractmethod
     def data(self, doc:Document):
         """Return the data values of the layer."""
+        pass
+
+    @abstractmethod
+    def repr(self, doc:Document):
+        """Return the represented data values of the layer."""
         pass
 
     @abstractmethod
@@ -146,8 +203,21 @@ class Layer(ABC):
 
     def data_indexes(self, layer:str, doc:Document):
         """Return a list of pairs of the data values of the layer and 
-        the indexes of the annotations of this layer."""
-        return zip(self.text(doc), self.data(doc))
+        the indexes of the annotations of this layer.
+
+        Examples:
+        ---------
+        >>> from .corpus import LayerDesc
+        >>> layer = CharacterLayer("text", LayerDesc(layer_type="characters"),
+        ...     "This")
+        >>> list(layer.data_indexes("text", None))
+        []
+        >>> layer = SeqLayer("words", LayerDesc(layer_type="seq", on="text"),
+        ...     ["A", "B", "C", "D"])
+        >>> list(layer.data_indexes("words", None))
+        [((0, 1), 'A'), ((1, 2), 'B'), ((2, 3), 'C'), ((3, 4), 'D')]
+        """
+        return zip(self.indexes(layer, doc), self.data(doc))
 
     @abstractmethod
     def __len__(self):
@@ -170,8 +240,11 @@ class CharacterLayer(Layer):
         >>> layer = CharacterLayer("text", {"layer_type": "characters"}, 
         ...     "This is a document.")
         >>> layer.data(None)
-        'This is a document.'
+        []
         """
+        return []
+
+    def repr(self, doc:Document):
         return self._text
 
     def text(self, doc:Document):
@@ -227,6 +300,9 @@ class SeqLayer(Layer):
         >>> layer.data(None)
         ['This', 'is', 'a', 'document', '.']
         """
+        return self.seq
+
+    def repr(self, doc:Document):
         return self.seq
 
     def text(self, doc:Document):
@@ -291,6 +367,9 @@ class StandoffLayer(Layer):
         """
         if self._meta.data is not None:
             return (s[2] for s in self._data)
+
+    def repr(self, doc:Document):
+        return self._data
 
     def text(self, doc:Document):
         """

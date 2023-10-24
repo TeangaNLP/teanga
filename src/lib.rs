@@ -16,6 +16,7 @@ const ID2STR_PREFIX : u8 = 0x01;
 const STR2ID_PREFIX : u8 = 0x02;
 const META_PREFIX : u8 = 0x03;
 const ORDER_BYTES : [u8;1] = [0x04];
+const STRIDX_SIZE : [u8;1] = [0x05];
 
 #[pyclass]
 #[derive(Debug,Clone)]
@@ -228,13 +229,17 @@ impl Corpus {
                         let mut id_bytes = Vec::new();
                         id_bytes.push(STR2ID_PREFIX);
                         id_bytes.extend(u.as_bytes());
-                        let b = db.get(id_bytes)
-                            .expect("Error reading string index")
-                            .unwrap_or_else(|| panic!("String index not found"));
-                        if b.len() != 4 {
-                            panic!("String index is not 4 bytes");
+                        match db.get(id_bytes).expect("Error reading string index") {
+                            Some(b) => {
+                                if b.len() != 4 {
+                                    panic!("String index is not 4 bytes");
+                                }
+                                u32::from_be_bytes(b.as_ref().try_into().unwrap())
+                            },
+                            None => {
+                                gen_next_id(&db, u)
+                            }
                         }
-                        u32::from_be_bytes(b.as_ref().try_into().unwrap())
                     })?);
         }
 
@@ -343,6 +348,41 @@ impl Corpus {
     pub fn get_docs(&self) -> Vec<String> {
         self.order.clone()
     }
+}
+
+fn gen_next_id(db : &sled::Db, u : &str) -> u32 {
+    let mut n = db.get(STRIDX_SIZE.to_vec())
+        .expect("Error reading string index size")
+        .map(|b| {
+            if b.len() != 4 {
+                panic!("String index size is not 4 bytes");
+            }
+            u32::from_be_bytes(b.as_ref().try_into().unwrap())
+        }).unwrap_or(0);
+
+    while let Err(_) = db.compare_and_swap(STRIDX_SIZE.to_vec(), 
+        if n == 0 { None } else { Some(n.to_be_bytes().to_vec()) }, 
+        Some((n+1).to_be_bytes().to_vec()))
+        .expect("Error reading DB") {
+        n = db.get(STRIDX_SIZE.to_vec())
+            .expect("Error reading string index size")
+            .map(|b| {
+                if b.len() != 4 {
+                    panic!("String index size is not 4 bytes");
+                }
+                u32::from_be_bytes(b.as_ref().try_into().unwrap())
+            }).unwrap_or(0);
+    }
+    n = n + 1;
+    let mut id_bytes = Vec::new();
+    id_bytes.push(STR2ID_PREFIX);
+    id_bytes.extend(u.as_bytes());
+    db.insert(id_bytes, n.to_be_bytes().to_vec()).expect("Error reading DB");
+    let mut id_bytes = Vec::new();
+    id_bytes.push(ID2STR_PREFIX);
+    id_bytes.extend(n.to_be_bytes().to_vec());
+    db.insert(id_bytes, u.as_bytes().to_vec()).expect("Error reading DB");
+    n
 }
 
 #[derive(Debug,Clone,Readable,Writable)]
@@ -563,7 +603,7 @@ impl Layer {
             PyLayer::LS(val) => {
                 let mut result = Vec::new();
                 for data in val {
-                    result.push(py_str_into_u32(&data, meta.data.as_ref().unwrap(), str2idx)?);
+                    result.push(py_str_into_u32(&data, &DataType::String, str2idx)?);
                 }
                 Ok(Layer::Seq(result))
             },
@@ -858,5 +898,12 @@ mod test {
         };
         let expected = "Kjco";
         assert_eq!(teanga_id(&existing_keys, &doc), expected);
+    }
+
+    #[test]
+    fn test_gen_next_id() {
+        let db = sled::Config::new().temporary(true).open().unwrap();
+        assert_eq!(1, gen_next_id(&db, "A"));
+        assert_eq!(2, gen_next_id(&db, "B"));
     }
 }

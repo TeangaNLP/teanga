@@ -76,18 +76,7 @@ class Corpus:
         if on is None:
             raise Exception("Layer of type " + layer_type + " must be based on " +
             "another layer.")
-        self.meta[name] = LayerDesc(layer_type, on)
-        if data:
-            self.meta[name].data = data
-        if data == "links":
-            if values is not None:
-                self.meta[name].values = values
-            if target is not None:
-                self.meta[name].target = target
-            else:
-                self.meta[name].target = on
-        if default:
-            self.meta[name].default = default
+        self.meta[name] = LayerDesc(layer_type, on, data, values, target, default)
 
     def add_doc(self, *args, **kwargs) -> Document:
         """Add a document to the corpus.
@@ -110,6 +99,10 @@ class Corpus:
         >>> corpus.add_layer_meta("en", layer_type="characters")
         >>> corpus.add_layer_meta("nl", layer_type="characters")
         >>> doc = corpus.add_doc(en="This is a document.", nl="Dit is een document.")
+
+        >>> corpus = Corpus("tmp",new=True)
+        >>> corpus.add_layer_meta("text")
+        >>> doc = corpus.add_doc("This is a document.")
 
         """
         char_layers = [name for (name, layer) in self.get_meta().items()
@@ -172,10 +165,17 @@ class Corpus:
         >>> doc = corpus.add_doc("This is a document.")
         >>> list(corpus.get_layers("text"))
         [CharacterLayer('This is a document.')]
+
+        >>> corpus = Corpus("tmp", new=True)
+        >>> corpus.add_layer_meta("text")
+        >>> doc = corpus.add_doc("This is a document.")
+        >>> list(corpus.get_layers("text"))
+        [CharacterLayer('This is a document.')]
+
         """
         if layer not in self.meta:
             raise Exception("Layer with name " + layer + " does not exist.")
-        return (doc[1].get_layer(layer) for doc in self.docs)
+        return (doc.get_layer(layer) for doc in self.get_docs())
 
     def get_doc_ids(self):
         """Return the document ids of the corpus.
@@ -197,6 +197,59 @@ class Corpus:
             return self.corpus.get_docs()
         else:
             return [doc[0] for doc in self.docs]
+
+    def get_docs(self):
+        """Get all the documents in the corpus
+
+        Examples:
+        ---------
+        >>> corpus = Corpus()
+        >>> corpus.add_layer_meta("text")
+        >>> doc = corpus.add_doc("This is a document.")
+        >>> list(corpus.get_docs())
+        [Document('Kjco', {'text': CharacterLayer('This is a document.')})]
+
+        >>> corpus = Corpus("tmp",new=True)
+        >>> corpus.add_layer_meta("text")
+        >>> doc = corpus.add_doc("This is a document.")
+        >>> list(corpus.get_docs())
+        [Document('Kjco', {'text': CharacterLayer('This is a document.')})]
+        """
+        if self.corpus:
+            return (Document(self.meta, id=doc_id, **self.corpus.get_doc_by_id(doc_id))
+                    for doc_id in self.corpus.get_docs())
+        else:
+            return (doc[1] for doc in self.docs)
+
+    def get_doc_by_id(self, doc_id:str) -> Document:
+        """
+        Get a document by its id.
+
+        Parameters:
+        -----------
+
+        doc_id: str
+            The id of the document.
+
+        Examples:
+        ---------
+
+        >>> corpus = Corpus()
+        >>> corpus.add_layer_meta("text")
+        >>> doc = corpus.add_doc("This is a document.")
+        >>> corpus.get_doc_by_id("Kjco")
+        Document('Kjco', {'text': CharacterLayer('This is a document.')})
+
+        >>> corpus = Corpus("tmp",new=True)
+        >>> corpus.add_layer_meta("text")
+        >>> doc = corpus.add_doc("This is a document.")
+        >>> corpus.get_doc_by_id("Kjco")
+        Document('Kjco', {'text': CharacterLayer('This is a document.')})
+        """
+        if self.corpus:
+            return Document(self.meta, id=doc_id, **self.corpus.get_doc_by_id(doc_id))
+        else:
+            return next(doc for doc in self.docs if doc[0] == doc_id)[1]
 
     def get_meta(self):
         """Return the meta data of the corpus.
