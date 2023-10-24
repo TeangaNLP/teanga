@@ -40,5 +40,5 @@ jobs:
         args: --release --out dist
     - name: Test with pytest
       run: |
-        pip install teangadb --no-index --find-links dist --force-reinstall
+        pip install teanga --no-index --find-links dist --force-reinstall
         python -m pytest --doctest-modules
