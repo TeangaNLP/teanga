@@ -5,7 +5,6 @@ description = "Teanga - Layer-based annotation of corpora with NLP"
 authors = [{name="John P. McCrae",email="john@mccr.ae"}]
 license = {file="LICENSE"}
 readme = "README.md"
-dependencies= ["requests"]
 requires-python = ">=3.7"
 dynamic = ["version"]
 
