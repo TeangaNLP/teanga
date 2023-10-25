@@ -9,6 +9,7 @@ use std::path::Path;
 use std::fs::File;
 use serde::Serialize;
 use serde::ser::{Serializer, SerializeMap};
+use thiserror::Error;
 
 struct TeangaVisitor(String);
 
@@ -63,6 +64,12 @@ pub fn read_corpus_from_json_string(s: &str, path : &str) -> Result<Corpus, serd
     deserializer.deserialize_any(TeangaVisitor(path.to_owned()))
 }
 
+pub fn read_corpus_from_json_file<P: AsRef<Path>>(json_file : P, path: &str) -> Result<Corpus, SerializeError> {
+    let file = File::open(json_file)?;
+    let mut deserializer = serde_json::Deserializer::from_reader(file);
+    Ok(deserializer.deserialize_any(TeangaVisitor(path.to_owned()))?)
+}
+
 pub fn read_corpus_from_yaml_string(s: &str, path : &str) -> Result<Corpus, serde_yaml::Error> {
     let deserializer = serde_yaml::Deserializer::from_str(s);
     deserializer.deserialize_any(TeangaVisitor(path.to_owned()))
@@ -81,6 +88,15 @@ fn write_corpus_to_yaml_file(corpus: &Corpus, mut file : File) -> Result<(), ser
     corpus.serialize(&mut ser)
 }
 
+#[derive(Error,Debug)]
+pub enum SerializeError {
+    #[error("Json error: {0}")]
+    Json(#[from] serde_json::Error),
+    #[error("Yaml error: {0}")]
+    Yaml(#[from] serde_yaml::Error),
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
+}
 
 #[cfg(test)]
 mod tests {

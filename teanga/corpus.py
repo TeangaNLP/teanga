@@ -267,3 +267,47 @@ target=None, default=None)}
         else:
             return self.meta
 
+def read_json_str(json, db_file=None, **kwargs):
+    """Read a corpus from a json string.
+
+    Parameters:
+    -----------
+
+    json: str
+        The json string.
+    db_file: str
+        The path to the database file, if the corpus should be stored in a
+        database.
+    **kwargs:
+        Keyword arguments passed to json.load.
+
+    Examples:
+    ---------
+
+    >>> corpus = read_json_str('{"_meta": {"text": {"type": \
+"characters"}},"Kjco": {"text": "This is a document."}}', "tmp")
+    """
+    if db_file:
+        teangadb.read_corpus_from_json_string(json, db_file)
+    else:
+        print("TODO")
+
+def read_json(path_or_buf, db_file=None, **kwargs):
+    """Read a corpus from a json file.
+
+    Parameters:
+    -----------
+
+    path_or_buf: str
+        The path to the json file or a buffer.
+    db_file: str
+        The path to the database file, if the corpus should be stored in a
+        database.
+    **kwargs:
+        Keyword arguments passed to json.load.
+
+    """
+    if db_file:
+        teangadb.read_corpus_from_json_file(path_or_buf, db_file)
+    else:
+        print("TODO")

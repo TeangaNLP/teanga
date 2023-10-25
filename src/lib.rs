@@ -42,14 +42,19 @@ struct LayerDesc {
     layer_type: LayerType,
     #[pyo3(get)]
     #[serde(default = "String::new")]
+    #[serde(skip_serializing_if = "String::is_empty")]
     on: String,
     #[pyo3(get)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     data: Option<DataType>,
     #[pyo3(get)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     values: Option<Vec<String>>,
     #[pyo3(get)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     target: Option<String>,
     #[pyo3(get)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     default: Option<Vec<String>>
 }
 
@@ -977,6 +982,12 @@ fn write_corpus_to_yaml(corpus : &Corpus, path : &str) -> PyResult<()> {
         PyErr::new::<pyo3::exceptions::PyIOError, _>(format!("{}", e)))
 }
 
+#[pyfunction]
+fn read_corpus_from_json_file(json : &str, path: &str) -> PyResult<Corpus> {
+    serialization::read_corpus_from_json_file(json, path).map_err(|e|
+        PyErr::new::<pyo3::exceptions::PyIOError, _>(format!("{}", e)))
+}
+
 /// A Python module implemented in Rust.
 #[pymodule]
 #[pyo3(name="teangadb")]
@@ -985,6 +996,7 @@ fn teangadb(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(read_corpus_from_json_string, m)?)?;
     m.add_function(wrap_pyfunction!(read_corpus_from_yaml_string, m)?)?;
     m.add_function(wrap_pyfunction!(write_corpus_to_yaml, m)?)?;
+    m.add_function(wrap_pyfunction!(read_corpus_from_json_file, m)?)?;
     Ok(())
 }
 
