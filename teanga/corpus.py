@@ -4,6 +4,7 @@ import teangadb
 import shutil
 import os
 from collections import namedtuple
+import json
 
 LayerDesc = namedtuple("LayerDesc",
                        ["layer_type", "on", "data", "values", "target", "default"],
@@ -267,32 +268,52 @@ target=None, default=None)}
         else:
             return self.meta
 
-def read_json_str(json, db_file=None, **kwargs):
+def _layer_desc(type="characters", on=None, data=None, values=None, 
+                target=None, default=None):
+    return LayerDesc(type, on, data, values, target, default)
+
+
+def _corpus_hook(dct : dict) -> Corpus:
+    c = Corpus()
+    if "_meta" not in dct:
+        return dct
+    c.meta = {key: _layer_desc(**value) for key, value in dct["_meta"].items()}
+    if "_order" in dct:
+        c.order = dct["_order"]
+    if c.order:
+        for doc_id in c.order:
+            c.docs.append((doc_id, Document(c.meta, id=doc_id, **dct[doc_id])))
+    else:
+        for doc_id, value in dct.items():
+            if not doc_id.startswith("_"):
+                c.docs.append((doc_id, Document(c.meta, id=doc_id, **value)))
+
+def read_json_str(json_str, db_file=None):
     """Read a corpus from a json string.
 
     Parameters:
     -----------
 
-    json: str
+    json_str: str
         The json string.
     db_file: str
         The path to the database file, if the corpus should be stored in a
         database.
-    **kwargs:
-        Keyword arguments passed to json.load.
 
     Examples:
     ---------
 
     >>> corpus = read_json_str('{"_meta": {"text": {"type": \
 "characters"}},"Kjco": {"text": "This is a document."}}', "tmp")
+    >>> corpus = read_json_str('{"_meta": {"text": {"type": \
+"characters"}},"Kjco": {"text": "This is a document."}}')
     """
     if db_file:
-        teangadb.read_corpus_from_json_string(json, db_file)
+        teangadb.read_corpus_from_json_string(json_str, db_file)
     else:
-        print("TODO")
+        json.loads(json_str, object_hook=_corpus_hook)
 
-def read_json(path_or_buf, db_file=None, **kwargs):
+def read_json(path_or_buf, db_file=None):
     """Read a corpus from a json file.
 
     Parameters:
@@ -303,11 +324,8 @@ def read_json(path_or_buf, db_file=None, **kwargs):
     db_file: str
         The path to the database file, if the corpus should be stored in a
         database.
-    **kwargs:
-        Keyword arguments passed to json.load.
-
     """
     if db_file:
         teangadb.read_corpus_from_json_file(path_or_buf, db_file)
     else:
-        print("TODO")
+        json.load(path_or_buf, object_hook=_corpus_hook)
