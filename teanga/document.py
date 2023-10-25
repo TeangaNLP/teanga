@@ -109,6 +109,11 @@ class Document:
                 if self.meta[name].on is None or self.meta[name].on in added:
                     self.add_layer(name, data)
                     added.add(name)
+                elif (self.meta[name].on is not None 
+                      and self.meta[name].on not in layers 
+                      and self.meta[name].on not in added):
+                    raise Exception("Cannot add layer " + name + " because sublayer " +
+                    self.meta[name].on + " does not exist.")
 
     def get_layer(self, name:str):
         """Return the value of a layer.

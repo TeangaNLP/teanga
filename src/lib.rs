@@ -10,6 +10,10 @@ use sha2::{Digest, Sha256};
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use itertools::Itertools;
+use serde::{Serialize,Deserialize};
+use thiserror::Error;
+
+mod serialization;
 
 const DOCUMENT_PREFIX : u8 = 0x00;
 const ID2STR_PREFIX : u8 = 0x01;
@@ -30,14 +34,14 @@ pub struct Corpus {
 }
 
 #[pyclass]
-#[derive(Debug,Clone,Readable,Writable)]
+#[derive(Debug,Clone,Readable,Writable,Serialize,Deserialize)]
 /// A layer description
 struct LayerDesc {
     #[pyo3(get)]
-    name: String,
-    #[pyo3(get)]
+    #[serde(rename = "type")]
     layer_type: LayerType,
     #[pyo3(get)]
+    #[serde(default = "String::new")]
     on: String,
     #[pyo3(get)]
     data: Option<DataType>,
@@ -48,6 +52,7 @@ struct LayerDesc {
     #[pyo3(get)]
     default: Option<Vec<String>>
 }
+
 
 #[pymethods]
 impl Corpus {
@@ -60,22 +65,21 @@ impl Corpus {
     /// # Returns
     /// A new corpus object
     ///
-    pub fn new(path : String) -> PyResult<Corpus> {
-        let db = sled::open(&path).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-            format!("Cannot open database {}", e)))?;
+    pub fn new(path : String) -> TeangaResult<Corpus> {
+        let db = sled::open(&path).map_err(|e| TeangaError::DBError(e))?;
         let mut meta = HashMap::new();
         for m in db.scan_prefix(&[META_PREFIX]) {
-            let (_, v) = m.map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                format!("Error reading metadata: {}", e)))?;
-            let layer_desc = LayerDesc::read_from_buffer(v.as_ref()).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                format!("Cannot read metadata {}", e)))?;
-            meta.insert(layer_desc.name.clone(), layer_desc);
+            let (name, v) = m.map_err(|e| TeangaError::DBError(e))?;
+            let layer_desc = LayerDesc::read_from_buffer(v.as_ref()).
+                map_err(|e| TeangaError::DataError(e))?;
+            let name = std::str::from_utf8(name.as_ref())
+                .map_err(|_| TeangaError::UTFDataError)?.to_string();
+            meta.insert(name, layer_desc);
         }
         let order = match db.get(ORDER_BYTES.to_vec())
-            .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                format!("Error reading order: {}", e)))? {
-            Some(bytes) => Vec::read_from_buffer(bytes.as_ref()).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                format!("Cannot read order {}", e)))?,
+            .map_err(|e| TeangaError::DBError(e))? {
+            Some(bytes) => Vec::read_from_buffer(bytes.as_ref()).
+                map_err(|e| TeangaError::DataError(e))?,
             None => Vec::new()
         };
         Ok(Corpus {
@@ -98,14 +102,14 @@ impl Corpus {
     /// * `default` - The default values for this layer
     pub fn add_layer_meta(&mut self, name: String, layer_type: LayerType, 
         on: String, data: Option<DataType>, values: Option<Vec<String>>, 
-        target: Option<String>, default: Option<Vec<String>>) -> PyResult<()> {
+        target: Option<String>, default: Option<Vec<String>>) -> TeangaResult<()> {
         if layer_type == LayerType::characters && on != "" {
-            return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+            return Err(TeangaError::ModelError(
                 format!("Layer {} of type characters cannot be based on another layer", name)))
         }
 
         if layer_type != LayerType::characters && on == "" {
-            return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+            return Err(TeangaError::ModelError(
                 format!("Layer {} of type {} must be based on another layer", name, layer_type)))
         }
 
@@ -123,7 +127,6 @@ impl Corpus {
         };
 
         let layer_desc = LayerDesc {
-            name,
             layer_type,
             on,
             data,
@@ -132,16 +135,14 @@ impl Corpus {
             default
          };
 
-        let db = sled::open(&self.path).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-            format!("Cannot open database {}", e)))?;
+        let db = sled::open(&self.path).map_err(|e| TeangaError::DBError(e))?;
         let mut id_bytes = Vec::new();
         id_bytes.push(META_PREFIX);
-        id_bytes.extend(layer_desc.name.clone().as_bytes());
-        db.insert(id_bytes, layer_desc.write_to_vec().map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-            format!("Cannot write layer meta {}", e)))?).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-            format!("Cannot write layer meta {}", e)))?;
+        id_bytes.extend(name.clone().as_bytes());
+        db.insert(id_bytes, layer_desc.write_to_vec()
+            .map_err(|e| TeangaError::DataError(e))?).map_err(|e| TeangaError::DBError(e))?;
 
-        self.meta.insert(layer_desc.name.clone(), layer_desc);
+        self.meta.insert(name.clone(), layer_desc);
          Ok(())
     }
 
@@ -670,8 +671,9 @@ impl Layer {
     }
 }
 
-#[derive(Debug,Clone,PartialEq)]
+#[derive(Debug,Clone,PartialEq, Serialize, Deserialize)]
 #[derive(FromPyObject)]
+#[serde(untagged)]
 pub enum PyLayer {
     CharacterLayer(String),
     L1(Vec<u32>),
@@ -785,7 +787,7 @@ fn teanga_id(existing_keys : &Vec<String>, doc : &Document) -> String {
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Debug,Clone,PartialEq,Readable,Writable)]
+#[derive(Debug,Clone,PartialEq,Readable,Writable,Serialize,Deserialize)]
 pub enum LayerType {
     characters,
     seq,
@@ -832,7 +834,7 @@ impl Display for LayerType {
     }
 }
 
-#[derive(Debug,Clone,PartialEq,Readable,Writable)]
+#[derive(Debug,Clone,PartialEq,Readable,Writable,Serialize,Deserialize)]
 pub enum DataType {
     String,
     Enum(Vec<String>),
@@ -883,6 +885,26 @@ impl Display for DataType {
 fn teangadb(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Corpus>()?;
     Ok(())
+}
+
+#[derive(Error, Debug)]
+pub enum TeangaError {
+    #[error("DB read error: {0}")]
+    DBError(#[from] sled::Error),
+    #[error("Data read error: {0}")]
+    DataError(#[from] speedy::Error),
+    #[error("Data read error: UTF-8 String could not be decoded")]
+    UTFDataError,
+    #[error("Teanga model error: {0}")]
+    ModelError(String),
+}
+
+type TeangaResult<T> = Result<T, TeangaError>;
+
+impl From<TeangaError> for PyErr {
+    fn from(err: TeangaError) -> PyErr {
+        PyErr::new::<pyo3::exceptions::PyIOError, _>(format!("{}", err))
+    }
 }
 
 #[cfg(test)]
