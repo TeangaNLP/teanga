@@ -65,8 +65,8 @@ impl Corpus {
     /// # Returns
     /// A new corpus object
     ///
-    pub fn new(path : String) -> TeangaResult<Corpus> {
-        let db = sled::open(&path).map_err(|e| TeangaError::DBError(e))?;
+    pub fn new(path : &str) -> TeangaResult<Corpus> {
+        let db = open_db(path)?;
         let mut meta = HashMap::new();
         for m in db.scan_prefix(&[META_PREFIX]) {
             let (name, v) = m.map_err(|e| TeangaError::DBError(e))?;
@@ -85,7 +85,133 @@ impl Corpus {
         Ok(Corpus {
             meta,
             order,
-            path
+            path: path.to_string()
+        })
+    }
+
+    /// Add a layer to the corpus
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The name of the layer
+    /// * `layer_type` - The type of the layer
+    /// * `on` - The layer that this layer is on
+    /// * `data` - The data file for this layer
+    /// * `values` - The values for this layer
+    /// * `target` - The target layer for this layer
+    /// * `default` - The default values for this layer
+    #[pyo3(name="add_layer_meta")]
+    pub fn add_layer_meta(&mut self, name: String, layer_type: LayerType, 
+        on: String, data: Option<DataType>, values: Option<Vec<String>>, 
+        target: Option<String>, default: Option<Vec<String>>) -> TeangaResult<()> {
+        CorpusTransaction::new(self)?.add_layer_meta(name, layer_type, on, data, values, target, default)
+    }
+
+    /// Add or update a document in the corpus
+    ///
+    /// # Arguments
+    ///
+    /// * `content` - The content of the document
+    ///
+    /// # Returns
+    ///
+    /// The ID of the document
+    pub fn add_doc(&mut self, content : HashMap<String, PyLayer>) -> TeangaResult<String> {
+        CorpusTransaction::new(self)?.add_doc(content)
+    }
+
+    /// Update a document
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the document
+    /// * `content` - The content of the document
+    ///
+    /// # Returns
+    ///
+    /// The new ID of the document (if no text layers are changed this will be the same as input)
+    pub fn update_doc(&mut self, id : &str, content : HashMap<String, PyLayer>) -> TeangaResult<String> {
+        CorpusTransaction::new(self)?.update_doc(id, content)
+    }
+
+ 
+    /// Remove a document from the corpus
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the document
+    pub fn remove_doc(&mut self, id : &str) -> TeangaResult<()> {
+        CorpusTransaction::new(self)?.remove_doc(id)
+    }
+
+    /// Get a document by its ID
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the document
+    ///
+    /// # Returns
+    ///
+    /// The document as a map from layers names to layers
+    pub fn get_doc_by_id(&self, id : &str) -> TeangaResult<HashMap<String, PyLayer>> {
+        let db = open_db(&self.path)?;
+        let mut id_bytes = Vec::new();
+        id_bytes.push(DOCUMENT_PREFIX);
+        id_bytes.extend(id.as_bytes());
+        let data = db.get(id_bytes)
+            .map_err(|e| TeangaError::DBError(e))?
+            .ok_or_else(|| TeangaError::ModelError(
+                format!("Document not found")))?;
+        let doc = Document::read_from_buffer(data.as_ref()).
+            map_err(|e| TeangaError::DataError(e))?;
+        let mut result = HashMap::new();
+        for (key, layer) in doc.content {
+            let layer_desc : &LayerDesc = self.meta.get(&key).
+                    ok_or_else(|| TeangaError::ModelError(
+                        format!("Serialized document contains undeclared layer {}", key)))?;
+            result.insert(key, layer.into_py(
+                    layer_desc,
+                    &|u| {
+                        let mut id_bytes = Vec::new();
+                        id_bytes.push(ID2STR_PREFIX);
+                        id_bytes.extend(u.to_be_bytes());
+                        String::from_utf8(
+                            db.get(id_bytes)
+                            .expect("Error reading string index")
+                            .unwrap_or_else(|| panic!("String index not found"))
+                            .as_ref().to_vec())
+                            .expect("Unicode error in string index")
+                    })?);
+
+        }
+        Ok(result)
+    }
+
+    /// Get the documents in the corpus
+    ///
+    /// # Returns
+    ///
+    /// The documents IDs in order
+    pub fn get_docs(&self) -> Vec<String> {
+        self.order.clone()
+    }
+}
+
+
+/// A corpus with an open database connection to implement multiple changes
+/// without closing the database
+struct CorpusTransaction<'a> {
+    corpus : &'a mut Corpus, 
+    db : sled::Db
+}
+
+impl<'a> CorpusTransaction<'a> {
+    /// Connect to the database
+    fn new(corpus : &'a mut Corpus) -> TeangaResult<CorpusTransaction> {
+        let db = open_db(&corpus.path)?;
+        Ok(CorpusTransaction {
+            corpus,
+            db
         })
     }
 
@@ -135,14 +261,13 @@ impl Corpus {
             default
          };
 
-        let db = sled::open(&self.path).map_err(|e| TeangaError::DBError(e))?;
         let mut id_bytes = Vec::new();
         id_bytes.push(META_PREFIX);
         id_bytes.extend(name.clone().as_bytes());
-        db.insert(id_bytes, layer_desc.write_to_vec()
+        self.db.insert(id_bytes, layer_desc.write_to_vec()
             .map_err(|e| TeangaError::DataError(e))?).map_err(|e| TeangaError::DBError(e))?;
 
-        self.meta.insert(name.clone(), layer_desc);
+        self.corpus.meta.insert(name.clone(), layer_desc);
          Ok(())
     }
 
@@ -155,25 +280,23 @@ impl Corpus {
     /// # Returns
     ///
     /// The ID of the document
-    pub fn add_doc(&mut self, content : HashMap<String, PyLayer>) -> PyResult<String> {
+    pub fn add_doc(&mut self, content : HashMap<String, PyLayer>) -> TeangaResult<String> {
         for key in content.keys() {
-            if !self.meta.contains_key(key) {
-                return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+            if !self.corpus.meta.contains_key(key) {
+                return Err(TeangaError::ModelError(
                     format!("Layer {} does not exist", key)))
             }
         }
-        let db = sled::open(&self.path).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-            format!("Cannot open database {}", e)))?;
         let mut doc_content = HashMap::new();
         for (k, v) in content {
-            let layer_meta = self.meta.get(&k).ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+            let layer_meta = self.corpus.meta.get(&k).ok_or_else(|| TeangaError::ModelError(
                 format!("No meta information for layer {}", k)))?;
             doc_content.insert(k, 
                 Layer::from_py(v, layer_meta, &|u : &str| {
                         let mut id_bytes = Vec::new();
                         id_bytes.push(STR2ID_PREFIX);
                         id_bytes.extend(u.as_bytes());
-                        let b = db.get(id_bytes)
+                        let b = self.db.get(id_bytes)
                             .expect("Error reading string index")
                             .unwrap_or_else(|| panic!("String index not found"));
                         if b.len() != 4 {
@@ -183,21 +306,18 @@ impl Corpus {
                     })?);
         }
         let doc = Document::new(doc_content);
-        let id = teanga_id(&self.order, &doc);
+        let id = teanga_id(&self.corpus.order, &doc);
     
-        self.order.push(id.clone());
+        self.corpus.order.push(id.clone());
 
-        db.insert(ORDER_BYTES.to_vec(), self.order.write_to_vec().map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-            format!("Cannot write order {}", e)))?).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-            format!("Cannot write order {}", e)))?;
+        self.db.insert(ORDER_BYTES.to_vec(), self.corpus.order.write_to_vec().
+            map_err(|e| TeangaError::DataError(e))?).map_err(|e| TeangaError::DBError(e))?;
 
-        let data = doc.write_to_vec().map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-            format!("Cannot write document {}", e)))?;
+        let data = doc.write_to_vec().map_err(|e| TeangaError::DataError(e))?;
         let mut id_bytes = Vec::new();
         id_bytes.push(DOCUMENT_PREFIX);
         id_bytes.extend(id.as_bytes());
-        db.insert(id_bytes, data).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-            format!("Cannot write document {}", e)))?;
+        self.db.insert(id_bytes, data).map_err(|e| TeangaError::DBError(e))?;
         Ok(id)
     }
 
@@ -211,26 +331,24 @@ impl Corpus {
     /// # Returns
     ///
     /// The new ID of the document (if no text layers are changed this will be the same as input)
-    pub fn update_doc(&mut self, id : &str, content : HashMap<String, PyLayer>) -> PyResult<String> {
-        let db = sled::open(&self.path).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-            format!("Cannot open database {}", e)))?;
+    pub fn update_doc(&mut self, id : &str, content : HashMap<String, PyLayer>) -> TeangaResult<String> {
         for key in content.keys() {
-            if !self.meta.contains_key(key) {
-                return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+            if !self.corpus.meta.contains_key(key) {
+                return Err(TeangaError::ModelError(
                     format!("Layer {} does not exist", key)))
             }
         }
 
         let mut doc_content = HashMap::new();
         for (k, v) in content {
-            let layer_meta = self.meta.get(&k).ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+            let layer_meta = self.corpus.meta.get(&k).ok_or_else(|| TeangaError::ModelError(
                 format!("No meta information for layer {}", k)))?;
             doc_content.insert(k, 
                 Layer::from_py(v, layer_meta, &|u : &str| {
                         let mut id_bytes = Vec::new();
                         id_bytes.push(STR2ID_PREFIX);
                         id_bytes.extend(u.as_bytes());
-                        match db.get(id_bytes).expect("Error reading string index") {
+                        match self.db.get(id_bytes).expect("Error reading string index") {
                             Some(b) => {
                                 if b.len() != 4 {
                                     panic!("String index is not 4 bytes");
@@ -238,39 +356,36 @@ impl Corpus {
                                 u32::from_be_bytes(b.as_ref().try_into().unwrap())
                             },
                             None => {
-                                gen_next_id(&db, u)
+                                gen_next_id(&self.db, u)
                             }
                         }
                     })?);
         }
 
         let doc = Document::new(doc_content);
-        let new_id = teanga_id(&self.order, &doc);
+        let new_id = teanga_id(&self.corpus.order, &doc);
         if id != new_id {
         
-            let n = self.order.iter().position(|x| x == id).ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+            let n = self.corpus.order.iter().position(|x| x == id).ok_or_else(|| TeangaError::ModelError(
                 format!("Cannot find document in order vector: {}", id)))?;
-            self.order.remove(n);
-            self.order.insert(n, new_id.clone());
+            self.corpus.order.remove(n);
+            self.corpus.order.insert(n, new_id.clone());
 
-            db.insert(ORDER_BYTES.to_vec(), self.order.write_to_vec().map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                format!("Cannot write order {}", e)))?).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                format!("Cannot write order {}", e)))?;
+            self.db.insert(ORDER_BYTES.to_vec(), self.corpus.order.write_to_vec().
+                map_err(|e| TeangaError::DataError(e))?).map_err(|e| TeangaError::DBError(e))?;
 
             let mut old_id_bytes = Vec::new();
             old_id_bytes.push(DOCUMENT_PREFIX);
             old_id_bytes.extend(id.as_bytes());
-            db.remove(old_id_bytes).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+            self.db.remove(old_id_bytes).map_err(|e| TeangaError::ModelError(
                 format!("Cannot remove document {}", e)))?;
         }
 
-        let data = doc.write_to_vec().map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-            format!("Cannot write document {}", e)))?;
+        let data = doc.write_to_vec().map_err(|e| TeangaError::DataError(e))?;
         let mut id_bytes = Vec::new();
         id_bytes.push(DOCUMENT_PREFIX);
         id_bytes.extend(new_id.as_bytes());
-        db.insert(id_bytes, data).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-            format!("Cannot write document {}", e)))?;
+        self.db.insert(id_bytes, data).map_err(|e| TeangaError::DBError(e))?;
         Ok(new_id)
     }
 
@@ -280,75 +395,40 @@ impl Corpus {
     /// # Arguments
     ///
     /// * `id` - The ID of the document
-    pub fn remove_doc(&mut self, id : &str) -> PyResult<()> {
-        let db = sled::open(&self.path).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-            format!("Cannot open database {}", e)))?;
+    pub fn remove_doc(&mut self, id : &str) -> TeangaResult<()> {
         let mut id_bytes = Vec::new();
         id_bytes.push(DOCUMENT_PREFIX);
         id_bytes.extend(id.as_bytes());
-        db.remove(id_bytes).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+        self.db.remove(id_bytes).map_err(|e| TeangaError::ModelError(
             format!("Cannot remove document {}", e)))?;
-        self.order.retain(|x| x != id);
-        db.insert(ORDER_BYTES.to_vec(), self.order.write_to_vec().map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-            format!("Cannot write order {}", e)))?).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-            format!("Cannot write order {}", e)))?;
+        self.corpus.order.retain(|x| x != id);
+        self.db.insert(ORDER_BYTES.to_vec(), self.corpus.order.write_to_vec().
+            map_err(|e| TeangaError::DataError(e))?).map_err(|e| TeangaError::DBError(e))?;
         Ok(())
     }
 
-    /// Get a document by its ID
-    ///
-    /// # Arguments
-    ///
-    /// * `id` - The ID of the document
-    ///
-    /// # Returns
-    ///
-    /// The document as a map from layers names to layers
-    pub fn get_doc_by_id(&mut self, id : &str) -> PyResult<HashMap<String, PyLayer>> {
-        let db = sled::open(&self.path).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-            format!("Cannot open database {}", e)))?;
-        
-        let mut id_bytes = Vec::new();
-        id_bytes.push(DOCUMENT_PREFIX);
-        id_bytes.extend(id.as_bytes());
-        let data = db.get(id_bytes)
-            .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                format!("Error reading document: {}", e)))?
-            .ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                format!("Document not found")))?;
-        let doc = Document::read_from_buffer(data.as_ref()).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-            format!("Cannot read document {}", e)))?;
-        let mut result = HashMap::new();
-        for (key, layer) in doc.content {
-            let layer_desc : &LayerDesc = self.meta.get(&key).
-                    ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                        format!("Serialized document contains undeclared layer {}", key)))?;
-            result.insert(key, layer.into_py(
-                    layer_desc,
-                    &|u| {
-                        let mut id_bytes = Vec::new();
-                        id_bytes.push(ID2STR_PREFIX);
-                        id_bytes.extend(u.to_be_bytes());
-                        String::from_utf8(
-                            db.get(id_bytes)
-                            .expect("Error reading string index")
-                            .unwrap_or_else(|| panic!("String index not found"))
-                            .as_ref().to_vec())
-                            .expect("Unicode error in string index")
-                    })?);
-
+    fn set_meta(&mut self, meta : HashMap<String, LayerDesc>) -> TeangaResult<()> {
+        self.corpus.meta = meta;
+        for (name, layer_desc) in self.corpus.meta.iter() {
+            let mut id_bytes = Vec::new();
+            id_bytes.push(META_PREFIX);
+            id_bytes.extend(name.clone().as_bytes());
+            self.db.insert(id_bytes, layer_desc.write_to_vec()
+                .map_err(|e| TeangaError::DataError(e)).unwrap()).unwrap();
         }
-        Ok(result)
+        Ok(())
     }
 
-    /// Get the documents in the corpus
-    ///
-    /// # Returns
-    ///
-    /// The documents IDs in order
-    pub fn get_docs(&self) -> Vec<String> {
-        self.order.clone()
+    fn set_order(&mut self, order : Vec<String>) -> TeangaResult<()> {
+        self.corpus.order = order;
+        self.db.insert(ORDER_BYTES.to_vec(), self.corpus.order.write_to_vec().
+            map_err(|e| TeangaError::DataError(e)).unwrap()).unwrap();
+        Ok(())
     }
+}
+
+fn open_db(path : &str) -> TeangaResult<sled::Db> {
+    sled::open(path).map_err(|e| TeangaError::DBError(e))
 }
 
 fn gen_next_id(db : &sled::Db, u : &str) -> u32 {
@@ -413,13 +493,13 @@ enum Layer {
 }
 
 impl Layer {
-    fn into_py<F>(&self, meta : &LayerDesc, idx2str : &F) -> PyResult<PyLayer> 
+    fn into_py<F>(&self, meta : &LayerDesc, idx2str : &F) -> TeangaResult<PyLayer> 
         where F : Fn(u32) -> String {
         match self {
             Layer::Characters(val) => Ok(PyLayer::CharacterLayer(val.clone())),
             Layer::Seq(val) => {
                 match meta.data {
-                    None => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                    None => Err(TeangaError::ModelError(
                         format!("Layer contains data but not data type"))),
                     Some(DataType::String) => {
                         let mut result = Vec::new();
@@ -449,7 +529,7 @@ impl Layer {
             },
             Layer::Div(val) => {
                 match meta.data {
-                    None => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                    None => Err(TeangaError::ModelError(
                         format!("Layer contains data but no data type"))),
                     Some(DataType::String) => {
                         let mut result = Vec::new();
@@ -480,7 +560,7 @@ impl Layer {
             },
             Layer::Element(val) => {
                 match meta.data {
-                    None => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                    None => Err(TeangaError::ModelError(
                         format!("Layer contains data but no data type"))),
                     Some(DataType::String) => {
                         let mut result = Vec::new();
@@ -511,7 +591,7 @@ impl Layer {
             },
             Layer::Span(val) => {
                 match meta.data {
-                    None => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                    None => Err(TeangaError::ModelError(
                         format!("Layer contains data but no data type"))),
                     Some(DataType::String) => {
                         let mut result = Vec::new();
@@ -564,7 +644,7 @@ impl Layer {
         }
     }
 
-    fn from_py<F>(obj : PyLayer, meta : &LayerDesc, str2idx : &F) -> PyResult<Layer> 
+    fn from_py<F>(obj : PyLayer, meta : &LayerDesc, str2idx : &F) -> TeangaResult<Layer> 
         where F : Fn(&str) -> u32 {
         match obj {
             PyLayer::CharacterLayer(val) => Ok(Layer::Characters(val)),
@@ -577,7 +657,7 @@ impl Layer {
                         match meta.layer_type {
                             LayerType::div => Ok(Layer::DivNoData(val)),
                             LayerType::element => Ok(Layer::ElementNoData(val)),
-                            _ => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                            _ => Err(TeangaError::ModelError(
                                 format!("Cannot convert data layer to {}", meta.layer_type)))
                         }
                     }
@@ -589,7 +669,7 @@ impl Layer {
                         match meta.layer_type {
                             LayerType::div => Ok(Layer::Div(val)),
                             LayerType::element => Ok(Layer::Element(val)),
-                            _ => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                            _ => Err(TeangaError::ModelError(
                                 format!("Cannot convert data layer to {}", meta.layer_type)))
                         }
                     },
@@ -625,16 +705,16 @@ impl Layer {
                         match meta.layer_type {
                             LayerType::div => Ok(Layer::Div(result)),
                             LayerType::element => Ok(Layer::Element(result)),
-                            _ => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                            _ => Err(TeangaError::ModelError(
                                 format!("Cannot convert data layer to {}", meta.layer_type)))
                         }
                     },
-                    None => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                    None => Err(TeangaError::ModelError(
                         format!("String in data, but data type is none")))
                 }
             },
             PyLayer::L2S(val) => {
-                let metadata = meta.data.as_ref().ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                let metadata = meta.data.as_ref().ok_or_else(|| TeangaError::ModelError(
                     format!("Cannot convert data layer to {}", meta.layer_type)))?;
                 match meta.data {
                     Some(ref metadata @ DataType::TypedLink(_)) => {
@@ -645,7 +725,7 @@ impl Layer {
                         match meta.layer_type {
                             LayerType::div => Ok(Layer::Div(result)),
                             LayerType::element => Ok(Layer::Element(result)),
-                            _ => Err(PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                            _ => Err(TeangaError::ModelError(
                                 format!("Cannot convert data layer to {}", meta.layer_type)))
                         }
                     },
@@ -659,7 +739,7 @@ impl Layer {
                 }
             },
             PyLayer::L3S(val) => {
-                let metadata = meta.data.as_ref().ok_or_else(|| PyErr::new::<pyo3::exceptions::PyIOError, _>(
+                let metadata = meta.data.as_ref().ok_or_else(|| TeangaError::ModelError(
                     format!("Cannot convert data layer to {}", meta.layer_type)))?;
                 let mut result = Vec::new();
                 for (start, end, idx, link) in val {
@@ -700,7 +780,7 @@ impl IntoPy<PyObject> for PyLayer {
     }
 }
 
-fn u32_into_py_str<F>(val : u32, layer_type : &DataType, f : &F) -> PyResult<String> 
+fn u32_into_py_str<F>(val : u32, layer_type : &DataType, f : &F) -> TeangaResult<String> 
     where F : Fn(u32) -> String {
     match layer_type {
         DataType::String => Ok(f(val)),
@@ -708,16 +788,16 @@ fn u32_into_py_str<F>(val : u32, layer_type : &DataType, f : &F) -> PyResult<Str
             if val < vals.len() as u32 {
                 Ok(vals[val as usize].clone())
             } else {
-                Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                Err(TeangaError::ModelError(
                         format!("Enum data is out of range of enum")))
             }
         }
-        _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+        _ => Err(TeangaError::ModelError(
                 format!("Cannot convert {} to string", layer_type)))
     }
 }
 
-fn u32_into_py_u32_str(val : u32, layer_type : &DataType) -> PyResult<(u32,String)> {
+fn u32_into_py_u32_str(val : u32, layer_type : &DataType) -> TeangaResult<(u32,String)> {
     match layer_type {
         DataType::TypedLink(vals) => {
             let n = (vals.len() as f64).log2().ceil() as u32;
@@ -726,41 +806,41 @@ fn u32_into_py_u32_str(val : u32, layer_type : &DataType) -> PyResult<(u32,Strin
             if link_type < vals.len() as u32 {
                 Ok((link_targ, vals[link_type as usize].clone()))
             } else {
-                Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                Err(TeangaError::ModelError(
                         format!("Link type is out of range of enum")))
             }
         }
-        _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+        _ => Err(TeangaError::ModelError(
                 format!("Cannot convert {} to string", layer_type)))
     }
 }
 
-fn py_str_into_u32<F>(val : &str, layer_type : &DataType, f : &F) -> PyResult<u32> 
+fn py_str_into_u32<F>(val : &str, layer_type : &DataType, f : &F) -> TeangaResult<u32> 
     where F : Fn(&str) -> u32 {
     match layer_type {
         DataType::String => Ok(f(val)),
         DataType::Enum(vals) => {
             match vals.iter().position(|x| x == val) {
                 Some(idx) => Ok(idx as u32),
-                None => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                None => Err(TeangaError::ModelError(
                         format!("Cannot convert enum {} to {}", val, vals.iter().join(","))))
             }
         },
-        _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+        _ => Err(TeangaError::ModelError( 
                 format!("Cannot convert string to {}", layer_type)))
     }
 }
 
-fn py_u32_str_into_u32(link_targ : u32, link_type : String, layer_type : &DataType) -> PyResult<u32> {
+fn py_u32_str_into_u32(link_targ : u32, link_type : String, layer_type : &DataType) -> TeangaResult<u32> {
     match layer_type {
         DataType::TypedLink(vals) => {
             match vals.iter().position(|x| *x == link_type) {
                 Some(idx) => Ok((idx as u32) << ((vals.len() as f64).log2().ceil() as u32) | link_targ),
-                None => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                None => Err(TeangaError::ModelError(
                         format!("Cannot convert link type {} to {}", link_type, vals.iter().join(","))))
             }
         },
-        _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+        _ => Err(TeangaError::ModelError(
             format!("Cannot convert string and int to {}", layer_type)))
     }
 }
@@ -879,11 +959,32 @@ impl Display for DataType {
     }
 }
 
+#[pyfunction]
+fn read_corpus_from_json_string(s : &str, path : &str) -> PyResult<Corpus> {
+    serialization::read_corpus_from_json_string(s, path).map_err(|e|
+        PyErr::new::<pyo3::exceptions::PyIOError, _>(format!("{}", e)))
+}
+
+#[pyfunction]
+fn read_corpus_from_yaml_string(s : &str, path: &str) -> PyResult<Corpus> {
+    serialization::read_corpus_from_yaml_string(s, path).map_err(|e|
+        PyErr::new::<pyo3::exceptions::PyIOError, _>(format!("{}", e)))
+}
+
+#[pyfunction]
+fn write_corpus_to_yaml(corpus : &Corpus, path : &str) -> PyResult<()> {
+    serialization::write_corpus_to_yaml(corpus, path).map_err(|e|
+        PyErr::new::<pyo3::exceptions::PyIOError, _>(format!("{}", e)))
+}
+
 /// A Python module implemented in Rust.
 #[pymodule]
 #[pyo3(name="teangadb")]
 fn teangadb(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Corpus>()?;
+    m.add_function(wrap_pyfunction!(read_corpus_from_json_string, m)?)?;
+    m.add_function(wrap_pyfunction!(read_corpus_from_yaml_string, m)?)?;
+    m.add_function(wrap_pyfunction!(write_corpus_to_yaml, m)?)?;
     Ok(())
 }
 

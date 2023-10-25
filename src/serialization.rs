@@ -1,10 +1,14 @@
 // Serialization support for Teanga DB
 // -----------------------------------------------------------------------------
 use serde::de::Visitor;
-use crate::{Corpus, LayerDesc, PyLayer};
+use crate::{Corpus, LayerDesc, PyLayer, CorpusTransaction};
 use std::collections::HashMap;
 use serde::Deserializer;
 use std::cmp::min;
+use std::path::Path;
+use std::fs::File;
+use serde::Serialize;
+use serde::ser::{Serializer, SerializeMap};
 
 struct TeangaVisitor(String);
 
@@ -18,21 +22,18 @@ impl<'de> Visitor<'de> for TeangaVisitor {
     fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
         where A: serde::de::MapAccess<'de>
     {
-        let mut corpus = Corpus::new(self.0).map_err(serde::de::Error::custom)?;
+        let mut corpus = Corpus::new(&self.0).map_err(serde::de::Error::custom)?;
+        let mut trans = CorpusTransaction::new(&mut corpus).map_err(serde::de::Error::custom)?;
         while let Some(ref key) = map.next_key::<String>()? {
             if key == "_meta" {
-                eprintln!("Reading meta");
                 let data = map.next_value::<HashMap<String, LayerDesc>>()?;
-                corpus.meta = data;
-                eprintln!("Meta: {:?}", corpus.meta);
+                trans.set_meta(data).map_err(serde::de::Error::custom)?;
             } else if key == "_order" {
-                eprintln!("Reading order");
                 let data = map.next_value::<Vec<String>>()?;
-                corpus.order = data;
+                trans.set_order(data).map_err(serde::de::Error::custom)?;
             } else {
-                eprintln!("Reading doc {}", key);
                 let doc = map.next_value::<HashMap<String, PyLayer>>()?;
-                let id = corpus.add_doc(doc).map_err(serde::de::Error::custom)?;
+                let id = trans.add_doc(doc).map_err(serde::de::Error::custom)?;
                 if id[..min(id.len(), key.len())] != key[..min(id.len(), key.len())] {
                     return Err(serde::de::Error::custom(format!("Document fails hash check: {} != {}", id, key)))
                 }
@@ -42,14 +43,42 @@ impl<'de> Visitor<'de> for TeangaVisitor {
     }
 }
 
-fn read_corpus_from_json_string(s: &str, path : String) -> Result<Corpus, serde_json::Error> {
-    let mut deserializer = serde_json::Deserializer::from_str(s);
-    deserializer.deserialize_any(TeangaVisitor(path))
+impl Serialize for Corpus {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: Serializer
+    {
+        let mut map = serializer.serialize_map(Some(3))?;
+        map.serialize_entry("_meta", &self.meta)?;
+        map.serialize_entry("_order", &self.order)?;
+        for id in &self.order {
+            eprintln!("Serializing {}", id);
+            map.serialize_entry(id, &self.get_doc_by_id(id).map_err(serde::ser::Error::custom)?)?;
+        }
+        map.end()
+    }
 }
 
-fn read_corpus_from_yaml_string(s: &str, path : String) -> Result<Corpus, serde_yaml::Error> {
+pub fn read_corpus_from_json_string(s: &str, path : &str) -> Result<Corpus, serde_json::Error> {
+    let mut deserializer = serde_json::Deserializer::from_str(s);
+    deserializer.deserialize_any(TeangaVisitor(path.to_owned()))
+}
+
+pub fn read_corpus_from_yaml_string(s: &str, path : &str) -> Result<Corpus, serde_yaml::Error> {
     let deserializer = serde_yaml::Deserializer::from_str(s);
-    deserializer.deserialize_any(TeangaVisitor(path))
+    deserializer.deserialize_any(TeangaVisitor(path.to_owned()))
+}
+
+pub fn write_corpus_to_yaml<P: AsRef<Path>>(corpus: &Corpus, path: P) -> Result<(), serde_yaml::Error> {
+    let mut file = File::create(path)
+        .expect("Could not create file");
+    let mut ser = serde_yaml::Serializer::new(&mut file);
+    corpus.serialize(&mut ser)
+}
+
+#[cfg(test)] // Only used for testing ATM
+fn write_corpus_to_yaml_file(corpus: &Corpus, mut file : File) -> Result<(), serde_yaml::Error> {
+    let mut ser = serde_yaml::Serializer::new(&mut file);
+    corpus.serialize(&mut ser)
 }
 
 
@@ -70,7 +99,68 @@ ecWc:
     text: This is an example
     tokens: [[0, 4], [5, 7], [8, 10], [11, 18]]
 ";
-        read_corpus_from_yaml_string(doc, "tmp".to_string()).unwrap();
+        let file = tempfile::tempdir().expect("Cannot create temp folder")
+            .path().to_str().unwrap().to_owned();
+        read_corpus_from_yaml_string(doc, &file).unwrap();
     }
+
+    #[test]
+    fn test_deserialize_json() {
+        let doc = r#"{
+    "_meta": {
+        "text": {
+            "type": "characters"
+        },
+        "tokens": {
+            "type": "span",
+            "on": "text"
+        }
+    },
+    "_order": [
+        "ecWc"
+    ],
+    "ecWc": {
+        "text": "This is an example",
+        "tokens": [
+            [
+                0,
+                4
+            ],
+            [
+                5,
+                7
+            ],
+            [
+                8,
+                10
+            ],
+            [
+                11,
+                18
+            ]
+        ]
+    }
+}"#;
+        let file = tempfile::tempdir().expect("Cannot create temp folder")
+            .path().to_str().unwrap().to_owned();
+        read_corpus_from_json_string(doc, &file).unwrap();
+    }
+
+    #[test]
+    fn test_serialize_yaml() {
+        let file = tempfile::tempdir().expect("Cannot create temp folder")
+            .path().to_str().unwrap().to_owned();
+        let mut corpus = Corpus::new(&file).expect("Cannot load corpus");
+        corpus.add_layer_meta("text".to_string(), crate::LayerType::characters,
+           String::new(), None, None, None, None).unwrap();
+        corpus.add_layer_meta("tokens".to_string(), crate::LayerType::span,
+            "text".to_string(), None, None, None, None).unwrap();
+        let doc = HashMap::from_iter(vec![("text".to_string(), PyLayer::CharacterLayer("This is an example".to_string())),
+                                           ("tokens".to_string(), PyLayer::L2(vec![(0, 4), (5, 7), (8, 10), (11, 18)]))]);
+        corpus.add_doc(doc).unwrap();
+        let outfile = tempfile::tempfile().expect("Cannot create temp file");
+        write_corpus_to_yaml_file(&corpus, outfile).unwrap();
+    }
+
 }
 
