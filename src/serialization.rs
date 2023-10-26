@@ -141,11 +141,17 @@ pub fn read_corpus_from_yaml_file<P: AsRef<Path>>(yaml_file : P, path: &str) -> 
     Ok(deserializer.deserialize_any(TeangaVisitor(path.to_owned()))?)
 }
 
-pub fn write_corpus_to_yaml<P: AsRef<Path>>(corpus: &Corpus, path: P) -> Result<(), serde_yaml::Error> {
+pub fn write_corpus_to_json<P: AsRef<Path>>(corpus: &Corpus, path: P) -> Result<(), serde_json::Error> {
     let mut file = File::create(path)
         .expect("Could not create file");
-    let mut ser = serde_yaml::Serializer::new(&mut file);
+    let mut ser = serde_json::Serializer::new(&mut file);
     corpus.serialize(&mut ser)
+}
+
+pub fn write_corpus_to_json_string(corpus: &Corpus) -> Result<String, SerializeError> {
+    let mut ser = serde_json::Serializer::new(Vec::new());
+    corpus.serialize(&mut ser)?;
+    Ok(String::from_utf8(ser.into_inner())?)
 }
 
 #[cfg(test)] // Only used for testing ATM
@@ -166,6 +172,8 @@ pub enum SerializeError {
     Teanga(#[from] crate::TeangaError),
     #[error("IO error: {0}")]
     Fmt(#[from] std::fmt::Error),
+    #[error("UTF8 error: {0}")]
+    Utf8(#[from] std::string::FromUtf8Error),
 }
 
 #[cfg(test)]

@@ -985,9 +985,21 @@ fn read_corpus_from_yaml_file(yaml : &str, path: &str) -> PyResult<Corpus> {
 
 #[pyfunction]
 fn write_corpus_to_yaml(corpus : &Corpus, path : &str) -> PyResult<()> {
-    let mut f = File::create(path).map_err(|e|
+    let f = File::create(path).map_err(|e|
         PyErr::new::<pyo3::exceptions::PyIOError, _>(format!("{}", e)))?;
     serialization::pretty_yaml_serialize(corpus, f).map_err(|e|
+        PyErr::new::<pyo3::exceptions::PyIOError, _>(format!("{}", e)))
+}
+
+#[pyfunction]
+fn write_corpus_to_json(corpus : &Corpus, path : &str) -> PyResult<()> {
+    serialization::write_corpus_to_json(corpus, path).map_err(|e|
+        PyErr::new::<pyo3::exceptions::PyIOError, _>(format!("{}", e)))
+}
+
+#[pyfunction]
+fn write_corpus_to_json_string(corpus : &Corpus) -> PyResult<String> {
+    serialization::write_corpus_to_json_string(corpus).map_err(|e|
         PyErr::new::<pyo3::exceptions::PyIOError, _>(format!("{}", e)))
 }
 
@@ -1017,6 +1029,8 @@ fn teangadb(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(read_corpus_from_yaml_file, m)?)?;
     m.add_function(wrap_pyfunction!(write_corpus_to_yaml, m)?)?;
     m.add_function(wrap_pyfunction!(write_corpus_to_yaml_string, m)?)?;
+    m.add_function(wrap_pyfunction!(write_corpus_to_json, m)?)?;
+    m.add_function(wrap_pyfunction!(write_corpus_to_json_string, m)?)?;
     Ok(())
 }
 

@@ -282,7 +282,8 @@ target=None, default=None)}
         if self.corpus:
             teangadb.write_corpus_to_yaml_file(path_or_buf, self.corpus)
         else:
-            print("TODO")
+            with open(path_or_buf, "w") as f:
+                self._to_pretty_yaml(f)
 
     def to_yaml_str(self) -> str:
         """
@@ -343,6 +344,58 @@ Kjco:\\n    text: This is a document.\\n'
                     writer.write(layer_id + ":")
                     writer.write(yaml.safe_dump(doc.get_layer(layer_id).raw(),
                                        default_flow_style=None))
+
+    def to_json(self, path_or_buf):
+        """Write the corpus to a JSON file.
+
+        Parameters:
+        -----------
+
+        path_or_buf: str
+            The path to the json file or a buffer.
+
+        """
+        if self.corpus:
+            teangadb.write_corpus_to_json_file(path_or_buf, self.corpus)
+        else:
+            with open(path_or_buf, "w") as f:
+                self._to_json(f)
+
+    def to_json_str(self) -> str:
+        """
+        Write the corpus to a JSON string.
+
+        Examples:
+        ---------
+
+        >>> corpus = Corpus("tmp",new=True)
+        >>> corpus.add_layer_meta("text")
+        >>> doc = corpus.add_doc("This is a document.")
+        >>> corpus.to_json_str()
+        '{"_meta":{"text":{"type":"characters"}},"_order":["Kjco"],\
+"Kjco":{"text":"This is a document."}}'
+
+        >>> corpus = Corpus()
+        >>> corpus.add_layer_meta("text")
+        >>> doc = corpus.add_doc("This is a document.")
+        >>> corpus.to_json_str()
+        '{"_meta": {"text": {"type": "characters"}}, \
+"Kjco": {"text": "This is a document."}}'
+         """
+        if self.corpus:
+            return teangadb.write_corpus_to_json_string(self.corpus)
+        else:
+            s = StringIO()
+            self._to_json(s)
+            return s.getvalue()
+
+    def _to_json(self, writer):
+        dct = {}
+        dct["_meta"] = {name: _from_layer_desc(data) for name, data in self.meta.items()}
+        for doc_id, doc in self.docs:
+            dct[doc_id] = {layer_id: doc.get_layer(layer_id).raw() 
+                           for layer_id in doc.get_layer_ids()}
+        json.dump(dct, writer)
  
 def _yaml_str(s):
     s = yaml.safe_dump(s)
@@ -354,6 +407,15 @@ def _layer_desc(type="characters", on=None, data=None, values=None,
                 target=None, default=None):
     return LayerDesc(type, on, data, values, target, default)
 
+def _from_layer_desc(layer_desc):
+    d = { 
+         name: data for name,data in layer_desc._asdict().items()
+         if data is not None
+    }
+    d["type"] = d["layer_type"]
+    del d["layer_type"]
+    return d
+            
 
 def _corpus_hook(dct : dict) -> Corpus:
     c = Corpus()
