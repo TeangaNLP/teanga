@@ -5,6 +5,7 @@ import shutil
 import os
 from collections import namedtuple
 import json
+import yaml
 
 LayerDesc = namedtuple("LayerDesc",
                        ["layer_type", "on", "data", "values", "target", "default"],
@@ -30,7 +31,6 @@ class Corpus:
             self.corpus = None
             self.meta = {}
             self.docs = []
-            self.order = []
 
     def add_layer_meta(self, name:str=None,
                   layer_type:str="characters", on:str=None, 
@@ -268,6 +268,40 @@ target=None, default=None)}
         else:
             return self.meta
 
+    def to_yaml(self, path_or_buf):
+        """Write the corpus to a yaml file.
+
+        Parameters:
+        -----------
+
+        path_or_buf: str
+            The path to the yaml file or a buffer.
+
+        """
+        if self.corpus:
+            teangadb.write_corpus_to_yaml_file(path_or_buf, self.corpus)
+        else:
+            print("TODO")
+
+    def to_yaml_str(self) -> str:
+        """
+        Write the corpus to a yaml string.
+
+        Examples:
+        ---------
+        >>> corpus = Corpus("tmp",new=True)
+        >>> corpus.add_layer_meta("text")
+        >>> doc = corpus.add_doc("This is a document.")
+        >>> corpus.to_yaml_str()
+        '_meta:\\n    text:\\n        type: characters\\n_order: ["Kjco"]\
+\\nKjco:\\n    text: This is a document.\\n'
+        """
+        if self.corpus:
+            return teangadb.write_corpus_to_yaml_string(self.corpus)
+        else:
+            print("TODO")
+
+
 def _layer_desc(type="characters", on=None, data=None, values=None, 
                 target=None, default=None):
     return LayerDesc(type, on, data, values, target, default)
@@ -279,9 +313,7 @@ def _corpus_hook(dct : dict) -> Corpus:
         return dct
     c.meta = {key: _layer_desc(**value) for key, value in dct["_meta"].items()}
     if "_order" in dct:
-        c.order = dct["_order"]
-    if c.order:
-        for doc_id in c.order:
+        for doc_id in dct["_order"]:
             c.docs.append((doc_id, Document(c.meta, id=doc_id, **dct[doc_id])))
     else:
         for doc_id, value in dct.items():
@@ -329,3 +361,44 @@ def read_json(path_or_buf, db_file=None):
         teangadb.read_corpus_from_json_file(path_or_buf, db_file)
     else:
         json.load(path_or_buf, object_hook=_corpus_hook)
+
+def read_yaml(path_or_buf, db_file=None):
+    """Read a corpus from a yaml file.
+
+    Parameters:
+    -----------
+
+    path_or_buf: str
+        The path to the yaml file or a buffer.
+    db_file: str
+        The path to the database file, if the corpus should be stored in a
+        database.
+    """
+    if db_file:
+        teangadb.read_corpus_from_yaml_file(path_or_buf, db_file)
+    else:
+        yaml.load(path_or_buf, Loader=yaml.FullLoader, object_hook=_corpus_hook)
+
+def read_yaml_str(yaml_str, db_file=None):
+    """Read a corpus from a yaml string.
+
+    Parameters:
+    -----------
+
+    yaml_str: str
+        The yaml string.
+    db_file: str
+        The path to the database file, if the corpus should be stored in a
+        database.
+
+    Examples:
+    ---------
+    >>> corpus = read_yaml_str("_meta:\\n  text:\\n    type: characters\\n\
+Kjco:\\n   text: This is a document.", "tmp")
+    >>> corpus = read_yaml_str("_meta:\\n  text:\\n    type: characters\\n\
+Kjco:\\n   text: This is a document.")
+    """
+    if db_file:
+        teangadb.read_corpus_from_yaml_string(yaml_str, db_file)
+    else:
+        _corpus_hook(yaml.load(yaml_str, Loader=yaml.FullLoader))

@@ -12,6 +12,7 @@ use base64::engine::general_purpose::STANDARD;
 use itertools::Itertools;
 use serde::{Serialize,Deserialize};
 use thiserror::Error;
+use std::fs::File;
 
 mod serialization;
 
@@ -977,8 +978,25 @@ fn read_corpus_from_yaml_string(s : &str, path: &str) -> PyResult<Corpus> {
 }
 
 #[pyfunction]
+fn read_corpus_from_yaml_file(yaml : &str, path: &str) -> PyResult<Corpus> {
+    serialization::read_corpus_from_yaml_file(yaml, path).map_err(|e|
+        PyErr::new::<pyo3::exceptions::PyIOError, _>(format!("{}", e)))
+}
+
+#[pyfunction]
 fn write_corpus_to_yaml(corpus : &Corpus, path : &str) -> PyResult<()> {
-    serialization::write_corpus_to_yaml(corpus, path).map_err(|e|
+    let mut f = File::create(path).map_err(|e|
+        PyErr::new::<pyo3::exceptions::PyIOError, _>(format!("{}", e)))?;
+    serialization::pretty_yaml_serialize(corpus, f).map_err(|e|
+        PyErr::new::<pyo3::exceptions::PyIOError, _>(format!("{}", e)))
+}
+
+#[pyfunction]
+fn write_corpus_to_yaml_string(corpus : &Corpus) -> PyResult<String> {
+    let mut v = Vec::new();
+    serialization::pretty_yaml_serialize(corpus, &mut v).map_err(|e|
+        PyErr::new::<pyo3::exceptions::PyIOError, _>(format!("{}", e)))?;
+    String::from_utf8(v).map_err(|e|
         PyErr::new::<pyo3::exceptions::PyIOError, _>(format!("{}", e)))
 }
 
@@ -995,8 +1013,10 @@ fn teangadb(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Corpus>()?;
     m.add_function(wrap_pyfunction!(read_corpus_from_json_string, m)?)?;
     m.add_function(wrap_pyfunction!(read_corpus_from_yaml_string, m)?)?;
-    m.add_function(wrap_pyfunction!(write_corpus_to_yaml, m)?)?;
     m.add_function(wrap_pyfunction!(read_corpus_from_json_file, m)?)?;
+    m.add_function(wrap_pyfunction!(read_corpus_from_yaml_file, m)?)?;
+    m.add_function(wrap_pyfunction!(write_corpus_to_yaml, m)?)?;
+    m.add_function(wrap_pyfunction!(write_corpus_to_yaml_string, m)?)?;
     Ok(())
 }
 

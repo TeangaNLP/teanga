@@ -10,6 +10,8 @@ use std::fs::File;
 use serde::Serialize;
 use serde::ser::{Serializer, SerializeMap};
 use thiserror::Error;
+use std::io::Write;
+use itertools::Itertools;
 
 struct TeangaVisitor(String);
 
@@ -59,6 +61,64 @@ impl Serialize for Corpus {
     }
 }
 
+pub fn pretty_yaml_serialize<W : Write>(corpus: &Corpus, mut writer: W) -> Result<(), SerializeError> {
+    writer.write_all(b"_meta:\n")?;
+    for name in corpus.meta.keys().sorted() {
+        let meta = &corpus.meta[name];
+        writer.write_all(b"    ")?;
+        writer.write_all(name.as_bytes())?;
+        writer.write_all(b":\n")?;
+        writer.write_all(b"        type: ")?;
+        writer.write_all(serde_yaml::to_string(&meta.layer_type)?.as_bytes())?;
+        if meta.on != "" {
+            writer.write_all(b"        on: ")?;
+            writer.write_all(serde_yaml::to_string(&meta.on)?.as_bytes())?;
+        }
+        if let Some(ref data) = meta.data {
+            writer.write_all(b"        data: ")?;
+            writer.write_all(serde_yaml::to_string(data)?.as_bytes())?;
+        }
+        if let Some(ref values) = meta.values {
+            writer.write_all(b"        values: ")?;
+            writer.write_all(serde_json::to_string(values)?.as_bytes())?;
+            writer.write_all(b"\n")?;
+        }
+        if let Some(ref target) = meta.target {
+            writer.write_all(b"        target: ")?;
+            writer.write_all(serde_yaml::to_string(target)?.as_bytes())?;
+        }
+        if let Some(ref default) = meta.default {
+            writer.write_all(b"        default: ")?;
+            writer.write_all(serde_json::to_string(default)?.as_bytes())?;
+            writer.write_all(b"\n")?;
+        }
+    }
+    writer.write_all(b"_order: ")?;
+    writer.write_all(serde_json::to_string(&corpus.order)?.as_bytes())?;
+    writer.write_all(b"\n")?;
+    for id in &corpus.order {
+        writer.write_all(id.as_bytes())?;
+        writer.write_all(b":\n")?;
+        let doc = corpus.get_doc_by_id(id)?;
+        for name in doc.keys().sorted() {
+            let layer = &doc[name];
+            if let PyLayer::CharacterLayer(_) = layer {
+                writer.write_all(b"    ")?;
+                writer.write_all(name.as_bytes())?;
+                writer.write_all(b": ")?;
+                writer.write_all(serde_yaml::to_string(layer)?.as_bytes())?;
+            } else {
+                writer.write_all(b"    ")?;
+                writer.write_all(name.as_bytes())?;
+                writer.write_all(b": ")?;
+                writer.write_all(serde_json::to_string(layer)?.as_bytes())?;
+                writer.write_all(b"\n")?;
+            }
+        }
+    }
+    Ok(())
+}
+
 pub fn read_corpus_from_json_string(s: &str, path : &str) -> Result<Corpus, serde_json::Error> {
     let mut deserializer = serde_json::Deserializer::from_str(s);
     deserializer.deserialize_any(TeangaVisitor(path.to_owned()))
@@ -73,6 +133,12 @@ pub fn read_corpus_from_json_file<P: AsRef<Path>>(json_file : P, path: &str) -> 
 pub fn read_corpus_from_yaml_string(s: &str, path : &str) -> Result<Corpus, serde_yaml::Error> {
     let deserializer = serde_yaml::Deserializer::from_str(s);
     deserializer.deserialize_any(TeangaVisitor(path.to_owned()))
+}
+
+pub fn read_corpus_from_yaml_file<P: AsRef<Path>>(yaml_file : P, path: &str) -> Result<Corpus, SerializeError> {
+    let file = File::open(yaml_file)?;
+    let deserializer = serde_yaml::Deserializer::from_reader(file);
+    Ok(deserializer.deserialize_any(TeangaVisitor(path.to_owned()))?)
 }
 
 pub fn write_corpus_to_yaml<P: AsRef<Path>>(corpus: &Corpus, path: P) -> Result<(), serde_yaml::Error> {
@@ -96,11 +162,16 @@ pub enum SerializeError {
     Yaml(#[from] serde_yaml::Error),
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
+    #[error("Teanga model error: {0}")]
+    Teanga(#[from] crate::TeangaError),
+    #[error("IO error: {0}")]
+    Fmt(#[from] std::fmt::Error),
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::BufWriter;
 
     #[test]
     fn test_deserialize_yaml() {
@@ -178,5 +249,23 @@ ecWc:
         write_corpus_to_yaml_file(&corpus, outfile).unwrap();
     }
 
+    #[test]
+    fn test_pretty_yaml() {
+        let file = tempfile::tempdir().expect("Cannot create temp folder")
+            .path().to_str().unwrap().to_owned();
+        let mut corpus = Corpus::new(&file).expect("Cannot load corpus");
+        corpus.add_layer_meta("text".to_string(), crate::LayerType::characters,
+           String::new(), None, None, None, None).unwrap();
+        corpus.add_layer_meta("tokens".to_string(), crate::LayerType::span,
+            "text".to_string(), None, None, None, None).unwrap();
+        let doc = HashMap::from_iter(vec![("text".to_string(), PyLayer::CharacterLayer("This is an example".to_string())),
+                                           ("tokens".to_string(), PyLayer::L2(vec![(0, 4), (5, 7), (8, 10), (11, 18)]))]);
+        corpus.add_doc(doc).unwrap();
+        let mut out = Vec::new();
+        pretty_yaml_serialize(&corpus, &mut out).unwrap();
+        assert_eq!(String::from_utf8(out).unwrap(),
+            "_meta:\n    text:\n        type: characters\n    tokens:\n        type: span\n        on: text\n_order: [\"ecWc\"]\necWc:\n    text: This is an example\n    tokens: [[0,4],[5,7],[8,10],[11,18]]\n");
+    }
+ 
 }
 
