@@ -6,6 +6,7 @@ import os
 from collections import namedtuple
 import json
 import yaml
+from io import StringIO
 
 LayerDesc = namedtuple("LayerDesc",
                        ["layer_type", "on", "data", "values", "target", "default"],
@@ -295,12 +296,59 @@ target=None, default=None)}
         >>> corpus.to_yaml_str()
         '_meta:\\n    text:\\n        type: characters\\n_order: ["Kjco"]\
 \\nKjco:\\n    text: This is a document.\\n'
+
+        >>> corpus = Corpus()
+        >>> corpus.add_layer_meta("text")
+        >>> doc = corpus.add_doc("This is a document.")
+        >>> corpus.to_yaml_str()
+        '_meta:\\n    text:\\n        type: characters\\n\
+Kjco:\\n    text: This is a document.\\n'
         """
         if self.corpus:
             return teangadb.write_corpus_to_yaml_string(self.corpus)
         else:
-            print("TODO")
+            s = StringIO()
+            self._to_pretty_yaml(s)
+            return s.getvalue()
 
+    def _to_pretty_yaml(self, writer):
+        writer.write("_meta:\n")
+        for name in sorted(self.meta.keys()):
+            meta = self.meta[name]
+            writer.write("    " + name + ":\n")
+            writer.write("        type: " + meta.layer_type + "\n")
+            if meta.on:
+                writer.write("        on: " + _yaml_str(meta.on))
+            if meta.data:
+                writer.write("        data: " + yaml.safe_dump(meta.data,
+                    default_flow_style=None, indent=8) + "\n")
+            if meta.values:
+                writer.write("        values:" + yaml.safe_dump(meta.values,
+                    default_flow_style=None, indent=8) + "\n")
+            if meta.target:
+                writer.write("        target:" + yaml.safe_dump(meta.target,
+                    default_flow_style=None, indent=8) + "\n")
+            if meta.default:
+                writer.write("        default:" + yaml.safe_dump(meta.default,
+                    default_flow_style=None, indent=8) + "\n")
+        for id, doc in self.docs:
+            writer.write(id + ":\n")
+            for layer_id in doc.get_layer_ids():
+                writer.write("    ")
+                if isinstance(doc.get_layer(layer_id).raw(), str):
+                    writer.write(layer_id)
+                    writer.write(": ")
+                    writer.write(_yaml_str(doc.get_layer(layer_id).raw()))
+                else:
+                    writer.write(layer_id + ":")
+                    writer.write(yaml.safe_dump(doc.get_layer(layer_id).raw(),
+                                       default_flow_style=None))
+ 
+def _yaml_str(s):
+    s = yaml.safe_dump(s)
+    if s.endswith("\n...\n"):
+        s = s[:-4]
+    return s
 
 def _layer_desc(type="characters", on=None, data=None, values=None, 
                 target=None, default=None):

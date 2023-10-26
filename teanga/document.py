@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from typing import Generator
 import numbers
 from itertools import chain, pairwise
-from .utils import teanga_id_for_doc
 
 class Document:
     """Document class for storing and processing text data."""
@@ -75,7 +74,7 @@ class Document:
             raise Exception("Unknown layer type " + self.meta[name].layer_type + 
             " for layer " + name + ".")
         if self.corpus and self.id:
-            data_fields = {name: layer.repr(self)
+            data_fields = {name: layer.raw()
                            for (name,layer) in self.layers.items()}
             self.corpus.update_doc(self.id, data_fields)
                      
@@ -170,6 +169,25 @@ class Document:
             indexes = self.layers[layer_name].indexes(text_layer, self)
             return (self.layers[text_layer].text(self)[start:end]
                     for start, end in indexes)
+    
+    def get_layer_ids(self):
+        """ Return the ids of the layers in the document.
+
+        Examples:
+        ---------
+
+        >>> from teanga import Corpus
+        >>> corpus = Corpus()
+        >>> corpus.add_layer_meta("text")
+        >>> corpus.add_layer_meta("words", layer_type="span", on="text")
+        >>> corpus.add_layer_meta("pos", layer_type="seq", on="words")
+        >>> doc = corpus.add_doc("This is a document.")
+        >>> layer = doc.add_layer("words", [[0,4], [5,7], [8,9], [10,18], [18,19]])
+        >>> layer = doc.add_layer("pos", ["DT", "VBZ", "DT", "NN", "."])
+        >>> list(doc.get_layer_ids())
+        ['text', 'words', 'pos']
+        """
+        return self.layers.keys()
 
     def __repr__(self):
         return "Document(" + repr(self.id) + ", " + repr(self.layers) + ")"
@@ -187,8 +205,8 @@ class Layer(ABC):
         pass
 
     @abstractmethod
-    def repr(self, doc:Document):
-        """Return the represented data values of the layer."""
+    def raw(self):
+        """Return the raw data values of the layer."""
         pass
 
     @abstractmethod
@@ -249,7 +267,7 @@ class CharacterLayer(Layer):
         """
         return []
 
-    def repr(self, doc:Document):
+    def raw(self):
         return self._text
 
     def text(self, doc:Document):
@@ -307,7 +325,7 @@ class SeqLayer(Layer):
         """
         return self.seq
 
-    def repr(self, doc:Document):
+    def raw(self):
         return self.seq
 
     def text(self, doc:Document):
@@ -373,7 +391,7 @@ class StandoffLayer(Layer):
         if self._meta.data is not None:
             return (s[2] for s in self._data)
 
-    def repr(self, doc:Document):
+    def raw(self):
         return self._data
 
     def text(self, doc:Document):
