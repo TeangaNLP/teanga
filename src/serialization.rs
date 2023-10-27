@@ -179,7 +179,6 @@ pub enum SerializeError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::BufWriter;
 
     #[test]
     fn test_deserialize_yaml() {
@@ -275,5 +274,11 @@ ecWc:
             "_meta:\n    text:\n        type: characters\n    tokens:\n        type: span\n        on: text\n_order: [\"ecWc\"]\necWc:\n    text: This is an example\n    tokens: [[0,4],[5,7],[8,10],[11,18]]\n");
     }
  
+    #[test]
+    fn test_1() {
+        let file = tempfile::tempdir().expect("Cannot create temp folder")
+            .path().to_str().unwrap().to_owned();
+        read_corpus_from_yaml_string("_meta:\n  text:\n    type: characters\nKjco:\n   text: This is a document.\n", &file).unwrap();
+    }
 }
 

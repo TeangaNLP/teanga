@@ -5,7 +5,7 @@ use pyo3::prelude::*;
 use std::collections::HashMap;
 use std::fmt::{self, Display, Formatter};
 use sled;
-use speedy::{Writable,Readable};
+use ciborium::{from_reader, into_writer};
 use sha2::{Digest, Sha256};
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
@@ -35,7 +35,7 @@ pub struct Corpus {
 }
 
 #[pyclass]
-#[derive(Debug,Clone,Readable,Writable,Serialize,Deserialize)]
+#[derive(Debug,Clone,Serialize,Deserialize)]
 /// A layer description
 struct LayerDesc {
     #[pyo3(get)]
@@ -74,18 +74,19 @@ impl Corpus {
     pub fn new(path : &str) -> TeangaResult<Corpus> {
         let db = open_db(path)?;
         let mut meta = HashMap::new();
+        eprintln!("Opening corpus");
         for m in db.scan_prefix(&[META_PREFIX]) {
             let (name, v) = m.map_err(|e| TeangaError::DBError(e))?;
-            let layer_desc = LayerDesc::read_from_buffer(v.as_ref()).
-                map_err(|e| TeangaError::DataError(e))?;
+            eprintln!("name: {}", std::str::from_utf8(name.as_ref()).unwrap());
+            let layer_desc = from_bytes::<LayerDesc>(v.as_ref())?;
             let name = std::str::from_utf8(name.as_ref())
                 .map_err(|_| TeangaError::UTFDataError)?.to_string();
             meta.insert(name, layer_desc);
         }
+        eprintln!("Order");
         let order = match db.get(ORDER_BYTES.to_vec())
             .map_err(|e| TeangaError::DBError(e))? {
-            Some(bytes) => Vec::read_from_buffer(bytes.as_ref()).
-                map_err(|e| TeangaError::DataError(e))?,
+            Some(bytes) => from_bytes::<Vec<String>>(bytes.as_ref())?,
             None => Vec::new()
         };
         Ok(Corpus {
@@ -168,8 +169,7 @@ impl Corpus {
             .map_err(|e| TeangaError::DBError(e))?
             .ok_or_else(|| TeangaError::ModelError(
                 format!("Document not found")))?;
-        let doc = Document::read_from_buffer(data.as_ref()).
-            map_err(|e| TeangaError::DataError(e))?;
+        let doc = from_bytes::<Document>(data.as_ref())?;
         let mut result = HashMap::new();
         for (key, layer) in doc.content {
             let layer_desc : &LayerDesc = self.meta.get(&key).
@@ -270,8 +270,8 @@ impl<'a> CorpusTransaction<'a> {
         let mut id_bytes = Vec::new();
         id_bytes.push(META_PREFIX);
         id_bytes.extend(name.clone().as_bytes());
-        self.db.insert(id_bytes, layer_desc.write_to_vec()
-            .map_err(|e| TeangaError::DataError(e))?).map_err(|e| TeangaError::DBError(e))?;
+        self.db.insert(id_bytes, to_stdvec(&layer_desc)?)
+            .map_err(|e| TeangaError::DBError(e))?;
 
         self.corpus.meta.insert(name.clone(), layer_desc);
          Ok(())
@@ -316,10 +316,10 @@ impl<'a> CorpusTransaction<'a> {
     
         self.corpus.order.push(id.clone());
 
-        self.db.insert(ORDER_BYTES.to_vec(), self.corpus.order.write_to_vec().
-            map_err(|e| TeangaError::DataError(e))?).map_err(|e| TeangaError::DBError(e))?;
+        self.db.insert(ORDER_BYTES.to_vec(), to_stdvec(&self.corpus.order)?)
+            .map_err(|e| TeangaError::DBError(e))?;
 
-        let data = doc.write_to_vec().map_err(|e| TeangaError::DataError(e))?;
+        let data = to_stdvec(&doc)?;
         let mut id_bytes = Vec::new();
         id_bytes.push(DOCUMENT_PREFIX);
         id_bytes.extend(id.as_bytes());
@@ -377,8 +377,8 @@ impl<'a> CorpusTransaction<'a> {
             self.corpus.order.remove(n);
             self.corpus.order.insert(n, new_id.clone());
 
-            self.db.insert(ORDER_BYTES.to_vec(), self.corpus.order.write_to_vec().
-                map_err(|e| TeangaError::DataError(e))?).map_err(|e| TeangaError::DBError(e))?;
+            self.db.insert(ORDER_BYTES.to_vec(), to_stdvec(&self.corpus.order)?).
+                map_err(|e| TeangaError::DBError(e))?;
 
             let mut old_id_bytes = Vec::new();
             old_id_bytes.push(DOCUMENT_PREFIX);
@@ -387,7 +387,7 @@ impl<'a> CorpusTransaction<'a> {
                 format!("Cannot remove document {}", e)))?;
         }
 
-        let data = doc.write_to_vec().map_err(|e| TeangaError::DataError(e))?;
+        let data = to_stdvec(&doc)?;
         let mut id_bytes = Vec::new();
         id_bytes.push(DOCUMENT_PREFIX);
         id_bytes.extend(new_id.as_bytes());
@@ -408,8 +408,8 @@ impl<'a> CorpusTransaction<'a> {
         self.db.remove(id_bytes).map_err(|e| TeangaError::ModelError(
             format!("Cannot remove document {}", e)))?;
         self.corpus.order.retain(|x| x != id);
-        self.db.insert(ORDER_BYTES.to_vec(), self.corpus.order.write_to_vec().
-            map_err(|e| TeangaError::DataError(e))?).map_err(|e| TeangaError::DBError(e))?;
+        self.db.insert(ORDER_BYTES.to_vec(), to_stdvec(&self.corpus.order)?).
+            map_err(|e| TeangaError::DBError(e))?;
         Ok(())
     }
 
@@ -419,18 +419,28 @@ impl<'a> CorpusTransaction<'a> {
             let mut id_bytes = Vec::new();
             id_bytes.push(META_PREFIX);
             id_bytes.extend(name.clone().as_bytes());
-            self.db.insert(id_bytes, layer_desc.write_to_vec()
-                .map_err(|e| TeangaError::DataError(e)).unwrap()).unwrap();
+            self.db.insert(id_bytes, to_stdvec(&layer_desc)?).
+                map_err(|e| TeangaError::DBError(e))?;
         }
         Ok(())
     }
 
     fn set_order(&mut self, order : Vec<String>) -> TeangaResult<()> {
         self.corpus.order = order;
-        self.db.insert(ORDER_BYTES.to_vec(), self.corpus.order.write_to_vec().
-            map_err(|e| TeangaError::DataError(e)).unwrap()).unwrap();
+        self.db.insert(ORDER_BYTES.to_vec(), to_stdvec(&self.corpus.order)?).
+            map_err(|e| TeangaError::DBError(e))?;
         Ok(())
     }
+}
+
+fn to_stdvec<T : Serialize>(t : &T) -> TeangaResult<Vec<u8>> {
+    let mut v = Vec::new();
+    into_writer(t,  &mut v).map_err(|e| TeangaError::DataError(e))?;
+    Ok(v)
+}
+
+fn from_bytes<T : serde::de::DeserializeOwned>(bytes : &[u8]) -> TeangaResult<T> {
+    from_reader(bytes).map_err(|e| TeangaError::DataError2(e))
 }
 
 fn open_db(path : &str) -> TeangaResult<sled::Db> {
@@ -472,7 +482,7 @@ fn gen_next_id(db : &sled::Db, u : &str) -> u32 {
     n
 }
 
-#[derive(Debug,Clone,Readable,Writable)]
+#[derive(Debug,Clone,Serialize,Deserialize)]
 /// A document object
 struct Document {
     content: HashMap<String, Layer>
@@ -486,7 +496,7 @@ impl Document {
     }
 }
 
-#[derive(Debug,Clone,Readable,Writable)]
+#[derive(Debug,Clone,Serialize,Deserialize)]
 enum Layer {
     Characters(String),
     Seq(Vec<u32>),
@@ -873,7 +883,7 @@ fn teanga_id(existing_keys : &Vec<String>, doc : &Document) -> String {
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Debug,Clone,PartialEq,Readable,Writable,Serialize,Deserialize)]
+#[derive(Debug,Clone,PartialEq,Serialize,Deserialize)]
 pub enum LayerType {
     characters,
     seq,
@@ -920,7 +930,7 @@ impl Display for LayerType {
     }
 }
 
-#[derive(Debug,Clone,PartialEq,Readable,Writable,Serialize,Deserialize)]
+#[derive(Debug,Clone,PartialEq,Serialize,Deserialize)]
 pub enum DataType {
     String,
     Enum(Vec<String>),
@@ -1038,8 +1048,10 @@ fn teangadb(_py: Python, m: &PyModule) -> PyResult<()> {
 pub enum TeangaError {
     #[error("DB read error: {0}")]
     DBError(#[from] sled::Error),
-    #[error("Data read error: {0}")]
-    DataError(#[from] speedy::Error),
+    #[error("Data error: {0}")]
+    DataError(#[from] ciborium::ser::Error<std::io::Error>),
+    #[error("Data error: {0}")]
+    DataError2(#[from] ciborium::de::Error<std::io::Error>),
     #[error("Data read error: UTF-8 String could not be decoded")]
     UTFDataError,
     #[error("Teanga model error: {0}")]

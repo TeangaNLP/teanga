@@ -379,7 +379,7 @@ Kjco:\\n    text: This is a document.\\n'
         >>> corpus.add_layer_meta("text")
         >>> doc = corpus.add_doc("This is a document.")
         >>> corpus.to_json_str()
-        '{"_meta": {"text": {"type": "characters"}}, \
+        '{"_meta": {"text": {"type": "characters"}}, "_order": ["Kjco"], \
 "Kjco": {"text": "This is a document."}}'
          """
         if self.corpus:
@@ -391,7 +391,9 @@ Kjco:\\n    text: This is a document.\\n'
 
     def _to_json(self, writer):
         dct = {}
-        dct["_meta"] = {name: _from_layer_desc(data) for name, data in self.meta.items()}
+        dct["_meta"] = {name: _from_layer_desc(data) 
+                        for name, data in self.meta.items()}
+        dct["_order"] = self.get_doc_ids()
         for doc_id, doc in self.docs:
             dct[doc_id] = {layer_id: doc.get_layer(layer_id).raw() 
                            for layer_id in doc.get_layer_ids()}
@@ -504,9 +506,9 @@ def read_yaml_str(yaml_str, db_file=None):
     Examples:
     ---------
     >>> corpus = read_yaml_str("_meta:\\n  text:\\n    type: characters\\n\
-Kjco:\\n   text: This is a document.", "tmp")
+Kjco:\\n   text: This is a document.\\n", "tmp")
     >>> corpus = read_yaml_str("_meta:\\n  text:\\n    type: characters\\n\
-Kjco:\\n   text: This is a document.")
+Kjco:\\n   text: This is a document.\\n")
     """
     if db_file:
         teangadb.read_corpus_from_yaml_string(yaml_str, db_file)
