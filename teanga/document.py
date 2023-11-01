@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Generator
 import numbers
 from itertools import chain, pairwise
+from collections import namedtuple
 
 class Document:
     """Document class for storing and processing text data."""
@@ -102,8 +103,9 @@ class Document:
 "pos": ["DT", "VBZ", "DT", "NN", "."]})
         """
         added = set(self.layers.keys())
+        n = len(added)
 
-        while len(added) < len(layers):
+        while len(added) < len(layers) + n:
             for name, data in layers.items():
                 if self.meta[name].on is None or self.meta[name].on in added:
                     self.add_layer(name, data)
@@ -188,6 +190,18 @@ class Document:
         ['text', 'words', 'pos']
         """
         return self.layers.keys()
+
+    def to_json(self) -> str:
+        """Return the JSON representation of the document."""
+        return {layer_id: self.layers[layer_id].raw()
+                for layer_id in self.layers.keys()}
+
+    @staticmethod
+    def from_json(json:dict, meta:dict, corpus=None, id=None) -> 'Document':
+        """Return a document from its JSON representation."""
+        doc = Document(meta, corpus, id)
+        doc.add_layers(json)
+        return doc
 
     def __repr__(self):
         return "Document(" + repr(self.id) + ", " + repr(self.layers) + ")"
