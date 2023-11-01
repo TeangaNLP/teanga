@@ -261,6 +261,10 @@ class Layer(ABC):
         """Return the number of annotations in the layer."""
         pass
 
+    def __getitem__(self, key):
+        """Return the annotation with the given index."""
+        return self.raw()[key]
+
 class CharacterLayer(Layer):
     """A layer of characters"""
     

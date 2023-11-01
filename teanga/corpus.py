@@ -137,7 +137,7 @@ class Corpus:
                 raise Exception("Invalid arguments, please specify the text " +
                                 "or use correct layer names.")
         else:
-            if set(kwargs.keys()) == set(char_layers):
+            if set(kwargs.keys()).issubset(set(char_layers)):
                 doc_id = teanga_id_for_doc(self.get_doc_ids(),
                                            **kwargs)
                 doc = Document(self.meta, id=doc_id, **kwargs)
@@ -398,7 +398,35 @@ Kjco:\\n    text: This is a document.\\n'
             dct[doc_id] = {layer_id: doc.get_layer(layer_id).raw() 
                            for layer_id in doc.get_layer_ids()}
         json.dump(dct, writer)
- 
+
+    def apply_service(self, service):
+        """Apply a service to each document in the corpus.
+
+        Parameters:
+        -----------
+        service:
+            The service to apply.
+
+        Examples:
+        ---------
+        >>> corpus = Corpus()
+        >>> corpus.add_layer_meta("text")
+        >>> corpus.add_layer_meta("first_char")
+        >>> doc = corpus.add_doc(text="This is a document.")
+        >>> from teanga.service import Service   
+        >>> class FirstCharService(Service):
+        ...     def requires(self):
+        ...         return {"text": "characters"}
+        ...     def produces(self):
+        ...         return {"first_char": "characters"}
+        ...     def execute(self, input):
+        ...         return input.add_layer("first_char",
+        ...                                input.get_layer("text")[0])
+        >>> corpus.apply_service(FirstCharService())
+        """
+        for doc in self.get_docs():
+            service.execute(doc)
+
 def _yaml_str(s):
     s = yaml.safe_dump(s)
     if s.endswith("\n...\n"):
