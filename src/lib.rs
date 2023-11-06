@@ -56,7 +56,10 @@ struct LayerDesc {
     target: Option<String>,
     #[pyo3(get)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    default: Option<Vec<String>>
+    default: Option<Vec<String>>,
+    #[pyo3(get)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    _uri: Option<String>
 }
 
 
@@ -107,11 +110,13 @@ impl Corpus {
     /// * `values` - The values for this layer
     /// * `target` - The target layer for this layer
     /// * `default` - The default values for this layer
+    /// * `uri` - The URI of metadata about this layer
     #[pyo3(name="add_layer_meta")]
     pub fn add_layer_meta(&mut self, name: String, layer_type: LayerType, 
         on: String, data: Option<DataType>, values: Option<Vec<String>>, 
-        target: Option<String>, default: Option<Vec<String>>) -> TeangaResult<()> {
-        CorpusTransaction::new(self)?.add_layer_meta(name, layer_type, on, data, values, target, default)
+        target: Option<String>, default: Option<Vec<String>>,
+        uri : Option<String>) -> TeangaResult<()> {
+        CorpusTransaction::new(self)?.add_layer_meta(name, layer_type, on, data, values, target, default, uri)
     }
 
     /// Add or update a document in the corpus
@@ -234,7 +239,8 @@ impl<'a> CorpusTransaction<'a> {
     /// * `default` - The default values for this layer
     pub fn add_layer_meta(&mut self, name: String, layer_type: LayerType, 
         on: String, data: Option<DataType>, values: Option<Vec<String>>, 
-        target: Option<String>, default: Option<Vec<String>>) -> TeangaResult<()> {
+        target: Option<String>, default: Option<Vec<String>>,
+        _uri : Option<String>) -> TeangaResult<()> {
         if layer_type == LayerType::characters && on != "" {
             return Err(TeangaError::ModelError(
                 format!("Layer {} of type characters cannot be based on another layer", name)))
@@ -264,7 +270,8 @@ impl<'a> CorpusTransaction<'a> {
             data,
             values,
             target,
-            default
+            default,
+            _uri
          };
 
         let mut id_bytes = Vec::new();
@@ -505,7 +512,8 @@ enum Layer {
     Element(Vec<(u32,u32)>),
     ElementNoData(Vec<u32>),
     Span(Vec<(u32,u32,u32)>),
-    SpanNoData(Vec<(u32,u32)>)
+    SpanNoData(Vec<(u32,u32)>),
+    MetaLayer(Vec<HashMap<String, Value>>)
 }
 
 impl Layer {
@@ -656,6 +664,9 @@ impl Layer {
                     result.push((*start, *end));
                 }
                 Ok(PyLayer::L2(result))
+            },
+            Layer::MetaLayer(val) => {
+                Ok(PyLayer::MetaLayer(val.clone()))
             }
         }
     }
@@ -762,7 +773,34 @@ impl Layer {
                     result.push((start, end, py_u32_str_into_u32(idx, link, metadata)?));
                 }
                 Ok(Layer::Span(result))
+            },
+            PyLayer::MetaLayer(vals) => {
+                Ok(Layer::MetaLayer(vals))
             }
+        }
+    }
+}
+
+#[derive(Debug,Clone,PartialEq, Serialize,Deserialize,FromPyObject)]
+/// Any valid JSON/YAML value
+pub enum Value {
+    Bool(bool),
+    Int(i32),
+    Float(f64),
+    String(String),
+    Array(Vec<Value>),
+    Object(HashMap<String, Value>)
+}
+
+impl IntoPy<PyObject> for Value {
+    fn into_py(self, py: Python) -> PyObject {
+        match self {
+            Value::Bool(val) => val.into_py(py),
+            Value::Int(val) => val.into_py(py),
+            Value::Float(val) => val.into_py(py),
+            Value::String(val) => val.into_py(py),
+            Value::Array(val) => val.into_py(py),
+            Value::Object(val) => val.into_py(py)
         }
     }
 }
@@ -778,7 +816,8 @@ pub enum PyLayer {
     LS(Vec<String>),
     L1S(Vec<(u32,String)>),
     L2S(Vec<(u32,u32,String)>),
-    L3S(Vec<(u32,u32,u32,String)>)
+    L3S(Vec<(u32,u32,u32,String)>),
+    MetaLayer(Vec<HashMap<String, Value>>)
 }
 
 impl IntoPy<PyObject> for PyLayer {
@@ -791,7 +830,8 @@ impl IntoPy<PyObject> for PyLayer {
             PyLayer::LS(val) => val.into_py(py),
             PyLayer::L1S(val) => val.into_py(py),
             PyLayer::L2S(val) => val.into_py(py),
-            PyLayer::L3S(val) => val.into_py(py)
+            PyLayer::L3S(val) => val.into_py(py),
+            PyLayer::MetaLayer(val) => val.into_py(py)
         }
     }
 }

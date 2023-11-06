@@ -246,9 +246,9 @@ ecWc:
             .path().to_str().unwrap().to_owned();
         let mut corpus = Corpus::new(&file).expect("Cannot load corpus");
         corpus.add_layer_meta("text".to_string(), crate::LayerType::characters,
-           String::new(), None, None, None, None).unwrap();
+           String::new(), None, None, None, None, None).unwrap();
         corpus.add_layer_meta("tokens".to_string(), crate::LayerType::span,
-            "text".to_string(), None, None, None, None).unwrap();
+            "text".to_string(), None, None, None, None, None).unwrap();
         let doc = HashMap::from_iter(vec![("text".to_string(), PyLayer::CharacterLayer("This is an example".to_string())),
                                            ("tokens".to_string(), PyLayer::L2(vec![(0, 4), (5, 7), (8, 10), (11, 18)]))]);
         corpus.add_doc(doc).unwrap();
@@ -262,9 +262,9 @@ ecWc:
             .path().to_str().unwrap().to_owned();
         let mut corpus = Corpus::new(&file).expect("Cannot load corpus");
         corpus.add_layer_meta("text".to_string(), crate::LayerType::characters,
-           String::new(), None, None, None, None).unwrap();
+           String::new(), None, None, None, None, None).unwrap();
         corpus.add_layer_meta("tokens".to_string(), crate::LayerType::span,
-            "text".to_string(), None, None, None, None).unwrap();
+            "text".to_string(), None, None, None, None, None).unwrap();
         let doc = HashMap::from_iter(vec![("text".to_string(), PyLayer::CharacterLayer("This is an example".to_string())),
                                            ("tokens".to_string(), PyLayer::L2(vec![(0, 4), (5, 7), (8, 10), (11, 18)]))]);
         corpus.add_doc(doc).unwrap();
