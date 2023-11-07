@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>teanga.document &#8212; Teanga 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=039e1c02" />
+    <script src="../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for teanga.document</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Description: This file contains the model class for the corpus.</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generator</span>
+<span class="kn">import</span> <span class="nn">numbers</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">chain</span><span class="p">,</span> <span class="n">pairwise</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
+
+<div class="viewcode-block" id="Document">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.Document">[docs]</a>
+<span class="k">class</span> <span class="nc">Document</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Document class for storing and processing text data.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">corpus</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">meta</span> <span class="o">=</span> <span class="n">meta</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layers</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">corpus</span> <span class="o">=</span> <span class="n">corpus</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="nb">id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_layers</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Document.add_layer">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.Document.add_layer">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Layer&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a layer to the document.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+<span class="sd">        name: str</span>
+<span class="sd">            Name of the layer.</span>
+<span class="sd">        value: str</span>
+<span class="sd">            Value of the layer.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        ---------</span>
+<span class="sd">        &gt;&gt;&gt; from teanga import Corpus</span>
+<span class="sd">        &gt;&gt;&gt; corpus = Corpus(&quot;tmp&quot;, new=True)</span>
+<span class="sd">        &gt;&gt;&gt; corpus.add_layer_meta(&quot;text&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; corpus.add_layer_meta(&quot;words&quot;, layer_type=&quot;span&quot;, on=&quot;text&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; corpus.add_layer_meta(&quot;pos&quot;, layer_type=&quot;seq&quot;, on=&quot;words&quot;, data=&quot;string&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; doc = corpus.add_doc(&quot;This is a document.&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; layer = doc.add_layer(&quot;words&quot;, [(0,4), (5,7), (8,9), (10,18), (18,19)])</span>
+<span class="sd">        &gt;&gt;&gt; layer = doc.add_layer(&quot;pos&quot;, [&quot;DT&quot;, &quot;VBZ&quot;, &quot;DT&quot;, &quot;NN&quot;, &quot;.&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; doc</span>
+<span class="sd">        Document(&#39;Kjco&#39;, {&#39;text&#39;: CharacterLayer(&#39;This is a document.&#39;), \</span>
+<span class="sd">&#39;words&#39;: SpanLayer([(0, 4), (5, 7), (8, 9), (10, 18), (18, 19)]), \</span>
+<span class="sd">&#39;pos&#39;: SeqLayer([&#39;DT&#39;, &#39;VBZ&#39;, &#39;DT&#39;, &#39;NN&#39;, &#39;.&#39;])})</span>
+<span class="sd">        &gt;&gt;&gt; corpus.get_doc_by_id(&quot;Kjco&quot;)</span>
+<span class="sd">        Document(&#39;Kjco&#39;, {&#39;text&#39;: CharacterLayer(&#39;This is a document.&#39;), \</span>
+<span class="sd">&#39;words&#39;: SpanLayer([(0, 4), (5, 7), (8, 9), (10, 18), (18, 19)]), \</span>
+<span class="sd">&#39;pos&#39;: SeqLayer([&#39;DT&#39;, &#39;VBZ&#39;, &#39;DT&#39;, &#39;NN&#39;, &#39;.&#39;])})</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Layer with name &quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot; does not exist.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">default</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">default</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">==</span> <span class="s2">&quot;characters&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">CharacterLayer</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">on</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Cannot add layer &quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot; because sublayer &quot;</span> <span class="o">+</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">on</span> <span class="o">+</span> <span class="s2">&quot; does not exist.&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">==</span> <span class="s2">&quot;seq&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Value of layer &quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot; must be a list.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">on</span><span class="p">]):</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Value of layer &quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot; must have the &quot;</span> <span class="o">+</span>
+                <span class="s2">&quot;same length as layer &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">on</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">SeqLayer</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">==</span> <span class="s2">&quot;span&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Value of layer &quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot; must be a list.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">SpanLayer</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">==</span> <span class="s2">&quot;div&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Value of layer &quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot; must be a list.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">DivLayer</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">==</span> <span class="s2">&quot;element&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Value of layer &quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot; must be a list.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">ElementLayer</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Unknown layer type &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">+</span> 
+            <span class="s2">&quot; for layer &quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">corpus</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
+            <span class="n">data_fields</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">layer</span><span class="o">.</span><span class="n">raw</span><span class="p">()</span>
+                           <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="n">layer</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">corpus</span><span class="o">.</span><span class="n">update_doc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">data_fields</span><span class="p">)</span>
+                     
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">name</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="Document.add_layers">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.Document.add_layers">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_layers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layers</span><span class="p">:</span><span class="nb">dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add multiple layers in one go.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+
+<span class="sd">        layers: dict</span>
+<span class="sd">            A dictionary of layer names and values.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        ---------</span>
+
+<span class="sd">        &gt;&gt;&gt; from teanga import Corpus</span>
+<span class="sd">        &gt;&gt;&gt; corpus = Corpus(&quot;tmp&quot;, new=True)</span>
+<span class="sd">        &gt;&gt;&gt; corpus.add_layer_meta(&quot;text&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; corpus.add_layer_meta(&quot;words&quot;, layer_type=&quot;span&quot;, on=&quot;text&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; corpus.add_layer_meta(&quot;pos&quot;, layer_type=&quot;seq&quot;, on=&quot;words&quot;, data=&quot;string&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; doc = corpus.add_doc(&quot;This is a document.&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; doc.add_layers({&quot;words&quot;: [(0,4), (5,7), (8,9), (10,18), (18,19)], \</span>
+<span class="sd">&quot;pos&quot;: [&quot;DT&quot;, &quot;VBZ&quot;, &quot;DT&quot;, &quot;NN&quot;, &quot;.&quot;]})</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">added</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">added</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">added</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span> <span class="o">+</span> <span class="n">n</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">layers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">on</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">on</span> <span class="ow">in</span> <span class="n">added</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+                    <span class="n">added</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">on</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> 
+                      <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">on</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">layers</span> 
+                      <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">on</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">added</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Cannot add layer &quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot; because sublayer &quot;</span> <span class="o">+</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">on</span> <span class="o">+</span> <span class="s2">&quot; does not exist.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Document.get_layer">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.Document.get_layer">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span><span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the value of a layer.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+
+<span class="sd">        name: str</span>
+<span class="sd">            The name of the layer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Layer with name &quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot; does not exist.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">name</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="Document.text_for_layer">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.Document.text_for_layer">[docs]</a>
+    <span class="k">def</span> <span class="nf">text_for_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">,</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the text for a layer.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+
+<span class="sd">        layer_name: str</span>
+<span class="sd">            The name of the layer.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">        --------</span>
+<span class="sd">        A generator that yields the text for the layer.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        ---------</span>
+<span class="sd">        &gt;&gt;&gt; from teanga import Corpus</span>
+<span class="sd">        &gt;&gt;&gt; corpus = Corpus()</span>
+<span class="sd">        &gt;&gt;&gt; corpus.add_layer_meta(&quot;text&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; corpus.add_layer_meta(&quot;words&quot;, layer_type=&quot;span&quot;, on=&quot;text&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; corpus.add_layer_meta(&quot;pos&quot;, layer_type=&quot;seq&quot;, on=&quot;words&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; doc = corpus.add_doc(&quot;This is a document.&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; layer = doc.add_layer(&quot;words&quot;, [[0,4], [5,7], [8,9], [10,18], [18,19]])</span>
+<span class="sd">        &gt;&gt;&gt; layer = doc.add_layer(&quot;pos&quot;, [&quot;DT&quot;, &quot;VBZ&quot;, &quot;DT&quot;, &quot;NN&quot;, &quot;.&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; list(doc.text_for_layer(&quot;text&quot;))</span>
+<span class="sd">        [&#39;T&#39;, &#39;h&#39;, &#39;i&#39;, &#39;s&#39;, &#39; &#39;, &#39;i&#39;, &#39;s&#39;, &#39; &#39;, &#39;a&#39;, &#39; &#39;, &#39;d&#39;, &#39;o&#39;, \</span>
+<span class="sd">&#39;c&#39;, &#39;u&#39;, &#39;m&#39;, &#39;e&#39;, &#39;n&#39;, &#39;t&#39;, &#39;.&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; list(doc.text_for_layer(&quot;words&quot;))</span>
+<span class="sd">        [&#39;This&#39;, &#39;is&#39;, &#39;a&#39;, &#39;document&#39;, &#39;.&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; list(doc.text_for_layer(&quot;pos&quot;))</span>
+<span class="sd">        [&#39;This&#39;, &#39;is&#39;, &#39;a&#39;, &#39;document&#39;, &#39;.&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">layer_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Layer with name &quot;</span> <span class="o">+</span> <span class="n">layer_name</span> <span class="o">+</span> <span class="s2">&quot; does not exist.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">layer_name</span><span class="p">]</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">==</span> <span class="s2">&quot;characters&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">layer_name</span><span class="p">]</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">text_layer</span> <span class="o">=</span> <span class="n">layer_name</span>
+            <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">text_layer</span><span class="p">]</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">!=</span> <span class="s2">&quot;characters&quot;</span><span class="p">:</span>
+                <span class="n">text_layer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">text_layer</span><span class="p">]</span><span class="o">.</span><span class="n">on</span>
+            <span class="n">indexes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">layer_name</span><span class="p">]</span><span class="o">.</span><span class="n">indexes</span><span class="p">(</span><span class="n">text_layer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">text_layer</span><span class="p">]</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="ow">in</span> <span class="n">indexes</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="Document.get_layer_ids">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.Document.get_layer_ids">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_layer_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return the ids of the layers in the document.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        ---------</span>
+
+<span class="sd">        &gt;&gt;&gt; from teanga import Corpus</span>
+<span class="sd">        &gt;&gt;&gt; corpus = Corpus()</span>
+<span class="sd">        &gt;&gt;&gt; corpus.add_layer_meta(&quot;text&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; corpus.add_layer_meta(&quot;words&quot;, layer_type=&quot;span&quot;, on=&quot;text&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; corpus.add_layer_meta(&quot;pos&quot;, layer_type=&quot;seq&quot;, on=&quot;words&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; doc = corpus.add_doc(&quot;This is a document.&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; layer = doc.add_layer(&quot;words&quot;, [[0,4], [5,7], [8,9], [10,18], [18,19]])</span>
+<span class="sd">        &gt;&gt;&gt; layer = doc.add_layer(&quot;pos&quot;, [&quot;DT&quot;, &quot;VBZ&quot;, &quot;DT&quot;, &quot;NN&quot;, &quot;.&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; list(doc.get_layer_ids())</span>
+<span class="sd">        [&#39;text&#39;, &#39;words&#39;, &#39;pos&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Document.to_json">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.Document.to_json">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the JSON representation of the document.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">layer_id</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">layer_id</span><span class="p">]</span><span class="o">.</span><span class="n">raw</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">layer_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">keys</span><span class="p">()}</span></div>
+
+
+<div class="viewcode-block" id="Document.from_json">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.Document.from_json">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">from_json</span><span class="p">(</span><span class="n">json</span><span class="p">:</span><span class="nb">dict</span><span class="p">,</span> <span class="n">meta</span><span class="p">:</span><span class="nb">dict</span><span class="p">,</span> <span class="n">corpus</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Document&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a document from its JSON representation.&quot;&quot;&quot;</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="n">Document</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">corpus</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
+        <span class="n">doc</span><span class="o">.</span><span class="n">add_layers</span><span class="p">(</span><span class="n">json</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">doc</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;Document(&quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span></div>
+
+
+<div class="viewcode-block" id="Layer">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.Layer">[docs]</a>
+<span class="k">class</span> <span class="nc">Layer</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A layer of annotation&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">meta</span><span class="p">:</span><span class="nb">dict</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_meta</span> <span class="o">=</span> <span class="n">meta</span>
+
+<div class="viewcode-block" id="Layer.data">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.Layer.data">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">:</span><span class="n">Document</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the data values of the layer.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="Layer.raw">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.Layer.raw">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">raw</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the raw data values of the layer.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="Layer.text">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.Layer.text">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">:</span><span class="n">Document</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the underlying text grouped by the annotations of this layer.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="Layer.text_data">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.Layer.text_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">text_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">:</span><span class="n">Document</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a list of pairs of the underlying text grouped by the </span>
+<span class="sd">        annotations of this layer and the data values of the layer.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">doc</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="n">doc</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Layer.indexes">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.Layer.indexes">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">indexes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">doc</span><span class="p">:</span><span class="n">Document</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the indexes of the annotations of this layer.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="Layer.data_indexes">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.Layer.data_indexes">[docs]</a>
+    <span class="k">def</span> <span class="nf">data_indexes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">doc</span><span class="p">:</span><span class="n">Document</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a list of pairs of the data values of the layer and </span>
+<span class="sd">        the indexes of the annotations of this layer.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        ---------</span>
+<span class="sd">        &gt;&gt;&gt; from .corpus import LayerDesc</span>
+<span class="sd">        &gt;&gt;&gt; layer = CharacterLayer(&quot;text&quot;, LayerDesc(layer_type=&quot;characters&quot;),</span>
+<span class="sd">        ...     &quot;This&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; list(layer.data_indexes(&quot;text&quot;, None))</span>
+<span class="sd">        []</span>
+<span class="sd">        &gt;&gt;&gt; layer = SeqLayer(&quot;words&quot;, LayerDesc(layer_type=&quot;seq&quot;, on=&quot;text&quot;),</span>
+<span class="sd">        ...     [&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; list(layer.data_indexes(&quot;words&quot;, None))</span>
+<span class="sd">        [((0, 1), &#39;A&#39;), ((1, 2), &#39;B&#39;), ((2, 3), &#39;C&#39;), ((3, 4), &#39;D&#39;)]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indexes</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">doc</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="n">doc</span><span class="p">))</span></div>
+
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the number of annotations in the layer.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the annotation with the given index.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw</span><span class="p">()[</span><span class="n">key</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="CharacterLayer">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.CharacterLayer">[docs]</a>
+<span class="k">class</span> <span class="nc">CharacterLayer</span><span class="p">(</span><span class="n">Layer</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A layer of characters&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">meta</span><span class="p">:</span><span class="nb">dict</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span><span class="nb">str</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">meta</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_text</span> <span class="o">=</span> <span class="n">text</span>
+
+<div class="viewcode-block" id="CharacterLayer.data">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.CharacterLayer.data">[docs]</a>
+    <span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">:</span><span class="n">Document</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the data values of the layer.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        ---------</span>
+<span class="sd">        &gt;&gt;&gt; layer = CharacterLayer(&quot;text&quot;, {&quot;layer_type&quot;: &quot;characters&quot;}, </span>
+<span class="sd">        ...     &quot;This is a document.&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; layer.data(None)</span>
+<span class="sd">        []</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="CharacterLayer.raw">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.CharacterLayer.raw">[docs]</a>
+    <span class="k">def</span> <span class="nf">raw</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_text</span></div>
+
+
+<div class="viewcode-block" id="CharacterLayer.text">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.CharacterLayer.text">[docs]</a>
+    <span class="k">def</span> <span class="nf">text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">:</span><span class="n">Document</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the underlying text grouped by the annotations of this layer.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        ---------</span>
+<span class="sd">        &gt;&gt;&gt; layer = CharacterLayer(&quot;text&quot;, {&quot;layer_type&quot;: &quot;characters&quot;},</span>
+<span class="sd">        ...     &quot;This is a document.&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; layer.text(None)</span>
+<span class="sd">        &#39;This is a document.&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_text</span></div>
+
+
+<div class="viewcode-block" id="CharacterLayer.indexes">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.CharacterLayer.indexes">[docs]</a>
+    <span class="k">def</span> <span class="nf">indexes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">doc</span><span class="p">:</span><span class="n">Document</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the indexes of the annotations of this layer.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        ---------</span>
+<span class="sd">        &gt;&gt;&gt; from .corpus import LayerDesc</span>
+<span class="sd">        &gt;&gt;&gt; layer = CharacterLayer(&quot;text&quot;, LayerDesc(layer_type=&quot;characters&quot;),</span>
+<span class="sd">        ...     &quot;This&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; list(layer.indexes(&quot;text&quot;, None))</span>
+<span class="sd">        [(0, 1), (1, 2), (2, 3), (3, 4)]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">layer</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Indexing on layer that is not a sublayer.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">zip</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_text</span><span class="p">)),</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_text</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;CharacterLayer(&quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_text</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_text</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SeqLayer">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.SeqLayer">[docs]</a>
+<span class="k">class</span> <span class="nc">SeqLayer</span><span class="p">(</span><span class="n">Layer</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A layer that is in one-to-one correspondence with its sublayer.</span>
+<span class="sd">    Typical examples are POS tags, lemmas, etc.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">meta</span><span class="p">:</span><span class="nb">dict</span><span class="p">,</span> <span class="n">seq</span><span class="p">:</span><span class="nb">list</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">meta</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seq</span> <span class="o">=</span> <span class="n">seq</span>
+
+<div class="viewcode-block" id="SeqLayer.data">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.SeqLayer.data">[docs]</a>
+    <span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">:</span><span class="n">Document</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the data values of the layer.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        ---------</span>
+<span class="sd">        &gt;&gt;&gt; layer = SeqLayer(&quot;words&quot;, {&quot;layer_type&quot;: &quot;seq&quot;, &quot;on&quot;: &quot;text&quot;}, </span>
+<span class="sd">        ...     [&quot;This&quot;, &quot;is&quot;, &quot;a&quot;, &quot;document&quot;, &quot;.&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; layer.data(None)</span>
+<span class="sd">        [&#39;This&#39;, &#39;is&#39;, &#39;a&#39;, &#39;document&#39;, &#39;.&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq</span></div>
+
+
+<div class="viewcode-block" id="SeqLayer.raw">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.SeqLayer.raw">[docs]</a>
+    <span class="k">def</span> <span class="nf">raw</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq</span></div>
+
+
+<div class="viewcode-block" id="SeqLayer.text">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.SeqLayer.text">[docs]</a>
+    <span class="k">def</span> <span class="nf">text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">:</span><span class="n">Document</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the underlying text grouped by the annotations of this layer.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        ---------</span>
+<span class="sd">        &gt;&gt;&gt; from .corpus import LayerDesc</span>
+<span class="sd">        &gt;&gt;&gt; doc = Document({&quot;text&quot;: LayerDesc(layer_type=&quot;characters&quot;),</span>
+<span class="sd">        ... &quot;words&quot;: LayerDesc(layer_type=&quot;seq&quot;, on=&quot;text&quot;)},</span>
+<span class="sd">        ... text=&quot;This&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; layer = doc.add_layer(&quot;words&quot;, [&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; list(layer.text(doc))</span>
+<span class="sd">        [&#39;T&#39;, &#39;h&#39;, &#39;i&#39;, &#39;s&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">doc</span><span class="o">.</span><span class="n">text_for_layer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SeqLayer.indexes">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.SeqLayer.indexes">[docs]</a>
+    <span class="k">def</span> <span class="nf">indexes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">doc</span><span class="p">:</span><span class="n">Document</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the indexes of the annotations of this layer.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        ---------</span>
+<span class="sd">        &gt;&gt;&gt; from .corpus import LayerDesc</span>
+<span class="sd">        &gt;&gt;&gt; doc = Document({&quot;text&quot;: LayerDesc(layer_type=&quot;characters&quot;),</span>
+<span class="sd">        ... &quot;words&quot;: LayerDesc(layer_type=&quot;seq&quot;, on=&quot;text&quot;)},</span>
+<span class="sd">        ... text=&quot;This&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; layer = doc.add_layer(&quot;words&quot;, [&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; list(layer.indexes(&quot;words&quot;, doc))</span>
+<span class="sd">        [(0, 1), (1, 2), (2, 3), (3, 4)]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">layer</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seq</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">doc</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_meta</span><span class="o">.</span><span class="n">on</span><span class="p">]</span><span class="o">.</span><span class="n">indexes</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">doc</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;SeqLayer(&quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="StandoffLayer">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.StandoffLayer">[docs]</a>
+<span class="k">class</span> <span class="nc">StandoffLayer</span><span class="p">(</span><span class="n">Layer</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Common superclass of span, div and element layers. Cannot be used</span>
+<span class="sd">    directly&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="StandoffLayer.data">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.StandoffLayer.data">[docs]</a>
+    <span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">:</span><span class="n">Document</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the data values of the layer.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        ---------</span>
+<span class="sd">        &gt;&gt;&gt; from .corpus import LayerDesc</span>
+<span class="sd">        &gt;&gt;&gt; doc = Document({&quot;text&quot;: LayerDesc(layer_type=&quot;characters&quot;),</span>
+<span class="sd">        ... &quot;words&quot;: LayerDesc(layer_type=&quot;span&quot;, on=&quot;text&quot;, data=&quot;string&quot;)},</span>
+<span class="sd">        ... text=&quot;This is an example.&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; layer = doc.add_layer(&quot;words&quot;, [[0,4,&quot;A&quot;], [5,7,&quot;B&quot;], [8,10,&quot;C&quot;], </span>
+<span class="sd">        ... [11,18,&quot;D&quot;]])</span>
+<span class="sd">        &gt;&gt;&gt; list(layer.data(doc))</span>
+<span class="sd">        [&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meta</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="StandoffLayer.raw">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.StandoffLayer.raw">[docs]</a>
+    <span class="k">def</span> <span class="nf">raw</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span></div>
+
+
+<div class="viewcode-block" id="StandoffLayer.text">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.StandoffLayer.text">[docs]</a>
+    <span class="k">def</span> <span class="nf">text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">:</span><span class="n">Document</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the underlying text grouped by the annotations of this layer.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        ---------</span>
+<span class="sd">        &gt;&gt;&gt; from .corpus import LayerDesc</span>
+<span class="sd">        &gt;&gt;&gt; doc = Document({&quot;text&quot;: LayerDesc(layer_type=&quot;characters&quot;),</span>
+<span class="sd">        ... &quot;words&quot;: LayerDesc(layer_type=&quot;span&quot;, on=&quot;text&quot;, data=&quot;string&quot;)}, </span>
+<span class="sd">        ... text=&quot;This is an example.&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; layer = doc.add_layer(&quot;words&quot;, [[0,4,&quot;A&quot;], [5,7,&quot;B&quot;], [8,10,&quot;C&quot;], </span>
+<span class="sd">        ... [11,18,&quot;D&quot;]])</span>
+<span class="sd">        &gt;&gt;&gt; list(layer.text(doc))</span>
+<span class="sd">        [&#39;This&#39;, &#39;is&#39;, &#39;an&#39;, &#39;example&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">doc</span><span class="o">.</span><span class="n">text_for_layer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SpanLayer">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.SpanLayer">[docs]</a>
+<span class="k">class</span> <span class="nc">SpanLayer</span><span class="p">(</span><span class="n">StandoffLayer</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A layer that defines spans of the sublayer which are annotated.</span>
+<span class="sd">    Typical examples are tokens, named entities, chunks, etc.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">meta</span><span class="p">:</span><span class="nb">dict</span><span class="p">,</span> <span class="n">spans</span><span class="p">:</span><span class="nb">list</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">meta</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">spans</span>
+        <span class="k">for</span> <span class="n">span</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span> 
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">span</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Integral</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Bad span data: &quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">span</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">span</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Integral</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Bad span data: &quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">span</span><span class="p">))</span>
+
+<div class="viewcode-block" id="SpanLayer.indexes">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.SpanLayer.indexes">[docs]</a>
+    <span class="k">def</span> <span class="nf">indexes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">doc</span><span class="p">:</span><span class="n">Document</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the indexes of the annotations of this layer.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        ---------</span>
+<span class="sd">        &gt;&gt;&gt; from .corpus import LayerDesc</span>
+<span class="sd">        &gt;&gt;&gt; doc = Document({&quot;text&quot;: LayerDesc(layer_type=&quot;characters&quot;),</span>
+<span class="sd">        ... &quot;words&quot;: LayerDesc(layer_type=&quot;span&quot;, on=&quot;text&quot;, data=&quot;string&quot;)},</span>
+<span class="sd">        ... text=&quot;This is an example.&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; layer = doc.add_layer(&quot;words&quot;, [[0,4,&quot;A&quot;], [5,7,&quot;B&quot;], [8,10,&quot;C&quot;], </span>
+<span class="sd">        ... [11,18,&quot;D&quot;]])</span>
+<span class="sd">        &gt;&gt;&gt; list(layer.indexes(&quot;words&quot;, doc))</span>
+<span class="sd">        [(0, 1), (1, 2), (2, 3), (3, 4)]</span>
+<span class="sd">        &gt;&gt;&gt; list(layer.indexes(&quot;text&quot;, doc))</span>
+<span class="sd">        [(0, 4), (5, 7), (8, 10), (11, 18)]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">layer</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">zip</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)),</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">layer</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meta</span><span class="o">.</span><span class="n">on</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">((</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">subindexes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_meta</span><span class="o">.</span><span class="n">on</span><span class="p">]</span><span class="o">.</span><span class="n">indexes</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">doc</span><span class="p">))</span>
+            <span class="k">return</span> <span class="p">((</span><span class="n">subindexes</span><span class="p">[</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">subindexes</span><span class="p">[</span><span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;SpanLayer(&quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span></div>
+
+
+<div class="viewcode-block" id="DivLayer">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.DivLayer">[docs]</a>
+<span class="k">class</span> <span class="nc">DivLayer</span><span class="p">(</span><span class="n">StandoffLayer</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A layer where the sublayer is divided into non-overlapping parts.</span>
+<span class="sd">    As such these layers have only a start index for each annotation, and that</span>
+<span class="sd">    annotation spans until the next annotation&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">meta</span><span class="p">:</span><span class="nb">dict</span><span class="p">,</span> <span class="n">spans</span><span class="p">:</span><span class="nb">list</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">meta</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">spans</span>
+        <span class="k">for</span> <span class="n">span</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span> 
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">span</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Integral</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Bad span data: &quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">span</span><span class="p">))</span>
+
+<div class="viewcode-block" id="DivLayer.indexes">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.DivLayer.indexes">[docs]</a>
+    <span class="k">def</span> <span class="nf">indexes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">doc</span><span class="p">:</span><span class="n">Document</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the indexes of the annotations of this layer.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        ---------</span>
+<span class="sd">        &gt;&gt;&gt; from .corpus import LayerDesc</span>
+<span class="sd">        &gt;&gt;&gt; doc = Document({&quot;text&quot;: LayerDesc(layer_type=&quot;characters&quot;),</span>
+<span class="sd">        ... &quot;sentences&quot;: LayerDesc(layer_type=&quot;div&quot;, on=&quot;text&quot;)},</span>
+<span class="sd">        ... text=&quot;This is an example. This is another example.&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; layer = doc.add_layer(&quot;sentences&quot;, [[0], [19]])</span>
+<span class="sd">        &gt;&gt;&gt; list(layer.indexes(&quot;sentences&quot;, doc))</span>
+<span class="sd">        [(0, 1), (1, 2)]</span>
+<span class="sd">        &gt;&gt;&gt; list(layer.indexes(&quot;text&quot;, doc))</span>
+<span class="sd">        [(0, 19), (19, 44)]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">layer</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">zip</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)),</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">layer</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meta</span><span class="o">.</span><span class="n">on</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pairwise</span><span class="p">(</span><span class="n">chain</span><span class="p">((</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">),</span> 
+                                  <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_meta</span><span class="o">.</span><span class="n">on</span><span class="p">])]))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">subindexes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_meta</span><span class="o">.</span><span class="n">on</span><span class="p">]</span><span class="o">.</span><span class="n">indexes</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">doc</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">pairwise</span><span class="p">(</span><span class="n">chain</span><span class="p">((</span><span class="n">subindexes</span><span class="p">[</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">),</span> 
+                                  <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_meta</span><span class="o">.</span><span class="n">on</span><span class="p">])]))</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;DivLayer(&quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span></div>
+
+
+<div class="viewcode-block" id="ElementLayer">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.ElementLayer">[docs]</a>
+<span class="k">class</span> <span class="nc">ElementLayer</span><span class="p">(</span><span class="n">StandoffLayer</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A layer where each annotation is an element of the sublayer. This allows</span>
+<span class="sd">    for multiple annotations of a single element. Typical examples are</span>
+<span class="sd">    metadata elements such a titles&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">meta</span><span class="p">:</span><span class="nb">dict</span><span class="p">,</span> <span class="n">spans</span><span class="p">:</span><span class="nb">list</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">meta</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">spans</span>
+        <span class="k">for</span> <span class="n">span</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span> 
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">span</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Integral</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Bad span data: &quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">span</span><span class="p">))</span>
+
+<div class="viewcode-block" id="ElementLayer.indexes">
+<a class="viewcode-back" href="../../teanga.html#teanga.document.ElementLayer.indexes">[docs]</a>
+    <span class="k">def</span> <span class="nf">indexes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">doc</span><span class="p">:</span><span class="n">Document</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the indexes of the annotations of this layer.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        ---------</span>
+<span class="sd">        &gt;&gt;&gt; from .corpus import LayerDesc</span>
+<span class="sd">        &gt;&gt;&gt; doc = Document({&quot;text&quot;: LayerDesc(layer_type=&quot;characters&quot;),</span>
+<span class="sd">        ... &quot;alts&quot;: LayerDesc(layer_type=&quot;element&quot;, on=&quot;text&quot;, data=&quot;string&quot; )},</span>
+<span class="sd">        ... text=&quot;Tá sé seo mar shampla.&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; layer = doc.add_layer(&quot;alts&quot;, [[1, &quot;́a&quot;], [4, &quot;́e&quot;]])</span>
+<span class="sd">        &gt;&gt;&gt; list(layer.indexes(&quot;alts&quot;, doc))</span>
+<span class="sd">        [(0, 1), (1, 2)]</span>
+<span class="sd">        &gt;&gt;&gt; list(layer.indexes(&quot;text&quot;, doc))</span>
+<span class="sd">        [(1, 2), (4, 5)]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">layer</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">zip</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)),</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">layer</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meta</span><span class="o">.</span><span class="n">on</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">((</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">subindexes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_meta</span><span class="o">.</span><span class="n">on</span><span class="p">]</span><span class="o">.</span><span class="n">indexes</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">doc</span><span class="p">))</span>
+            <span class="k">return</span> <span class="p">((</span><span class="n">subindexes</span><span class="p">[</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">subindexes</span><span class="p">[</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;ElementLayer(&quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span></div>
+
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">Teanga</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, John P McCrae.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
