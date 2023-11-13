@@ -41,8 +41,6 @@ jobs:
       run: |
         python -m pip install teanga --no-index --find-links dist --force-reinstall
         echo "import sys; print(sys.path)" | python
-        ls /usr/lib/python3/dist-packages/
-        ls /usr/local/lib/python3.10/dist-packages/
-        ls /usr/lib/python3.10/lib-dynload
-        cp /usr/local/lib/python3.10/dist-packages/teanga/_db* python/teanga/
+        ls /opt/hostedtoolcache/Python/3.10.13/x64/lib/python3.10/site-packages
+        cp /opt/hostedtoolcache/Python/3.10.13/x64/lib/python3.10/site-packages/teanga/_db* python/teanga/
         python -m pytest --doctest-modules
