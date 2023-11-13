@@ -40,5 +40,9 @@ jobs:
     - name: Test with pytest
       run: |
         python -m pip install teanga --no-index --find-links dist --force-reinstall
+        ls /usr/local/lib
+        ls /usr/local/lib/python3.10
+        ls /usr/local/lib/python3.10/dist-packages
+        ls /usr/local/lib/python3.10/dist-packages/teanga/
         cp /usr/local/lib/python3.10/dist-packages/teanga/_db* python/teanga/
         python -m pytest --doctest-modules
