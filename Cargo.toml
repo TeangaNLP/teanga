@@ -2,11 +2,19 @@
 name = "teanga"
 version = "0.1.0"
 edition = "2021"
+include = [
+    "/pyproject.toml",
+    "/src",
+    "/python/teanga"
+]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 name = "teangadb"
 crate-type = ["cdylib"]
+
+[features]
+extension-module = ["pyo3/extension-module"]
 
 [dependencies]
 pyo3 = "0.19.0"

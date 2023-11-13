@@ -1,6 +1,6 @@
 from .document import Document
 from .utils import teanga_id_for_doc
-import teangadb
+import teanga._db as teangadb
 import shutil
 import os
 from collections import namedtuple

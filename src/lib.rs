@@ -1070,7 +1070,7 @@ fn read_corpus_from_json_file(json : &str, path: &str) -> PyResult<Corpus> {
 
 /// A Python module implemented in Rust.
 #[pymodule]
-#[pyo3(name="teangadb")]
+#[pyo3(name="_db")]
 fn teangadb(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Corpus>()?;
     m.add_function(wrap_pyfunction!(read_corpus_from_json_string, m)?)?;
