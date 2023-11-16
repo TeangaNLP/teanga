@@ -7,6 +7,7 @@ from collections import namedtuple
 import json
 import yaml
 from io import StringIO
+from itertools import chain
 
 LayerDesc = namedtuple("LayerDesc",
                        ["layer_type", "on", "data", "values", "target", "default"],
@@ -32,6 +33,39 @@ class Corpus:
             self.corpus = None
             self.meta = {}
             self.docs = []
+
+
+    def add_meta_from_service(self, service):
+        """Add the meta data of a service to the corpus. This is normally 
+        required to call apply to a service
+
+        Parameters:
+        -----------
+        service:
+            The service to add.
+
+        Examples:
+        ---------
+        >>> corpus = Corpus()
+        >>> class ExampleService:
+        ...     def requires(self):
+        ...         return {"text": {"type": "characters"}}
+        ...     def produces(self):
+        ...         return {"first_char": {"type": "characters"}}
+        >>> corpus.add_meta_from_service(ExampleService())
+        """
+        for name, layer in chain(service.requires().items(), 
+                                 service.produces().items()):
+            if "type" not in layer:
+                raise Exception("Layer type not specified." + str(layer))
+            layer["layer_type"] = layer["type"]
+            del layer["type"]
+            desc = LayerDesc(**layer)
+            if name in self.meta and self.meta[name] != desc:
+                raise Exception("Layer with name " + name +
+                                " already exists with different meta.")
+            self.meta[name] = desc
+
 
     def add_layer_meta(self, name:str=None,
                   layer_type:str="characters", on:str=None, 
@@ -399,7 +433,7 @@ Kjco:\\n    text: This is a document.\\n'
                            for layer_id in doc.get_layer_ids()}
         json.dump(dct, writer)
 
-    def apply_service(self, service):
+    def apply(self, service):
         """Apply a service to each document in the corpus.
 
         Parameters:
@@ -416,14 +450,15 @@ Kjco:\\n    text: This is a document.\\n'
         >>> from teanga.service import Service   
         >>> class FirstCharService(Service):
         ...     def requires(self):
-        ...         return {"text": "characters"}
+        ...         return {"text": { "type": "characters"}}
         ...     def produces(self):
-        ...         return {"first_char": "characters"}
+        ...         return {"first_char": {"type": "characters"}}
         ...     def execute(self, input):
         ...         return input.add_layer("first_char",
         ...                                input.get_layer("text")[0])
         >>> corpus.apply_service(FirstCharService())
         """
+        self.add_meta_from_service(service)
         for doc in self.get_docs():
             service.execute(doc)
 
