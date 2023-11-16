@@ -456,7 +456,7 @@ Kjco:\\n    text: This is a document.\\n'
         ...     def execute(self, input):
         ...         return input.add_layer("first_char",
         ...                                input.get_layer("text")[0])
-        >>> corpus.apply_service(FirstCharService())
+        >>> corpus.apply(FirstCharService())
         """
         self.add_meta_from_service(service)
         for doc in self.get_docs():
