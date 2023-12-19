@@ -31,7 +31,7 @@ class RESTService(Service):
     """An external service implemented in REST"""
 
     def __init__(self, endpoint):
-        """Creates a new REST service with the given endpoint."""
+        """Creates a new REST service reading from the given endpoint."""
         super().__init__()
         self.endpoint = endpoint
         self._requires = None
@@ -55,3 +55,24 @@ class RESTService(Service):
         """Executes this service on a document."""
         r = requests.post(self.endpoint, json=input.to_json())
         return input.add_layers(r.json())
+
+def rest_service(service, kwargs):
+    """Start a service as a rest service."""
+    from flask import Flask, request, jsonify
+    app = Flask(__name__)
+
+    @app.route("/", methods=["GET"])
+    def get():
+        if request.args.get("requires"):
+            return jsonify(service.requires())
+        elif request.args.get("produces"):
+            return jsonify(service.produces())
+        else:
+            return "Hello, World!"
+
+    @app.route("/", methods=["POST"])
+    def post():
+        doc = Document.from_json(request.json)
+        return jsonify(service.execute(doc).to_json())
+
+    app.run(**kwargs)
