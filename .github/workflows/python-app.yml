@@ -44,3 +44,12 @@ jobs:
         # copy the Rust code to the source folder to run the tests
         cp /opt/hostedtoolcache/Python/3.10.13/x64/lib/python3.10/site-packages/teanga/_db* python/teanga/
         python -m pytest --doctest-modules
+    - name: Update automatic release
+      uses: marvinpinto/action-automatic-releases@latest
+      with:
+          repo_token: ${{secrets.GITHUB_TOKEN}}
+          automatic_release_tag: "dev-latest"
+          prerelease: true
+          title: "Latest Version"
+          files: |
+            dist/teanga-0.1.0-cp310-cp310-manylinux_2_34_x86_64.whl
