@@ -5,6 +5,15 @@
 Teanga is a database and system designed for NLP with pretrained language
 models.
 
+## Compiling
+
+This module can be compiled with [maturin](https://github.com/PyO3/maturin) as 
+follows
+
+```bash
+maturin develop
+```
+
 ## Teanga 2 Data Model
 
 The core idea of Teanga2 is the data model which descibes how the data is 

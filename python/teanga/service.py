@@ -57,7 +57,7 @@ class RESTService(Service):
         return input.add_layers(r.json())
 
 def rest_service(service, kwargs):
-    """Start a service as a rest service."""
+    """Start a service as a REST service."""
     from flask import Flask, request, jsonify
     app = Flask(__name__)
 
