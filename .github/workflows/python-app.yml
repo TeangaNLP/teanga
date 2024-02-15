@@ -35,7 +35,7 @@ jobs:
       uses: marvinpinto/action-automatic-releases@latest
       with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "dev-latest"
+          automatic_release_tag: "dev-latest-linux"
           prerelease: true
           title: "Latest Version"
           files: |
@@ -64,7 +64,7 @@ jobs:
       uses: marvinpinto/action-automatic-releases@latest
       with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "dev-latest"
+          automatic_release_tag: "dev-latest-windows"
           prerelease: true
           title: "Latest Version"
           files: |
@@ -93,7 +93,7 @@ jobs:
       uses: marvinpinto/action-automatic-releases@latest
       with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "dev-latest"
+          automatic_release_tag: "dev-latest-macos"
           prerelease: true
           title: "Latest Version"
           files: |
