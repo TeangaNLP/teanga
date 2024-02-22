@@ -134,7 +134,7 @@ order of the documents in the text.
 Each document is indexed by initial characters
 the Base64 encoding of the SHA-256 of the UTF-8 representation of the text. The 
 text representation consists of all character layers ordered by their key with
-the key appended before the text. Keys and text should by a zero byte (`\u0000`). 
+the key appended before the text. Keys and text should be separated by a zero byte (`\u0000`). 
 For example the following document:
 
 ```yaml
@@ -145,8 +145,11 @@ de: Guten Tag!
 The string to encode is as follows:
 
 ```python
->>> rep = "de\x00Guten Tag!\x00en\x00Hello!\x00"
->>> b64encode(sha256(rep.encode("utf-8")).digest()).decode("ascii")
+from base64 import b64encode
+from hashlib import sha256
+
+rep = "de\x00Guten Tag!\x00en\x00Hello!\x00"
+b64encode(sha256(rep.encode("utf-8")).digest()).decode("ascii")
 'SpKHmfUJ1IkFXito5Me/ssLZ0Xx+ma5jjXTDb2qXs88='
 ```
 
