@@ -5,14 +5,16 @@
 Teanga is a database and system designed for NLP with pretrained language
 models.
 
-## Compiling
+## Install
 
-This module can be compiled with [maturin](https://github.com/PyO3/maturin) as 
-follows
+Install with `pip` as follows:
 
 ```bash
-maturin develop
+pip install git+https://github.com/teangaNLP/teanga2
 ```
+
+For persistent storage, you can install the Rust version from https://github.com/teangaNLP/teanga.rs
+
 
 ## Teanga 2 Data Model
 
