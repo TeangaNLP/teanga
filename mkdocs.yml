@@ -1,0 +1,8 @@
+site_name: Teanga
+site_url: https://teangaNLP.github.io/teanga2
+site_description: Teanga is a platform for the development of NLP workflows
+nav:
+  - Home: index.md
+plugins:
+- mkdocstrings
+
