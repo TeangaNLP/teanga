@@ -1,6 +1,10 @@
 from .document import Document
 from .utils import teanga_id_for_doc
-import teanga._db as teangadb
+try:
+    import teanga._db as teangadb
+    TEANGA_DB = True
+except ImportError:
+    TEANGA_DB = False
 import shutil
 import os
 from collections import namedtuple
@@ -25,6 +29,8 @@ class Corpus:
     """
     def __init__(self, db=None, new=False):
         if db:
+            if not TEANGA_DB:
+                teanga_db_fail()
             if new and os.path.exists(db):
                 shutil.rmtree(db)
             self.corpus = teangadb.Corpus(db)
@@ -136,9 +142,10 @@ class Corpus:
         >>> corpus.add_layer_meta("nl", layer_type="characters")
         >>> doc = corpus.add_doc(en="This is a document.", nl="Dit is een document.")
 
-        >>> corpus = Corpus("tmp",new=True)
-        >>> corpus.add_layer_meta("text")
-        >>> doc = corpus.add_doc("This is a document.")
+        >>> if TEANGA_DB:
+        ...   corpus = Corpus("tmp",new=True)
+        ...   corpus.add_layer_meta("text")
+        ...   doc = corpus.add_doc("This is a document.")
 
         """
         char_layers = [name for (name, layer) in self.get_meta().items()
@@ -201,13 +208,6 @@ class Corpus:
         >>> doc = corpus.add_doc("This is a document.")
         >>> list(corpus.get_layers("text"))
         [CharacterLayer('This is a document.')]
-
-        >>> corpus = Corpus("tmp", new=True)
-        >>> corpus.add_layer_meta("text")
-        >>> doc = corpus.add_doc("This is a document.")
-        >>> list(corpus.get_layers("text"))
-        [CharacterLayer('This is a document.')]
-
         """
         if layer not in self.meta:
             raise Exception("Layer with name " + layer + " does not exist.")
@@ -219,11 +219,6 @@ class Corpus:
         Examples:
         ---------
         >>> corpus = Corpus()
-        >>> corpus.add_layer_meta("text")
-        >>> doc = corpus.add_doc("This is a document.")
-        >>> corpus.get_doc_ids()
-        ['Kjco']
-        >>> corpus = Corpus("tmp",new=True)
         >>> corpus.add_layer_meta("text")
         >>> doc = corpus.add_doc("This is a document.")
         >>> corpus.get_doc_ids()
@@ -240,12 +235,6 @@ class Corpus:
         Examples:
         ---------
         >>> corpus = Corpus()
-        >>> corpus.add_layer_meta("text")
-        >>> doc = corpus.add_doc("This is a document.")
-        >>> list(corpus.get_docs())
-        [Document('Kjco', {'text': CharacterLayer('This is a document.')})]
-
-        >>> corpus = Corpus("tmp",new=True)
         >>> corpus.add_layer_meta("text")
         >>> doc = corpus.add_doc("This is a document.")
         >>> list(corpus.get_docs())
@@ -276,11 +265,10 @@ class Corpus:
         >>> corpus.get_doc_by_id("Kjco")
         Document('Kjco', {'text': CharacterLayer('This is a document.')})
 
-        >>> corpus = Corpus("tmp",new=True)
-        >>> corpus.add_layer_meta("text")
-        >>> doc = corpus.add_doc("This is a document.")
-        >>> corpus.get_doc_by_id("Kjco")
-        Document('Kjco', {'text': CharacterLayer('This is a document.')})
+        >>> if TEANGA_DB:
+        ...   corpus = Corpus("tmp",new=True)
+        ...   corpus.add_layer_meta("text")
+        ...   doc = corpus.add_doc("This is a document.")
         """
         if self.corpus:
             return Document(self.meta, id=doc_id, **self.corpus.get_doc_by_id(doc_id))
@@ -325,13 +313,6 @@ target=None, default=None)}
 
         Examples:
         ---------
-        >>> corpus = Corpus("tmp",new=True)
-        >>> corpus.add_layer_meta("text")
-        >>> doc = corpus.add_doc("This is a document.")
-        >>> corpus.to_yaml_str()
-        '_meta:\\n    text:\\n        type: characters\\n_order: ["Kjco"]\
-\\nKjco:\\n    text: This is a document.\\n'
-
         >>> corpus = Corpus()
         >>> corpus.add_layer_meta("text")
         >>> doc = corpus.add_doc("This is a document.")
@@ -401,13 +382,6 @@ Kjco:\\n    text: This is a document.\\n'
 
         Examples:
         ---------
-
-        >>> corpus = Corpus("tmp",new=True)
-        >>> corpus.add_layer_meta("text")
-        >>> doc = corpus.add_doc("This is a document.")
-        >>> corpus.to_json_str()
-        '{"_meta":{"text":{"type":"characters"}},"_order":["Kjco"],\
-"Kjco":{"text":"This is a document."}}'
 
         >>> corpus = Corpus()
         >>> corpus.add_layer_meta("text")
@@ -510,12 +484,15 @@ def read_json_str(json_str, db_file=None):
     Examples:
     ---------
 
-    >>> corpus = read_json_str('{"_meta": {"text": {"type": \
+    >>> if TEANGA_DB:
+    ...   corpus = read_json_str('{"_meta": {"text": {"type": \
 "characters"}},"Kjco": {"text": "This is a document."}}', "tmp")
     >>> corpus = read_json_str('{"_meta": {"text": {"type": \
 "characters"}},"Kjco": {"text": "This is a document."}}')
     """
     if db_file:
+        if not TEANGA_DB:
+            teanga_db_fail()
         teangadb.read_corpus_from_json_string(json_str, db_file)
     else:
         json.loads(json_str, object_hook=_corpus_hook)
@@ -533,6 +510,8 @@ def read_json(path_or_buf, db_file=None):
         database.
     """
     if db_file:
+        if not TEANGA_DB:
+            teanga_db_fail()
         teangadb.read_corpus_from_json_file(path_or_buf, db_file)
     else:
         json.load(path_or_buf, object_hook=_corpus_hook)
@@ -550,6 +529,8 @@ def read_yaml(path_or_buf, db_file=None):
         database.
     """
     if db_file:
+        if not TEANGA_DB:
+            teanga_db_fail()
         teangadb.read_corpus_from_yaml_file(path_or_buf, db_file)
     else:
         yaml.load(path_or_buf, Loader=yaml.FullLoader, object_hook=_corpus_hook)
@@ -568,12 +549,19 @@ def read_yaml_str(yaml_str, db_file=None):
 
     Examples:
     ---------
-    >>> corpus = read_yaml_str("_meta:\\n  text:\\n    type: characters\\n\
+    >>> if TEANGA_DB:
+    ...   corpus = read_yaml_str("_meta:\\n  text:\\n    type: characters\\n\
 Kjco:\\n   text: This is a document.\\n", "tmp")
     >>> corpus = read_yaml_str("_meta:\\n  text:\\n    type: characters\\n\
 Kjco:\\n   text: This is a document.\\n")
     """
     if db_file:
+        if not TEANGA_DB:
+            teanga_db_fail()
         teangadb.read_corpus_from_yaml_string(yaml_str, db_file)
     else:
         _corpus_hook(yaml.load(yaml_str, Loader=yaml.FullLoader))
+
+def teanga_db_fail():
+    raise Exception("Teanga database not available. Please install the Teanga "
+                    + "Rust package from https://github.com/teangaNLP/teanga.rs")

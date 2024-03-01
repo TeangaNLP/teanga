@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from typing import Generator
 import numbers
 from itertools import chain, pairwise
-from collections import namedtuple
 
 class Document:
     """Document class for storing and processing text data."""
@@ -27,7 +26,7 @@ class Document:
         Examples:
         ---------
         >>> from teanga import Corpus
-        >>> corpus = Corpus("tmp", new=True)
+        >>> corpus = Corpus()
         >>> corpus.add_layer_meta("text")
         >>> corpus.add_layer_meta("words", layer_type="span", on="text")
         >>> corpus.add_layer_meta("pos", layer_type="seq", on="words", data="string")
@@ -94,7 +93,7 @@ class Document:
         ---------
 
         >>> from teanga import Corpus
-        >>> corpus = Corpus("tmp", new=True)
+        >>> corpus = Corpus()
         >>> corpus.add_layer_meta("text")
         >>> corpus.add_layer_meta("words", layer_type="span", on="text")
         >>> corpus.add_layer_meta("pos", layer_type="seq", on="words", data="string")

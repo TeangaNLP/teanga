@@ -1,19 +1,17 @@
-[project]
+[tool.poetry]
 name = "teanga"
 version = "0.1.0"
 description = "Teanga - Layer-based annotation of corpora with NLP"
-authors = [{name="John P. McCrae",email="john@mccr.ae"}]
-license = {file="LICENSE"}
+authors = ["John P. McCrae <john@mccr.ae>"]
 readme = "README.md"
-requires-python = ">=3.7"
-dynamic = ["version"]
+license = "LICENSE"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pyyaml = "^6.0.1"
+requests = "^2.31.0"
+
 
 [build-system]
-requires = ["maturin>=1.3,<2.0"]
-build-backend = "maturin"
-
-[tool.maturin]
-python-source = "python"
-module-name = "teanga._db"
-bindings = 'pyo3'
-features = ["pyo3/extension-module"]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
