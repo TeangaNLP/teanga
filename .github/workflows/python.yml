@@ -29,6 +29,5 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        poetry install
-        poetry add pytest
+        poetry install --with dev
         poetry run pytest --doctest-modules
