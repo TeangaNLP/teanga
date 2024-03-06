@@ -336,17 +336,17 @@ Kjco:\\n    text: This is a document.\\n'
             if meta.on:
                 writer.write("        on: " + _yaml_str(meta.on))
             if meta.data:
-                writer.write("        data: " + yaml.safe_dump(meta.data,
-                    default_flow_style=None, indent=8) + "\n")
+                writer.write("        data: " + 
+                             self._dump_yaml_json(meta.data))
             if meta.values:
-                writer.write("        values:" + yaml.safe_dump(meta.values,
-                    default_flow_style=None, indent=8) + "\n")
+                writer.write("        values: " + 
+                             self._dump_yaml_json(meta.values))
             if meta.target:
-                writer.write("        target:" + yaml.safe_dump(meta.target,
-                    default_flow_style=None, indent=8) + "\n")
+                writer.write("        target: " + 
+                             self._dump_yaml_json(meta.target))
             if meta.default:
-                writer.write("        default:" + yaml.safe_dump(meta.default,
-                    default_flow_style=None, indent=8) + "\n")
+                writer.write("        default: " + 
+                             self._dump_yaml_json(meta.default))
         for id, doc in self.docs:
             writer.write(id + ":\n")
             for layer_id in doc.get_layer_ids():
@@ -356,9 +356,16 @@ Kjco:\\n    text: This is a document.\\n'
                     writer.write(": ")
                     writer.write(_yaml_str(doc.get_layer(layer_id).raw()))
                 else:
-                    writer.write(layer_id + ":")
-                    writer.write(yaml.safe_dump(doc.get_layer(layer_id).raw(),
-                                       default_flow_style=None))
+                    writer.write(layer_id + ": ")
+                    writer.write(json.dumps(doc.get_layer(layer_id).raw()) + "\n")
+
+    def _dump_yaml_json(self, obj):
+        if obj is None:
+            return "null"
+        elif isinstance(obj, str):
+            return _yaml_str(obj)
+        else:
+            return json.dumps(obj)
 
     def to_json(self, path_or_buf):
         """Write the corpus to a JSON file.
