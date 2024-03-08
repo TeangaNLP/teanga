@@ -334,7 +334,7 @@ Kjco:\\n    text: This is a document.\\n'
             writer.write("    " + name + ":\n")
             writer.write("        type: " + meta.layer_type + "\n")
             if meta.base:
-                writer.write("        base: " + _yaml_str(meta.on))
+                writer.write("        base: " + _yaml_str(meta.base))
             if meta.data:
                 writer.write("        data: " + 
                              self._dump_yaml_json(meta.data))
