@@ -475,6 +475,7 @@ def _corpus_hook(dct : dict) -> Corpus:
         for doc_id, value in dct.items():
             if not doc_id.startswith("_"):
                 c.docs.append((doc_id, Document(c.meta, id=doc_id, **value)))
+    return c
 
 def read_json_str(json_str, db_file=None):
     """Read a corpus from a json string.
