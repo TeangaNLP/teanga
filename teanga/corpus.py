@@ -500,9 +500,9 @@ def read_json_str(json_str, db_file=None):
     if db_file:
         if not TEANGA_DB:
             teanga_db_fail()
-        teangadb.read_corpus_from_json_string(json_str, db_file)
+        return teangadb.read_corpus_from_json_string(json_str, db_file)
     else:
-        json.loads(json_str, object_hook=_corpus_hook)
+        return json.loads(json_str, object_hook=_corpus_hook)
 
 def read_json(path_or_buf, db_file=None):
     """Read a corpus from a json file.
@@ -519,9 +519,9 @@ def read_json(path_or_buf, db_file=None):
     if db_file:
         if not TEANGA_DB:
             teanga_db_fail()
-        teangadb.read_corpus_from_json_file(path_or_buf, db_file)
+        return teangadb.read_corpus_from_json_file(path_or_buf, db_file)
     else:
-        json.load(path_or_buf, object_hook=_corpus_hook)
+        return json.load(path_or_buf, object_hook=_corpus_hook)
 
 def read_yaml(path_or_buf, db_file=None):
     """Read a corpus from a yaml file.
@@ -538,9 +538,9 @@ def read_yaml(path_or_buf, db_file=None):
     if db_file:
         if not TEANGA_DB:
             teanga_db_fail()
-        teangadb.read_corpus_from_yaml_file(path_or_buf, db_file)
+        return teangadb.read_corpus_from_yaml_file(path_or_buf, db_file)
     else:
-        yaml.load(path_or_buf, Loader=yaml.FullLoader, object_hook=_corpus_hook)
+        return yaml.load(path_or_buf, Loader=yaml.FullLoader, object_hook=_corpus_hook)
 
 def read_yaml_str(yaml_str, db_file=None):
     """Read a corpus from a yaml string.
@@ -565,9 +565,9 @@ Kjco:\\n   text: This is a document.\\n")
     if db_file:
         if not TEANGA_DB:
             teanga_db_fail()
-        teangadb.read_corpus_from_yaml_string(yaml_str, db_file)
+        return teangadb.read_corpus_from_yaml_string(yaml_str, db_file)
     else:
-        _corpus_hook(yaml.load(yaml_str, Loader=yaml.FullLoader))
+        return _corpus_hook(yaml.load(yaml_str, Loader=yaml.FullLoader))
 
 def teanga_db_fail():
     raise Exception("Teanga database not available. Please install the Teanga "
