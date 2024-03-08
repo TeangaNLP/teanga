@@ -14,7 +14,7 @@ from io import StringIO
 from itertools import chain
 
 LayerDesc = namedtuple("LayerDesc",
-                       ["layer_type", "on", "data", "values", "target", "default"],
+                       ["layer_type", "base", "data", "values", "target", "default"],
                        defaults=[None, None, None, None, None, None])
 
 class Corpus:
@@ -74,7 +74,7 @@ class Corpus:
 
 
     def add_layer_meta(self, name:str=None,
-                  layer_type:str="characters", on:str=None, 
+                  layer_type:str="characters", base:str=None, 
                   data=None, values:list[str]=None,
                   target:str=None, default=None):
         """Add a layer to the corpus.
@@ -86,7 +86,7 @@ class Corpus:
         layer_type: str
             The type of the layer, can be "characters", "span", "seq", 
             "element" or "div".
-        on: str
+        base: str
             The name of the layer on which the new layer is based.
         data: list
             The data of the layer, this can be the value "string", "link" or 
@@ -99,26 +99,26 @@ class Corpus:
             A default value if none is given
     """
         if self.corpus:
-            if not on:
-                on = ""
+            if not base:
+                base = ""
             self.corpus.add_layer_meta(
-                    name, layer_type, on, data, values, target, default)
+                    name, layer_type, base, data, values, target, default)
         if name is None:
             raise Exception("Name of the layer is not specified.")
         if name in self.meta:
             raise Exception("Layer with name " + name + " already exists.")
         if layer_type not in ["characters", "span", "seq", "div", "element"]:
             raise Exception("Type of the layer is not valid.")
-        if layer_type == "characters" and on is not None and on != "":
+        if layer_type == "characters" and base is not None and base != "":
             raise Exception("Layer of type characters cannot be based on" +
             " another layer.")
         if layer_type == "characters":
             self.meta[name] = LayerDesc("characters")
             return
-        if on is None:
+        if base is None:
             raise Exception("Layer of type " + layer_type + " must be based on " +
             "another layer.")
-        self.meta[name] = LayerDesc(layer_type, on, data, values, target, default)
+        self.meta[name] = LayerDesc(layer_type, base, data, values, target, default)
 
     def add_doc(self, *args, **kwargs) -> Document:
         """Add a document to the corpus.
@@ -283,7 +283,7 @@ class Corpus:
         >>> corpus = Corpus()
         >>> corpus.add_layer_meta("text")
         >>> corpus.get_meta()
-        {'text': LayerDesc(layer_type='characters', on=None, data=None, values=None, \
+        {'text': LayerDesc(layer_type='characters', base=None, data=None, values=None, \
 target=None, default=None)}
         """
         if self.corpus:
@@ -333,8 +333,8 @@ Kjco:\\n    text: This is a document.\\n'
             meta = self.meta[name]
             writer.write("    " + name + ":\n")
             writer.write("        type: " + meta.layer_type + "\n")
-            if meta.on:
-                writer.write("        on: " + _yaml_str(meta.on))
+            if meta.base:
+                writer.write("        base: " + _yaml_str(meta.on))
             if meta.data:
                 writer.write("        data: " + 
                              self._dump_yaml_json(meta.data))
@@ -449,9 +449,9 @@ def _yaml_str(s):
         s = s[:-4]
     return s
 
-def _layer_desc(type="characters", on=None, data=None, values=None, 
+def _layer_desc(type="characters", base=None, data=None, values=None, 
                 target=None, default=None):
-    return LayerDesc(type, on, data, values, target, default)
+    return LayerDesc(type, base, data, values, target, default)
 
 def _from_layer_desc(layer_desc):
     d = { 
