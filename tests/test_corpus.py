@@ -3,9 +3,9 @@ def test_yaml_conv_1():
     c = teanga.Corpus()
     c.add_layer_meta("en", layer_type="characters")
     c.add_layer_meta("de", layer_type="characters")
-    c.add_layer_meta("en_tokens", layer_type="span", on="en")
-    c.add_layer_meta("de_tokens", layer_type="span", on="de")
-    c.add_layer_meta("align", layer_type="element", on="en_tokens", 
+    c.add_layer_meta("en_tokens", layer_type="span", base="en")
+    c.add_layer_meta("de_tokens", layer_type="span", base="de")
+    c.add_layer_meta("align", layer_type="element", base="en_tokens", 
                      target="de_tokens", data="link")
     doc = c.add_doc(en="Hello", de="Guten Tag")
     doc.add_layer("en_tokens", [[0,5]])
@@ -15,19 +15,19 @@ def test_yaml_conv_1():
     yaml ="""_meta:
     align:
         type: element
-        on: en_tokens
+        base: en_tokens
         data: link
         target: de_tokens
     de:
         type: characters
     de_tokens:
         type: span
-        on: de
+        base: de
     en:
         type: characters
     en_tokens:
         type: span
-        on: en
+        base: en
 cBbB:
     en: Hello
     de: Guten Tag
