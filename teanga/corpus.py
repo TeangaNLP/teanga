@@ -365,7 +365,7 @@ Kjco:\\n    text: This is a document.\\n'
         elif isinstance(obj, str):
             return _yaml_str(obj)
         else:
-            return json.dumps(obj)
+            return json.dumps(obj) + "\n"
 
     def to_json(self, path_or_buf):
         """Write the corpus to a JSON file.
@@ -474,7 +474,16 @@ def _corpus_hook(dct : dict) -> Corpus:
     else:
         for doc_id, value in dct.items():
             if not doc_id.startswith("_"):
-                c.docs.append((doc_id, Document(c.meta, id=doc_id, **value)))
+                doc = Document(c.meta, id=doc_id, **value)
+                text_fields = {
+                        field: value for field, value in value.items()
+                        if isinstance(value, str)
+                }
+                tid = teanga_id_for_doc(c.get_doc_ids(), **text_fields)
+                if tid != doc_id:
+                    raise Exception("Invalid document id: " + doc_id + 
+                                    " should be " + tid)
+                c.docs.append((doc_id, doc))
     return c
 
 def read_json_str(json_str, db_file=None):
