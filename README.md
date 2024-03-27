@@ -57,19 +57,19 @@ _meta:
         type: characters
     tokens:
         type: span
-        on: text
+        base: text
     upos:
         type: seq
-        on: tokens
+        base: tokens
         data: ["ADJ", ... "X"]
     document:
         type: div
-        on: text
+        base: text
         value: [[0]]
     author:
         type: element
-        on: document
-        data: str
+        base: document
+        data: string
 abcd:
     text: "Teanga2 data model"
     tokens: [[0,7], [8,12], [13,18]]
@@ -101,15 +101,15 @@ _meta:
     type: characters
   words:
     type: span
-    on: text
+    base: text
     data: none
   upos:
     type: seq
-    on: words
+    base: words
     data: ["DET","NOUN","VERB"]
   dep:
     type: seq
-    on: words
+    base: words
     data: link
     link_types: ["root","nsubj","dobj"]
     target: dep
@@ -181,8 +181,8 @@ several points in the document
 _meta:
     _uri: https://jmccrae.github.io/teanga2/meta/basic.yaml
     author:
-        on: document
-        data: str
+        base: document
+        data: string
         _uri: https://jmccrae.github.io/teanga2/props/author.html
 ABCD:
     _uri: corpus/doc1.yaml
