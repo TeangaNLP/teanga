@@ -14,8 +14,9 @@ from io import StringIO
 from itertools import chain
 
 LayerDesc = namedtuple("LayerDesc",
-                       ["layer_type", "base", "data", "values", "target", "default"],
-                       defaults=[None, None, None, None, None, None])
+                       ["layer_type", "base", "data", 
+                        "link_types", "target", "default", "meta"],
+                       defaults=[None, None, None, None, None, None, {}])
 
 class Corpus:
     """Corpus class for storing and processing text data.
@@ -75,7 +76,7 @@ class Corpus:
 
     def add_layer_meta(self, name:str=None,
                   layer_type:str="characters", base:str=None, 
-                  data=None, values:list[str]=None,
+                  data=None, link_types:list[str]=None,
                   target:str=None, default=None):
         """Add a layer to the corpus.
         
@@ -91,7 +92,7 @@ class Corpus:
         data: list
             The data of the layer, this can be the value "string", "link" or 
             a list of strings, for an enumeration of values
-        values: list
+        link_types: list
             The types of the links, if the data is links.
         target: str
             The name of the target layer, if the data is links.
@@ -102,7 +103,7 @@ class Corpus:
             if not base:
                 base = ""
             self.corpus.add_layer_meta(
-                    name, layer_type, base, data, values, target, default)
+                    name, layer_type, base, data, link_types, target, default)
         if name is None:
             raise Exception("Name of the layer is not specified.")
         if name in self.meta:
@@ -118,7 +119,7 @@ class Corpus:
         if base is None:
             raise Exception("Layer of type " + layer_type + " must be based on " +
             "another layer.")
-        self.meta[name] = LayerDesc(layer_type, base, data, values, target, default)
+        self.meta[name] = LayerDesc(layer_type, base, data, link_types, target, default)
 
     def add_doc(self, *args, **kwargs) -> Document:
         """Add a document to the corpus.
@@ -164,7 +165,7 @@ class Corpus:
                 else:
                     self.docs.append((doc_id, doc))
                 return doc
-            elif len(kwargs) == 1 and list(kwargs.keys())[0] == char_layers[0]["name"]:
+            elif len(kwargs) == 1 and list(kwargs.keys())[0] == char_layers[0]:
                 doc_id = teanga_id_for_doc(self.get_doc_ids(),
                                            **kwargs)
                 doc = Document(self.meta, id=doc_id, **kwargs)
@@ -283,8 +284,8 @@ class Corpus:
         >>> corpus = Corpus()
         >>> corpus.add_layer_meta("text")
         >>> corpus.get_meta()
-        {'text': LayerDesc(layer_type='characters', base=None, data=None, values=None, \
-target=None, default=None)}
+        {'text': LayerDesc(layer_type='characters', base=None, data=None, \
+link_types=None, target=None, default=None, meta={})}
         """
         if self.corpus:
             return self.corpus.meta
@@ -338,9 +339,9 @@ Kjco:\\n    text: This is a document.\\n'
             if meta.data:
                 writer.write("        data: " + 
                              self._dump_yaml_json(meta.data))
-            if meta.values:
-                writer.write("        values: " + 
-                             self._dump_yaml_json(meta.values))
+            if meta.link_types:
+                writer.write("        link_types: " + 
+                             self._dump_yaml_json(meta.link_types))
             if meta.target:
                 writer.write("        target: " + 
                              self._dump_yaml_json(meta.target))
@@ -449,15 +450,17 @@ def _yaml_str(s):
         s = s[:-4]
     return s
 
-def _layer_desc(type="characters", base=None, data=None, values=None, 
+def _layer_desc(type="characters", base=None, data=None, link_types=None, 
                 target=None, default=None):
-    return LayerDesc(type, base, data, values, target, default)
+    return LayerDesc(type, base, data, link_types, target, default)
 
 def _from_layer_desc(layer_desc):
     d = { 
          name: data for name,data in layer_desc._asdict().items()
-         if data is not None
+         if data is not None and name != "meta"
     }
+    for key, value in layer_desc.meta.items():
+        d["_" + key] = value
     d["type"] = d["layer_type"]
     del d["layer_type"]
     return d
