@@ -11,7 +11,9 @@ class Document:
         self.layers = {}
         self.corpus = corpus
         self.id = id
-        self.add_layers(kwargs)
+        self.add_layers({key: value 
+                         for key, value in kwargs.items() 
+                         if not key.startswith("_")})
 
     def add_layer(self, name:str, value) -> 'Layer':
         """Add a layer to the document.
@@ -103,6 +105,10 @@ class Document:
         """
         added = set(self.layers.keys())
         n = len(added)
+
+        for layer in self.meta:
+            if layer not in layers and self.meta[layer].default is not None:
+                layers[layer] = self.meta[layer].default
 
         while len(added) < len(layers) + n:
             for name, data in layers.items():

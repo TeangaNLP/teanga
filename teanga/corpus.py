@@ -65,9 +65,7 @@ class Corpus:
                                  service.produces().items()):
             if "type" not in layer:
                 raise Exception("Layer type not specified." + str(layer))
-            layer["layer_type"] = layer["type"]
-            del layer["type"]
-            desc = LayerDesc(**layer)
+            desc = _layer_desc_from_kwargs(layer)
             if name in self.meta and self.meta[name] != desc:
                 raise Exception("Layer with name " + name +
                                 " already exists with different meta.")
@@ -408,7 +406,8 @@ Kjco:\\n    text: This is a document.\\n'
     def _to_json(self, writer):
         dct = {}
         dct["_meta"] = {name: _from_layer_desc(data) 
-                        for name, data in self.meta.items()}
+                        for name, data in self.meta.items()
+                        if not name.startswith("_")}
         dct["_order"] = self.get_doc_ids()
         for doc_id, doc in self.docs:
             dct[doc_id] = {layer_id: doc.get_layer(layer_id).raw() 
@@ -450,9 +449,20 @@ def _yaml_str(s):
         s = s[:-4]
     return s
 
-def _layer_desc(type="characters", base=None, data=None, link_types=None, 
-                target=None, default=None):
-    return LayerDesc(type, base, data, link_types, target, default)
+def _layer_desc_from_kwargs(kwargs):
+    kwargs["meta"] = {}
+    if "type" in kwargs:
+        kwargs["layer_type"] = kwargs["type"]
+        del kwargs["type"]
+    kwargs2 = kwargs.copy()
+    for key in kwargs:
+        if key.startswith("_"):
+            kwargs2["meta"][key[1:]] = kwargs[key]
+            del kwargs2[key]
+        elif key not in ["layer_type", "base", "data", "link_types", 
+                         "target", "default", "meta"]:
+            raise Exception("Invalid key in Teanga meta description: " + key)
+    return LayerDesc(**kwargs2)
 
 def _from_layer_desc(layer_desc):
     d = { 
@@ -470,7 +480,9 @@ def _corpus_hook(dct : dict) -> Corpus:
     c = Corpus()
     if "_meta" not in dct:
         return dct
-    c.meta = {key: _layer_desc(**value) for key, value in dct["_meta"].items()}
+    c.meta = {key: _layer_desc_from_kwargs(value) 
+              for key, value in dct["_meta"].items()
+              if not key.startswith("_")}
     if "_order" in dct:
         for doc_id in dct["_order"]:
             c.docs.append((doc_id, Document(c.meta, id=doc_id, **dct[doc_id])))

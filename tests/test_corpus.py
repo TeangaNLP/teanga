@@ -1,5 +1,6 @@
+import teanga
+
 def test_yaml_conv_1():
-    import teanga
     c = teanga.Corpus()
     c.add_layer_meta("en", layer_type="characters")
     c.add_layer_meta("de", layer_type="characters")
@@ -36,3 +37,68 @@ cBbB:
     align: [[0, 0], [0, 1]]
 """
     assert c.to_yaml_str() == yaml
+
+
+def test_readme_example_1():
+    example = """_meta:
+    text:
+        type: characters
+    tokens:
+        type: span
+        base: text
+    upos:
+        type: seq
+        base: tokens
+        data: ["ADJ", ... "X"]
+    document:
+        type: div
+        base: text
+        default: [[0]]
+    author:
+        type: element
+        base: document
+        data: string
+VC90:
+    text: "Teanga2 data model"
+    tokens: [[0,7], [8,12], [13,18]]
+    upos: ["PROPN", "NOUN", "NOUN"]
+    author: [[0, "John P. McCrae"], [0, "Somebody Else"]]"""
+    teanga.read_yaml_str(example)
+ 
+def test_readme_example_2():
+    example = """_meta:
+  text:
+    type: characters
+  words:
+    type: span
+    base: text
+    data: none
+  upos:
+    type: seq
+    base: words
+    data: ["DET","NOUN","VERB"]
+  dep:
+    type: seq
+    base: words
+    data: link
+    link_types: ["root","nsubj","dobj"]
+    target: dep
+k0Jl:
+  text: "this is an example"
+  words: [[0,4], [5,7], [8,10], [11,17]]
+  upos: ["DET", "VERB", "DET", "NOUN"]
+  dep: [[1, "nsubj"], [1, "root"], [2, "det"], [1, "dobj"]]"""
+    teanga.read_yaml_str(example)
+
+def test_readme_example_3():
+    example = """_meta:
+    _uri: https://jmccrae.github.io/teanga2/meta/basic.yaml
+    author:
+        base: document
+        data: string
+        _uri: https://jmccrae.github.io/teanga2/props/author.html
+jjVi:
+    _uri: corpus/doc1.yaml"""
+    teanga.read_yaml_str(example)
+
+

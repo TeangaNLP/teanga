@@ -65,12 +65,12 @@ _meta:
     document:
         type: div
         base: text
-        value: [[0]]
+        default: [[0]]
     author:
         type: element
         base: document
         data: string
-abcd:
+VC90:
     text: "Teanga2 data model"
     tokens: [[0,7], [8,12], [13,18]]
     upos: ["PROPN", "NOUN", "NOUN"]
@@ -113,7 +113,7 @@ _meta:
     data: link
     link_types: ["root","nsubj","dobj"]
     target: dep
-0aBC:
+kOJl:
   text: "this is an example"
   words: [[0,4], [5,7], [8,10], [11,17]]
   upos: ["DET", "VERB", "DET", "NOUN"]
@@ -184,7 +184,7 @@ _meta:
         base: document
         data: string
         _uri: https://jmccrae.github.io/teanga2/props/author.html
-ABCD:
+jjVi:
     _uri: corpus/doc1.yaml
 ```
 
