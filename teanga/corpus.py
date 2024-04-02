@@ -428,8 +428,8 @@ Kjco:\\n    text: This is a document.\\n'
         ...     def produces(self):
         ...         return {"first_char": {"type": "characters"}}
         ...     def execute(self, input):
-        ...         return input.add_layer("first_char",
-        ...                                input["text"][0])
+        ...         input["first_char"] = input["text"][0]
+        ...         return input
         >>> corpus.apply(FirstCharService())
         """
         self.add_meta_from_service(service)

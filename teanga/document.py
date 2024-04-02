@@ -123,7 +123,7 @@ class Document:
         while len(added) < len(layers) + n:
             for name, data in layers.items():
                 if self._meta[name].base is None or self._meta[name].base in added:
-                    self.add_layer(name, data)
+                    self[name] = data
                     added.add(name)
                 elif (self._meta[name].base is not None 
                       and self._meta[name].base not in layers 
@@ -173,8 +173,8 @@ class Document:
         >>> corpus.add_layer_meta("words", layer_type="span", base="text")
         >>> corpus.add_layer_meta("pos", layer_type="seq", base="words")
         >>> doc = corpus.add_doc("This is a document.")
-        >>> layer = doc.add_layer("words", [[0,4], [5,7], [8,9], [10,18], [18,19]])
-        >>> layer = doc.add_layer("pos", ["DT", "VBZ", "DT", "NN", "."])
+        >>> doc["words"] = [[0,4], [5,7], [8,9], [10,18], [18,19]]
+        >>> doc["pos"] = ["DT", "VBZ", "DT", "NN", "."]
         >>> list(doc.text_for_layer("text"))
         ['T', 'h', 'i', 's', ' ', 'i', 's', ' ', 'a', ' ', 'd', 'o', \
 'c', 'u', 'm', 'e', 'n', 't', '.']
