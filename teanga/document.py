@@ -92,6 +92,20 @@ class Document:
                      
         return self.layers[name]
 
+    def __getattr__(self, name:str) -> 'Layer':
+        """Return the layer with the given name."""
+        if name in self.layers:
+            return self.layers[name]
+        else:
+            raise AttributeError("No such layer: " + name)
+
+    def __setattr__(self, name:str, value) -> None:
+        """Set the value of a layer."""
+        if name != "layers" and name != "_meta" and name != "corpus" and name != "id":
+            self.__setitem__(name, value)
+        else:
+            super().__setattr__(name, value)
+
     def add_layers(self, layers:dict):
         """Add multiple layers in one go.
 
@@ -173,8 +187,8 @@ class Document:
         >>> corpus.add_layer_meta("words", layer_type="span", base="text")
         >>> corpus.add_layer_meta("pos", layer_type="seq", base="words")
         >>> doc = corpus.add_doc("This is a document.")
-        >>> doc["words"] = [[0,4], [5,7], [8,9], [10,18], [18,19]]
-        >>> doc["pos"] = ["DT", "VBZ", "DT", "NN", "."]
+        >>> doc.words = [[0,4], [5,7], [8,9], [10,18], [18,19]]
+        >>> doc.pos = ["DT", "VBZ", "DT", "NN", "."]
         >>> list(doc.text_for_layer("text"))
         ['T', 'h', 'i', 's', ' ', 'i', 's', ' ', 'a', ' ', 'd', 'o', \
 'c', 'u', 'm', 'e', 'n', 't', '.']
