@@ -4,7 +4,7 @@ from .utils import teanga_id_for_doc
 from .layer_desc import LayerDesc, _layer_desc_from_kwargs, _from_layer_desc
 
 try:
-    import teanga._db as teangadb
+    import teanga._rs as teangadb
     TEANGA_DB = True
 except ImportError:
     TEANGA_DB = False
