@@ -32,7 +32,7 @@ class Corpus:
             if new and os.path.exists(db):
                 shutil.rmtree(db)
             self.corpus = teangadb.Corpus(db)
-            self.meta = self.corpus.meta
+            self._meta = self.corpus.meta
         else:
             self.corpus = None
             self.meta = {}
