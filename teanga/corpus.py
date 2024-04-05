@@ -6,7 +6,8 @@ from .layer_desc import LayerDesc, _layer_desc_from_kwargs, _from_layer_desc
 try:
     import teanga_pyo3.teanga as teangadb
     TEANGA_DB = True
-except ImportError:
+except ImportError as e:
+    print(e)
     TEANGA_DB = False
 import shutil
 import os
