@@ -16,6 +16,12 @@ import yaml
 from io import StringIO
 from itertools import chain
 
+def try_load_teanga_pyo3():
+    global TEANGA_DB
+    global teangadb
+    import teanga_pyo3.teanga as teangadb
+    TEANGA_DB = True
+
 class Corpus:
     """Corpus class for storing and processing text data.
         
