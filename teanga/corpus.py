@@ -32,7 +32,7 @@ class Corpus:
             if new and os.path.exists(db):
                 shutil.rmtree(db)
             self.corpus = teangadb.Corpus(db)
-            self._meta = self.corpus.meta
+            self.meta = self.corpus.meta
         else:
             self.corpus = None
             self.meta = {}
@@ -63,10 +63,10 @@ class Corpus:
             if "type" not in layer:
                 raise Exception("Layer type not specified." + str(layer))
             desc = _layer_desc_from_kwargs(layer)
-            if name in self._meta and self._meta[name] != desc:
+            if name in self.meta and self.meta[name] != desc:
                 raise Exception("Layer with name " + name +
                                 " already exists with different meta.")
-            self._meta[name] = desc
+            self.meta[name] = desc
 
 
     def add_layer_meta(self, name:str=None,
@@ -95,13 +95,12 @@ class Corpus:
             A default value if none is given
     """
         if self.corpus:
-            if not base:
-                base = ""
             self.corpus.add_layer_meta(
                     name, layer_type, base, data, link_types, target, default)
+            return
         if name is None:
             raise Exception("Name of the layer is not specified.")
-        if name in self._meta:
+        if name in self.meta:
             raise Exception("Layer with name " + name + " already exists.")
         if layer_type not in ["characters", "span", "seq", "div", "element"]:
             raise Exception("Type of the layer is not valid.")
@@ -109,12 +108,12 @@ class Corpus:
             raise Exception("Layer of type characters cannot be based on" +
             " another layer.")
         if layer_type == "characters":
-            self._meta[name] = LayerDesc("characters")
+            self.meta[name] = LayerDesc("characters")
             return
         if base is None:
             raise Exception("Layer of type " + layer_type + " must be based on " +
             "another layer.")
-        self._meta[name] = LayerDesc(layer_type, base, data, link_types, target, default)
+        self.meta[name] = LayerDesc(layer_type, base, data, link_types, target, default)
 
     def add_doc(self, *args, **kwargs) -> Document:
         """Add a document to the corpus.
@@ -153,7 +152,7 @@ class Corpus:
             if len(args) == 1:
                 doc_id = teanga_id_for_doc(self.doc_ids,
                         **{char_layers[0]: args[0]})
-                doc = Document(self._meta, id=doc_id, **{char_layers[0]: args[0]})
+                doc = Document(self.meta, id=doc_id, **{char_layers[0]: args[0]})
                 if self.corpus:
                     self.corpus.add_doc({ char_layers[0]: args[0] })
                     doc.corpus = self.corpus
@@ -163,7 +162,7 @@ class Corpus:
             elif len(kwargs) == 1 and list(kwargs.keys())[0] == char_layers[0]:
                 doc_id = teanga_id_for_doc(self.doc_ids,
                                            **kwargs)
-                doc = Document(self._meta, id=doc_id, **kwargs)
+                doc = Document(self.meta, id=doc_id, **kwargs)
                 if self.corpus:
                     self.corpus.add_doc(**kwargs)
                     doc.corpus = self.corpus
@@ -174,10 +173,14 @@ class Corpus:
                 raise Exception("Invalid arguments, please specify the text " +
                                 "or use correct layer names.")
         else:
+            if len(kwargs.keys()) == 0:
+                raise Exception("More than one character layer found " +
+                                f"{' '.join(char_layers)} " +
+                                "Please specify the layer names to add")
             if set(kwargs.keys()).issubset(set(char_layers)):
                 doc_id = teanga_id_for_doc(self.doc_ids,
                                            **kwargs)
-                doc = Document(self._meta, id=doc_id, **kwargs)
+                doc = Document(self.meta, id=doc_id, **kwargs)
                 if self.corpus:
                     self.corpus.add_doc(kwargs)
                     doc.corpus = self.corpus
@@ -201,7 +204,7 @@ class Corpus:
         ['Kjco']
         """
         if self.corpus:
-            return self.corpus.docs
+            return self.corpus.order
         else:
             return [doc[0] for doc in self._docs]
 
@@ -218,7 +221,7 @@ class Corpus:
         [('Kjco', Document('Kjco', {'text': CharacterLayer('This is a document.')}))]
         """
         if self.corpus:
-            return [(doc_id, Document(self._meta, id=doc_id, 
+            return [(doc_id, Document(self.meta, id=doc_id, 
                                      **self.corpus.get_doc_by_id(doc_id)))
                     for doc_id in self.corpus._docs]
         else:
@@ -249,7 +252,7 @@ class Corpus:
         ...   doc = corpus.add_doc("This is a document.")
         """
         if self.corpus:
-            return Document(self._meta, id=doc_id, **self.corpus.doc_by_id(doc_id))
+            return Document(self.meta, id=doc_id, **self.corpus.doc_by_id(doc_id))
         else:
             return next(doc for doc in self._docs if doc[0] == doc_id)[1]
 
@@ -266,14 +269,14 @@ class Corpus:
 link_types=None, target=None, default=None, meta={})}
         """
         if self.corpus:
-            return self.corpus._meta
+            return self.corpus.meta
         else:
             return self._meta
 
     @meta.setter
     def meta(self, meta: dict[str, LayerDesc]):
         if self.corpus:
-            self.corpus._meta = meta
+            self.corpus.meta = meta
         else:
             self._meta = meta
 
@@ -318,8 +321,8 @@ Kjco:\\n    text: This is a document.\\n'
 
     def _to_pretty_yaml(self, writer):
         writer.write("_meta:\n")
-        for name in sorted(self._meta.keys()):
-            meta = self._meta[name]
+        for name in sorted(self.meta.keys()):
+            meta = self.meta[name]
             writer.write("    " + name + ":\n")
             writer.write("        type: " + meta.layer_type + "\n")
             if meta.base:
@@ -399,7 +402,7 @@ Kjco:\\n    text: This is a document.\\n'
     def _to_json(self, writer):
         dct = {}
         dct["_meta"] = {name: _from_layer_desc(data) 
-                        for name, data in self._meta.items()
+                        for name, data in self.meta.items()
                         if not name.startswith("_")}
         dct["_order"] = self.doc_ids
         for doc_id, doc in self._docs:
