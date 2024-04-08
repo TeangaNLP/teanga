@@ -6,7 +6,7 @@ from .layer_desc import LayerDesc, _layer_desc_from_kwargs, _from_layer_desc
 try:
     import teanga_pyo3.teanga as teangadb
     TEANGA_DB = True
-except ImportError as e:
+except ImportError:
     TEANGA_DB = False
 import shutil
 import os
@@ -96,7 +96,7 @@ class Corpus:
     """
         if self.corpus:
             self.corpus.add_layer_meta(
-                    name, layer_type, base, data, link_types, target, default)
+                    name, layer_type, {}, base, data, link_types, target, default)
             return
         if name is None:
             raise Exception("Name of the layer is not specified.")
@@ -136,12 +136,6 @@ class Corpus:
         >>> corpus.add_layer_meta("en", layer_type="characters")
         >>> corpus.add_layer_meta("nl", layer_type="characters")
         >>> doc = corpus.add_doc(en="This is a document.", nl="Dit is een document.")
-
-        >>> if TEANGA_DB:
-        ...   corpus = Corpus("tmp",new=True)
-        ...   corpus.add_layer_meta("text")
-        ...   doc = corpus.add_doc("This is a document.")
-
         """
         char_layers = [name for (name, layer) in self.meta.items()
                        if layer.layer_type == "characters"]
@@ -223,7 +217,7 @@ class Corpus:
         if self.corpus:
             return [(doc_id, Document(self.meta, id=doc_id, 
                                      **self.corpus.get_doc_by_id(doc_id)))
-                    for doc_id in self.corpus._docs]
+                    for doc_id in self.corpus.order]
         else:
             return self._docs
 
@@ -252,7 +246,7 @@ class Corpus:
         ...   doc = corpus.add_doc("This is a document.")
         """
         if self.corpus:
-            return Document(self.meta, id=doc_id, **self.corpus.doc_by_id(doc_id))
+            return Document(self.meta, id=doc_id, **self.corpus.get_doc_by_id(doc_id))
         else:
             return next(doc for doc in self._docs if doc[0] == doc_id)[1]
 
