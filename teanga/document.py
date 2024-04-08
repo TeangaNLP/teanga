@@ -617,9 +617,8 @@ class ElementLayer(StandoffLayer):
         elif layer == self._meta.base:
             return [(s[0], s[0] + 1) for s in self._data]
         else:
-            subindexes = list(self._doc.layers[self._meta.base].indexes(layer, 
-                                                                        self._doc))
-            return [(subindexes[s[0]], subindexes[s[0]] + 1) for s in self._data]
+            subindexes = list(self._doc.layers[self._meta.base].indexes(layer))
+            return [subindexes[s[0]] for s in self._data]
 
     def __repr__(self):
         return "ElementLayer(" + repr(self._data) + ")"

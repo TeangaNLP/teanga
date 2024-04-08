@@ -479,9 +479,6 @@ def read_json_str(json_str:str, db_file:str=None) -> Corpus:
     Examples:
     ---------
 
-    >>> if TEANGA_DB:
-    ...   corpus = read_json_str('{"_meta": {"text": {"type": \
-"characters"}},"Kjco": {"text": "This is a document."}}', "tmp")
     >>> corpus = read_json_str('{"_meta": {"text": {"type": \
 "characters"}},"Kjco": {"text": "This is a document."}}')
     """
@@ -544,9 +541,6 @@ def read_yaml_str(yaml_str, db_file:str=None) -> Corpus:
 
     Examples:
     ---------
-    >>> if TEANGA_DB:
-    ...   corpus = read_yaml_str("_meta:\\n  text:\\n    type: characters\\n\
-Kjco:\\n   text: This is a document.\\n", "tmp")
     >>> corpus = read_yaml_str("_meta:\\n  text:\\n    type: characters\\n\
 Kjco:\\n   text: This is a document.\\n")
     """
