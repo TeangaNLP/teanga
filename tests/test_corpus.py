@@ -9,9 +9,9 @@ def test_yaml_conv_1():
     c.add_layer_meta("align", layer_type="element", base="en_tokens", 
                      target="de_tokens", data="link")
     doc = c.add_doc(en="Hello", de="Guten Tag")
-    doc.add_layer("en_tokens", [[0,5]])
-    doc.add_layer("de_tokens", [[0,5],[6,9]])
-    doc.add_layer("align", [[0,0],[0,1]])
+    doc["en_tokens"] = [[0,5]]
+    doc["de_tokens"] = [[0,5],[6,9]]
+    doc["align"] = [[0,0],[0,1]]
 
     yaml ="""_meta:
     align:
@@ -72,7 +72,6 @@ def test_readme_example_2():
   words:
     type: span
     base: text
-    data: none
   upos:
     type: seq
     base: words
@@ -100,5 +99,27 @@ def test_readme_example_3():
 jjVi:
     _uri: corpus/doc1.yaml"""
     teanga.read_yaml_str(example)
+
+
+def test_ud():
+    example = """_meta:
+  text:
+    type: characters
+  words:
+    type: span
+    base: text
+  rel:
+    type: seq
+    base: words
+    data: link
+    link_types: ["root","nsubj","dobj"]
+k0Jl:
+    text: "this is an example"
+    words: [[0,4], [5,7], [8,10], [11,17]]
+    rel: [[1, "nsubj"], [1, "root"], [2, "det"], [1, "dobj"]]"""
+    corpus = teanga.read_yaml_str(example)
+    for id, doc in corpus.docs:
+        for layer in doc.layers:
+            print(doc[layer].data)
 
 

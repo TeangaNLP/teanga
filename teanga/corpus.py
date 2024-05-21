@@ -1,22 +1,19 @@
 from .document import Document
+from .service import Service
 from .utils import teanga_id_for_doc
+from .layer_desc import LayerDesc, _layer_desc_from_kwargs, _from_layer_desc
+
 try:
-    import teanga._db as teangadb
+    import teanga_pyo3.teanga as teangadb
     TEANGA_DB = True
 except ImportError:
     TEANGA_DB = False
 import shutil
 import os
-from collections import namedtuple
 import json
 import yaml
 from io import StringIO
 from itertools import chain
-
-LayerDesc = namedtuple("LayerDesc",
-                       ["layer_type", "base", "data", 
-                        "link_types", "target", "default", "meta"],
-                       defaults=[None, None, None, None, None, None, {}])
 
 class Corpus:
     """Corpus class for storing and processing text data.
@@ -39,10 +36,10 @@ class Corpus:
         else:
             self.corpus = None
             self.meta = {}
-            self.docs = []
+            self._docs = []
 
 
-    def add_meta_from_service(self, service):
+    def add_meta_from_service(self, service : Service):
         """Add the meta data of a service to the corpus. This is normally 
         required to call apply to a service
 
@@ -98,10 +95,9 @@ class Corpus:
             A default value if none is given
     """
         if self.corpus:
-            if not base:
-                base = ""
             self.corpus.add_layer_meta(
-                    name, layer_type, base, data, link_types, target, default)
+                    name, layer_type, {}, base, data, link_types, target, default)
+            return
         if name is None:
             raise Exception("Name of the layer is not specified.")
         if name in self.meta:
@@ -140,79 +136,57 @@ class Corpus:
         >>> corpus.add_layer_meta("en", layer_type="characters")
         >>> corpus.add_layer_meta("nl", layer_type="characters")
         >>> doc = corpus.add_doc(en="This is a document.", nl="Dit is een document.")
-
-        >>> if TEANGA_DB:
-        ...   corpus = Corpus("tmp",new=True)
-        ...   corpus.add_layer_meta("text")
-        ...   doc = corpus.add_doc("This is a document.")
-
         """
-        char_layers = [name for (name, layer) in self.get_meta().items()
+        char_layers = [name for (name, layer) in self.meta.items()
                        if layer.layer_type == "characters"]
         if len(char_layers) == 0:
             raise Exception("No character layer found. " +
             "Please add at least one character layer.")
         elif len(char_layers) == 1:
             if len(args) == 1:
-                doc_id = teanga_id_for_doc(self.get_doc_ids(),
+                doc_id = teanga_id_for_doc(self.doc_ids,
                         **{char_layers[0]: args[0]})
                 doc = Document(self.meta, id=doc_id, **{char_layers[0]: args[0]})
                 if self.corpus:
                     self.corpus.add_doc({ char_layers[0]: args[0] })
                     doc.corpus = self.corpus
                 else:
-                    self.docs.append((doc_id, doc))
+                    self._docs.append((doc_id, doc))
                 return doc
             elif len(kwargs) == 1 and list(kwargs.keys())[0] == char_layers[0]:
-                doc_id = teanga_id_for_doc(self.get_doc_ids(),
+                doc_id = teanga_id_for_doc(self.doc_ids,
                                            **kwargs)
                 doc = Document(self.meta, id=doc_id, **kwargs)
                 if self.corpus:
                     self.corpus.add_doc(**kwargs)
                     doc.corpus = self.corpus
                 else:
-                    self.docs.append((doc_id, doc))
+                    self._docs.append((doc_id, doc))
                 return doc
             else:
                 raise Exception("Invalid arguments, please specify the text " +
                                 "or use correct layer names.")
         else:
+            if len(kwargs.keys()) == 0:
+                raise Exception("More than one character layer found " +
+                                f"{' '.join(char_layers)} " +
+                                "Please specify the layer names to add")
             if set(kwargs.keys()).issubset(set(char_layers)):
-                doc_id = teanga_id_for_doc(self.get_doc_ids(),
+                doc_id = teanga_id_for_doc(self.doc_ids,
                                            **kwargs)
                 doc = Document(self.meta, id=doc_id, **kwargs)
                 if self.corpus:
                     self.corpus.add_doc(kwargs)
                     doc.corpus = self.corpus
                 else:
-                    self.docs.append((doc_id, doc))
+                    self._docs.append((doc_id, doc))
                 return doc
             else:
                 raise Exception("Invalid arguments, please specify the text " +
                                 "or use correct layer names.")
 
-    def get_layers(self, layer:str):
-        """Return all the values of a specific layer in the corpus.
-
-        Parameters:
-        -----------
-        layer: str
-            The name of the layer.
-
-        Examples:
-        ---------
-
-        >>> corpus = Corpus()
-        >>> corpus.add_layer_meta("text")
-        >>> doc = corpus.add_doc("This is a document.")
-        >>> list(corpus.get_layers("text"))
-        [CharacterLayer('This is a document.')]
-        """
-        if layer not in self.meta:
-            raise Exception("Layer with name " + layer + " does not exist.")
-        return (doc.get_layer(layer) for doc in self.get_docs())
-
-    def get_doc_ids(self):
+    @property
+    def doc_ids(self) -> list[str]:
         """Return the document ids of the corpus.
 
         Examples:
@@ -220,15 +194,16 @@ class Corpus:
         >>> corpus = Corpus()
         >>> corpus.add_layer_meta("text")
         >>> doc = corpus.add_doc("This is a document.")
-        >>> corpus.get_doc_ids()
+        >>> corpus.doc_ids
         ['Kjco']
         """
         if self.corpus:
-            return self.corpus.get_docs()
+            return self.corpus.order
         else:
-            return [doc[0] for doc in self.docs]
+            return [doc[0] for doc in self._docs]
 
-    def get_docs(self):
+    @property
+    def docs(self) -> list[tuple[str, Document]]:
         """Get all the documents in the corpus
 
         Examples:
@@ -236,16 +211,17 @@ class Corpus:
         >>> corpus = Corpus()
         >>> corpus.add_layer_meta("text")
         >>> doc = corpus.add_doc("This is a document.")
-        >>> list(corpus.get_docs())
-        [Document('Kjco', {'text': CharacterLayer('This is a document.')})]
+        >>> corpus.docs
+        [('Kjco', Document('Kjco', {'text': CharacterLayer('This is a document.')}))]
         """
         if self.corpus:
-            return (Document(self.meta, id=doc_id, **self.corpus.get_doc_by_id(doc_id))
-                    for doc_id in self.corpus.get_docs())
+            return [(doc_id, Document(self.meta, id=doc_id, 
+                                     **self.corpus.get_doc_by_id(doc_id)))
+                    for doc_id in self.corpus.order]
         else:
-            return (doc[1] for doc in self.docs)
+            return self._docs
 
-    def get_doc_by_id(self, doc_id:str) -> Document:
+    def doc_by_id(self, doc_id:str) -> Document:
         """
         Get a document by its id.
 
@@ -261,7 +237,7 @@ class Corpus:
         >>> corpus = Corpus()
         >>> corpus.add_layer_meta("text")
         >>> doc = corpus.add_doc("This is a document.")
-        >>> corpus.get_doc_by_id("Kjco")
+        >>> corpus.doc_by_id("Kjco")
         Document('Kjco', {'text': CharacterLayer('This is a document.')})
 
         >>> if TEANGA_DB:
@@ -272,25 +248,33 @@ class Corpus:
         if self.corpus:
             return Document(self.meta, id=doc_id, **self.corpus.get_doc_by_id(doc_id))
         else:
-            return next(doc for doc in self.docs if doc[0] == doc_id)[1]
+            return next(doc for doc in self._docs if doc[0] == doc_id)[1]
 
-    def get_meta(self):
+    @property
+    def meta(self) -> dict[str, LayerDesc]:
         """Return the meta data of the corpus.
 
         Examples:
         ---------
         >>> corpus = Corpus()
         >>> corpus.add_layer_meta("text")
-        >>> corpus.get_meta()
+        >>> corpus.meta
         {'text': LayerDesc(layer_type='characters', base=None, data=None, \
 link_types=None, target=None, default=None, meta={})}
         """
         if self.corpus:
             return self.corpus.meta
         else:
-            return self.meta
+            return self._meta
 
-    def to_yaml(self, path_or_buf):
+    @meta.setter
+    def meta(self, meta: dict[str, LayerDesc]):
+        if self.corpus:
+            self.corpus.meta = meta
+        else:
+            self._meta = meta
+
+    def to_yaml(self, path_or_buf : str):
         """Write the corpus to a yaml file.
 
         Parameters:
@@ -303,8 +287,11 @@ link_types=None, target=None, default=None, meta={})}
         if self.corpus:
             teangadb.write_corpus_to_yaml_file(path_or_buf, self.corpus)
         else:
-            with open(path_or_buf, "w") as f:
-                self._to_pretty_yaml(f)
+            if isinstance(path_or_buf, str):
+                with open(path_or_buf, "w") as f:
+                    self._to_pretty_yaml(f)
+            else:
+                self._to_pretty_yaml(path_or_buf)
 
     def to_yaml_str(self) -> str:
         """
@@ -346,17 +333,17 @@ Kjco:\\n    text: This is a document.\\n'
             if meta.default:
                 writer.write("        default: " + 
                              self._dump_yaml_json(meta.default))
-        for id, doc in self.docs:
+        for id, doc in self._docs:
             writer.write(id + ":\n")
-            for layer_id in doc.get_layer_ids():
+            for layer_id in doc.layers:
                 writer.write("    ")
-                if isinstance(doc.get_layer(layer_id).raw(), str):
+                if isinstance(doc[layer_id].raw, str):
                     writer.write(layer_id)
                     writer.write(": ")
-                    writer.write(_yaml_str(doc.get_layer(layer_id).raw()))
+                    writer.write(_yaml_str(doc[layer_id].raw))
                 else:
                     writer.write(layer_id + ": ")
-                    writer.write(json.dumps(doc.get_layer(layer_id).raw()) + "\n")
+                    writer.write(json.dumps(doc[layer_id].raw) + "\n")
 
     def _dump_yaml_json(self, obj):
         if obj is None:
@@ -379,8 +366,11 @@ Kjco:\\n    text: This is a document.\\n'
         if self.corpus:
             teangadb.write_corpus_to_json_file(path_or_buf, self.corpus)
         else:
-            with open(path_or_buf, "w") as f:
-                self._to_json(f)
+            if isinstance(path_or_buf, str):
+                with open(path_or_buf, "w") as f:
+                    self._to_json(f)
+            else:
+                self._to_json(path_or_buf)
 
     def to_json_str(self) -> str:
         """
@@ -408,13 +398,13 @@ Kjco:\\n    text: This is a document.\\n'
         dct["_meta"] = {name: _from_layer_desc(data) 
                         for name, data in self.meta.items()
                         if not name.startswith("_")}
-        dct["_order"] = self.get_doc_ids()
-        for doc_id, doc in self.docs:
-            dct[doc_id] = {layer_id: doc.get_layer(layer_id).raw() 
-                           for layer_id in doc.get_layer_ids()}
+        dct["_order"] = self.doc_ids
+        for doc_id, doc in self._docs:
+            dct[doc_id] = {layer_id: doc[layer_id].raw 
+                           for layer_id in doc.layers}
         json.dump(dct, writer)
 
-    def apply(self, service):
+    def apply(self, service : Service):
         """Apply a service to each document in the corpus.
 
         Parameters:
@@ -435,12 +425,12 @@ Kjco:\\n    text: This is a document.\\n'
         ...     def produces(self):
         ...         return {"first_char": {"type": "characters"}}
         ...     def execute(self, input):
-        ...         return input.add_layer("first_char",
-        ...                                input.get_layer("text")[0])
+        ...         input["first_char"] = input["text"][0]
+        ...         return input
         >>> corpus.apply(FirstCharService())
         """
         self.add_meta_from_service(service)
-        for doc in self.get_docs():
+        for _, doc in self.docs:
             service.execute(doc)
 
 def _yaml_str(s):
@@ -448,33 +438,6 @@ def _yaml_str(s):
     if s.endswith("\n...\n"):
         s = s[:-4]
     return s
-
-def _layer_desc_from_kwargs(kwargs):
-    kwargs["meta"] = {}
-    if "type" in kwargs:
-        kwargs["layer_type"] = kwargs["type"]
-        del kwargs["type"]
-    kwargs2 = kwargs.copy()
-    for key in kwargs:
-        if key.startswith("_"):
-            kwargs2["meta"][key[1:]] = kwargs[key]
-            del kwargs2[key]
-        elif key not in ["layer_type", "base", "data", "link_types", 
-                         "target", "default", "meta"]:
-            raise Exception("Invalid key in Teanga meta description: " + key)
-    return LayerDesc(**kwargs2)
-
-def _from_layer_desc(layer_desc):
-    d = { 
-         name: data for name,data in layer_desc._asdict().items()
-         if data is not None and name != "meta"
-    }
-    for key, value in layer_desc.meta.items():
-        d["_" + key] = value
-    d["type"] = d["layer_type"]
-    del d["layer_type"]
-    return d
-            
 
 def _corpus_hook(dct : dict) -> Corpus:
     c = Corpus()
@@ -485,7 +448,7 @@ def _corpus_hook(dct : dict) -> Corpus:
               if not key.startswith("_")}
     if "_order" in dct:
         for doc_id in dct["_order"]:
-            c.docs.append((doc_id, Document(c.meta, id=doc_id, **dct[doc_id])))
+            c._docs.append((doc_id, Document(c.meta, id=doc_id, **dct[doc_id])))
     else:
         for doc_id, value in dct.items():
             if not doc_id.startswith("_"):
@@ -494,14 +457,14 @@ def _corpus_hook(dct : dict) -> Corpus:
                         field: value for field, value in value.items()
                         if isinstance(value, str)
                 }
-                tid = teanga_id_for_doc(c.get_doc_ids(), **text_fields)
+                tid = teanga_id_for_doc(c.doc_ids, **text_fields)
                 if tid != doc_id:
                     raise Exception("Invalid document id: " + doc_id + 
                                     " should be " + tid)
-                c.docs.append((doc_id, doc))
+                c._docs.append((doc_id, doc))
     return c
 
-def read_json_str(json_str, db_file=None):
+def read_json_str(json_str:str, db_file:str=None) -> Corpus:
     """Read a corpus from a json string.
 
     Parameters:
@@ -516,9 +479,6 @@ def read_json_str(json_str, db_file=None):
     Examples:
     ---------
 
-    >>> if TEANGA_DB:
-    ...   corpus = read_json_str('{"_meta": {"text": {"type": \
-"characters"}},"Kjco": {"text": "This is a document."}}', "tmp")
     >>> corpus = read_json_str('{"_meta": {"text": {"type": \
 "characters"}},"Kjco": {"text": "This is a document."}}')
     """
@@ -529,7 +489,7 @@ def read_json_str(json_str, db_file=None):
     else:
         return json.loads(json_str, object_hook=_corpus_hook)
 
-def read_json(path_or_buf, db_file=None):
+def read_json(path_or_buf, db_file:str=None) -> Corpus:
     """Read a corpus from a json file.
 
     Parameters:
@@ -548,7 +508,7 @@ def read_json(path_or_buf, db_file=None):
     else:
         return json.load(path_or_buf, object_hook=_corpus_hook)
 
-def read_yaml(path_or_buf, db_file=None):
+def read_yaml(path_or_buf, db_file:str=None) -> Corpus:
     """Read a corpus from a yaml file.
 
     Parameters:
@@ -567,7 +527,7 @@ def read_yaml(path_or_buf, db_file=None):
     else:
         return yaml.load(path_or_buf, Loader=yaml.FullLoader, object_hook=_corpus_hook)
 
-def read_yaml_str(yaml_str, db_file=None):
+def read_yaml_str(yaml_str, db_file:str=None) -> Corpus:
     """Read a corpus from a yaml string.
 
     Parameters:
@@ -581,9 +541,6 @@ def read_yaml_str(yaml_str, db_file=None):
 
     Examples:
     ---------
-    >>> if TEANGA_DB:
-    ...   corpus = read_yaml_str("_meta:\\n  text:\\n    type: characters\\n\
-Kjco:\\n   text: This is a document.\\n", "tmp")
     >>> corpus = read_yaml_str("_meta:\\n  text:\\n    type: characters\\n\
 Kjco:\\n   text: This is a document.\\n")
     """
