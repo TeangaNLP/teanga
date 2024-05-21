@@ -16,7 +16,6 @@ def test_teanga_corpus_to_rdf_2():
     corpus.add_layer_meta("words", layer_type="span", base="text")
     doc = corpus.add_doc("Hello there! Goodbye!")
     doc.words = [(0, 5), (6, 12), (14, 22)]
-    print(doc.layers)
     graph = rdflib.Graph()
     rdf.teanga_corpus_to_rdf(graph, corpus, "http://example.org/corpus")
     for s, p, o in graph:
@@ -26,11 +25,49 @@ def test_teanga_corpus_to_rdf_2():
              rdflib.Literal("Hello there! Goodbye!")) in graph)
     assert ((rdflib.URIRef("http://example.org/corpus#xQAb"),
              rdflib.URIRef("http://teanga.io/teanga#words"),
-             rdflib.URIRef("http://example.org/corpus#xQAb&layer=words&idx=0")) in graph)
+             rdflib.URIRef("http://example.org/corpus#xQAb&layer=words&idx=0")) 
+            in graph)
     assert ((rdflib.URIRef("http://example.org/corpus#xQAb&layer=words&idx=0"),
              rdflib.URIRef("http://teanga.io/teanga#idx"),
              rdflib.Literal(0)) in graph)
     assert ((rdflib.URIRef("http://example.org/corpus#xQAb&layer=words&idx=0"),
              rdflib.URIRef("http://teanga.io/teanga#ref"),
-             rdflib.URIRef("http://example.org/corpus#xQAb&layer=text&chars=0,5")) in graph)
+             rdflib.URIRef("http://example.org/corpus#xQAb&layer=text&chars=0,5")) 
+            in graph)
     
+def test_teanga_corpus_to_rdf_3():
+    corpus = teanga.Corpus()
+    corpus.add_layer_meta("text", layer_type="characters")
+    corpus.add_layer_meta("words", layer_type="span", base="text")
+    corpus.add_layer_meta("pos", layer_type="seq", base="words", data=["NN", "VB"])
+    corpus.add_layer_meta("lemma", layer_type="element", base="words", data="string")
+    corpus.add_layer_meta("dep", layer_type="seq", base="words", data="link", 
+                          link_types=["subj", "obj"])
+    corpus.add_layer_meta("cons", layer_type="seq", base="words", data="link")
+    corpus.add_layer_meta("document", layer_type="div", base="text", default=[0])
+    corpus.add_layer_meta("author", layer_type="seq", base="document", data="string")
+    doc = corpus.add_doc("Llamas eat")
+    doc.words = [(0, 6), (7, 10)]
+    doc.pos = ["NN", "VB"]
+    doc.lemma = [(0, "llama"), (1, "eat")]
+    doc.dep = [(1, "subj"), (0, "obj")]
+    doc.cons = [1, 0]
+    doc.author = ["Alice"]
+    graph = rdflib.Graph()
+    rdf.teanga_corpus_to_rdf(graph, corpus, "http://example.org/corpus")
+    for s, p, o in graph:
+        print(s, p, o)
+
+    assert((rdflib.URIRef("http://example.org/corpus#3I1a"),
+            rdflib.URIRef("http://teanga.io/teanga#text"),
+            rdflib.Literal("Llamas eat")) in graph)
+    assert((rdflib.URIRef("http://example.org/corpus#3I1a&layer=cons&idx=0"),
+            rdflib.URIRef("http://teanga.io/teanga#link"),
+            rdflib.URIRef("http://example.org/corpus#3I1a&layer=words&idx=1")) in graph)
+    assert((rdflib.URIRef("http://example.org/corpus#3I1a&layer=dep&idx=0"),
+            rdflib.URIRef("http://example.org/corpus#subj"),
+            rdflib.URIRef("http://example.org/corpus#3I1a&layer=words&idx=1")) in graph)
+
+
+    
+
