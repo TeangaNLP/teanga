@@ -208,7 +208,74 @@ class Document:
             indexes = self.layers[layer_name].indexes(text_layer)
             return (self.layers[text_layer].text[0][start:end]
                     for start, end in indexes)
-    
+
+    def view(self, *kwargs, start:int=0, end:int=None, root_layer:str=None):
+        """Return a view of the document. A view is a grouping of the basic
+          text data according to the annotations in the document
+
+        Parameters:
+        -----------
+
+        kwargs: list
+            The layers to view the text data by.
+        start: int
+            The start index of the view.
+        end: int
+            The end index of the view.
+        root_layer: str
+            The root layer of the view (this should not normally be specified).
+
+        Returns:
+        --------
+
+        The text data grouped by the annotations in the document.
+
+        Examples:
+        ---------
+
+        >>> from teanga import Corpus
+        >>> corpus = Corpus()
+        >>> corpus.add_layer_meta("text")
+        >>> corpus.add_layer_meta("words", layer_type="span", base="text")
+        >>> corpus.add_layer_meta("sentences", layer_type="div", base="text")
+        >>> doc = corpus.add_doc("This is a sentence. This is another sentence.")
+        >>> doc.words = [[0,4], [5,7], [8,9], [10,18], [18,19]]
+        >>> doc.sentences = [0, 19]
+        >>> doc.view("words")
+        ['This', 'is', 'a', 'sentence', '.', 'This', 'is', 'another', 'sentence', '.']
+        >>> doc.view("sentences")
+        ['This is a sentence.', 'This is another sentence.']
+        >>> doc.view("words", "sentences")
+        [['This', 'is', 'a', 'sentence', '.'], ['This', 'is', 'another', \
+'sentence', '.']]
+          """
+        if root_layer is None:
+            for layer in kwargs:
+                rl = self.layers[layer].root_layer()
+                if root_layer is not None and rl != root_layer:
+                    raise Exception("view was called with layers that have " +
+                    "different root layers")
+                root_layer = rl
+        if root_layer is None:
+            for layer in self.layers:
+                if self._meta[layer].base is None:
+                    if root_layer is not None:
+                        raise Exception("view was called without specifying any" +
+                        "layers or root layer but there are multiple root " +
+                        "layers in the document")
+                    root_layer = layer
+                    break
+        if end is None:
+            end = len(self.layers["text"])
+        if len(kwargs) == 0:
+            return self.text_for_layer(root_layer)[start:end]
+        else:
+            indexes = self.layers[kwargs[-1]].indexes(root_layer)
+            indexes = [(s, e) for s,e in indexes
+                       if s >= start and e <= end]
+            return [self.view(*kwargs[:-1], start=s, end=e, root_layer=root_layer)
+                    for s, e in indexes]
+
     def to_json(self) -> str:
         """Return the JSON representation of the document."""
         return {layer_id: self.layers[layer_id].raw
