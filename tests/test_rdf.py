@@ -84,11 +84,37 @@ def test_teanga_corpus_to_nif():
              rdflib.URIRef("http://example.org/corpus#xQAb")) in graph)
     assert ((rdflib.URIRef("http://example.org/corpus#xQAb&layer=words&idx=0"), 
              rdflib.URIRef("http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#beginIndex"),
-             rdflib.Literal(0)) in graph)
+             rdflib.Literal(0, datatype=rdflib.XSD.nonNegativeInteger)) in graph)
     assert ((rdflib.URIRef("http://example.org/corpus#xQAb&layer=words&idx=0"), 
              rdflib.URIRef("http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#endIndex"),
-             rdflib.Literal(5)) in graph)
+             rdflib.Literal(5, datatype=rdflib.XSD.nonNegativeInteger)) in graph)
     assert ((rdflib.URIRef("http://example.org/corpus#xQAb&layer=words&idx=0"),
              rdflib.URIRef("http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#superString"),
              rdflib.URIRef("http://example.org/corpus#xQAb&layer=text")) 
             in graph)
+
+def test_teanga_corpus_to_webanno():
+    corpus = teanga.Corpus()
+    corpus.add_layer_meta("text", layer_type="characters")
+    corpus.add_layer_meta("words", layer_type="span", base="text")
+    doc = corpus.add_doc("Hello there! Goodbye!")
+    doc.words = [(0, 5), (6, 12), (14, 22)]
+    objs = rdf.teanga_corpus_to_webanno(corpus, "http://example.org/corpus")
+    for obj in objs:
+        print(obj)
+
+    assert objs[0] == {'id': '#xQAb&layer=words&idx=0', 
+                       'type': 'Annotation', 
+                       'target': {
+                           'source': 'http://example.org/corpus#xQAb&layer=text', 
+                           'selector': {
+                               'type': 'TextPositionSelector', 
+                               'start': 0, 
+                               'end': 5}}, 
+                       'body': {
+                           'value': {
+                               '@id': 'http://teanga.io/teanga#words'}
+                           }
+                       }
+
+ 

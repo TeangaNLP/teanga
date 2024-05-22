@@ -150,6 +150,7 @@ def teanga_corpus_to_nif(graph, corpus, url :str) -> None:
         document_id, document = document
         doc_url = url + "#" + document_id
         graph.add((rdflib.URIRef(doc_url), RDF.type, teanga.Document))
+        graph.add((rdflib.URIRef(doc_url), RDF.type, nif.Context))
         for layer in document.layers:
             layer_desc = corpus.meta[layer]
             if "uri" in layer_desc.meta:
@@ -197,8 +198,9 @@ def teanga_corpus_to_nif(graph, corpus, url :str) -> None:
                     graph.add((node, nif.superString, rdflib.URIRef(root_url)))
 
                     graph.add((node, RDF.type, nif.OffsetbasedString))
-                    graph.add((node, nif.beginIndex, rdflib.Literal(start_idx)))
-                    graph.add((node, nif.endIndex, rdflib.Literal(end_idx)))
+                    graph.add((node, RDF.type, nif.String))
+                    graph.add((node, nif.beginIndex, rdflib.Literal(start_idx, datatype=rdflib.XSD.nonNegativeInteger)))
+                    graph.add((node, nif.endIndex, rdflib.Literal(end_idx, datatype=rdflib.XSD.nonNegativeInteger)))
                     if isinstance(data, str):
                         graph.add((node, layer_url, rdflib.Literal(data)))
                     elif isinstance(data, int):
@@ -211,4 +213,77 @@ def teanga_corpus_to_nif(graph, corpus, url :str) -> None:
                                       url, document_id, document)
 
  
+def teanga_corpus_to_webanno(corpus : teanga.Corpus, url : str) -> list[dict]:
+    """Convert a Teanga Corpus to a list of WebAnno JSON objects
 
+    Parameters
+    ----------
+
+    corpus : teanga.Corpus
+        The corpus to convert
+    url : str
+        The URL of the document
+    """
+    webannos = []
+    teanga_ns = "http://teanga.io/teanga#"
+    for document in corpus.docs:
+        document_id, document = document
+        for layer in document.layers:
+            layer_desc = corpus.meta[layer]
+            if "uri" in layer_desc.meta:
+                layer_url = layer_desc.meta["uri"]
+            elif layer in TEANGA_BUILT_INS:
+                layer_url = teanga_ns + layer
+            else:
+                layer_url = url + "#" + layer
+            if layer_desc.layer_type != "characters":
+                root_layer = document[layer].root_layer()
+                for idx, ((start_idx, end_idx), data) in enumerate(document[layer].
+                        indexes_data(root_layer)):
+                    webanno = {}
+                    webanno["id"] = ("#" + document_id + "&layer=" + layer + "&idx=" 
+                                     + str(idx))
+                    webanno["type"] = "Annotation"
+                    webanno["target"] = {
+                            "source": url + "#" + document_id + "&layer=" + root_layer,
+                            "selector": {
+                                "type": "TextPositionSelector",
+                                "start": start_idx,
+                                "end": end_idx
+                                }
+                            }
+                    if isinstance(data, str):
+                        webanno["body"] = {
+                                "type": "TextualBody",
+                                "value": data
+                                }
+                    elif isinstance(data, int):
+                        if not layer_desc.target:
+                            target = layer_desc.base
+                        else:
+                            target = layer_desc.target
+                        target_url = _node_url(url, document_id, target,
+                               document.meta[target].layer_type,
+                               data)
+                        webanno["body"] = {
+                                "id": target_url }
+                    elif isinstance(data, tuple):
+                        if not layer_desc.target:
+                            target = layer_desc.base
+                        else:
+                            target = layer_desc.target
+                        target_url = _node_url(url, document_id, target,
+                               document.meta[target].layer_type,
+                               data[0])
+                        webanno["body"] = {
+                                "id": target_url }
+                    else:
+                        webanno["body"] = {
+                                "value": {
+                                    "@id": layer_url
+                                    }
+                                }
+
+                    webannos.append(webanno)
+
+    return webannos
