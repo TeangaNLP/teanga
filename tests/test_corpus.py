@@ -122,4 +122,7 @@ k0Jl:
         for layer in doc.layers:
             print(doc[layer].data)
 
-
+def test_open_url():
+    corpus = teanga.from_url("https://teanga.io/examples/ex1.yaml")
+    assert len(corpus.docs) == 1
+    assert corpus.docs[0][1].text.text[0] == "Teanga2 data model"
