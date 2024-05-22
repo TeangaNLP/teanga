@@ -274,6 +274,11 @@ link_types=None, target=None, default=None, meta={})}
         else:
             self._meta = meta
 
+    def view(self, *args):
+        """Create a view on the corpus."""
+        for doc_id, doc in self.docs:
+            yield doc.view(*args)
+
     def to_yaml(self, path_or_buf : str):
         """Write the corpus to a yaml file.
 
