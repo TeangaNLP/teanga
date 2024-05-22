@@ -344,6 +344,13 @@ class Layer(ABC):
         """
         return zip(self.indexes(layer), self.data)
 
+    def root_layer(self) -> str:
+        """Return the name of the root layer of the layer."""
+        if self._meta.base is None:
+            return self._name
+        else:
+            return self._doc.layers[self._meta.base].root_layer()
+
     @abstractmethod
     def __len__(self):
         """Return the number of annotations in the layer."""
@@ -578,7 +585,7 @@ class DivLayer(StandoffLayer):
         super().__init__(name, doc)
         self._data = spans
         for span in self._data: 
-            if (not isinstance(span, numbers.Integral) and 
+            if (not isinstance(span, numbers.Integral) and
                 not isinstance(span[0], numbers.Integral)):
                 raise Exception("Bad span data: " + repr(span))
 
@@ -640,8 +647,7 @@ class ElementLayer(StandoffLayer):
         super().__init__(name, doc)
         self._data = spans
         for span in self._data: 
-            if (not isinstance(span, numbers.Integral) and 
-                not isinstance(span[0], numbers.Integral)):
+            if not isinstance(span[0], numbers.Integral):
                 raise Exception("Bad span data: " + repr(span))
 
     @property
