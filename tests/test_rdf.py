@@ -18,8 +18,6 @@ def test_teanga_corpus_to_rdf_2():
     doc.words = [(0, 5), (6, 12), (14, 22)]
     graph = rdflib.Graph()
     rdf.teanga_corpus_to_rdf(graph, corpus, "http://example.org/corpus")
-    for s, p, o in graph:
-        print(s, p, o)
     assert ((rdflib.URIRef("http://example.org/corpus#xQAb"), 
              rdflib.URIRef("http://teanga.io/teanga#text"), 
              rdflib.Literal("Hello there! Goodbye!")) in graph)
@@ -32,7 +30,7 @@ def test_teanga_corpus_to_rdf_2():
              rdflib.Literal(0)) in graph)
     assert ((rdflib.URIRef("http://example.org/corpus#xQAb&layer=words&idx=0"),
              rdflib.URIRef("http://teanga.io/teanga#ref"),
-             rdflib.URIRef("http://example.org/corpus#xQAb&layer=text&chars=0,5")) 
+             rdflib.URIRef("http://example.org/corpus#xQAb&layer=text&char=0,5")) 
             in graph)
     
 def test_teanga_corpus_to_rdf_3():
@@ -55,8 +53,6 @@ def test_teanga_corpus_to_rdf_3():
     doc.author = ["Alice"]
     graph = rdflib.Graph()
     rdf.teanga_corpus_to_rdf(graph, corpus, "http://example.org/corpus")
-    for s, p, o in graph:
-        print(s, p, o)
 
     assert((rdflib.URIRef("http://example.org/corpus#3I1a"),
             rdflib.URIRef("http://teanga.io/teanga#text"),
@@ -69,5 +65,30 @@ def test_teanga_corpus_to_rdf_3():
             rdflib.URIRef("http://example.org/corpus#3I1a&layer=words&idx=1")) in graph)
 
 
-    
-
+def test_teanga_corpus_to_nif():
+    corpus = teanga.Corpus()
+    corpus.add_layer_meta("text", layer_type="characters")
+    corpus.add_layer_meta("words", layer_type="span", base="text")
+    doc = corpus.add_doc("Hello there! Goodbye!")
+    doc.words = [(0, 5), (6, 12), (14, 22)]
+    graph = rdflib.Graph()
+    rdf.teanga_corpus_to_nif(graph, corpus, "http://example.org/corpus")
+    print("NIF Conversion")
+    for s, p, o in graph:
+        print(s, p, o)
+    assert ((rdflib.URIRef("http://example.org/corpus#xQAb&layer=text"), 
+             rdflib.URIRef("http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#isString"),
+             rdflib.Literal("Hello there! Goodbye!")) in graph)
+    assert ((rdflib.URIRef("http://example.org/corpus#xQAb&layer=text"),
+             rdflib.URIRef("http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#referenceContext"),
+             rdflib.URIRef("http://example.org/corpus#xQAb")) in graph)
+    assert ((rdflib.URIRef("http://example.org/corpus#xQAb&layer=words&idx=0"), 
+             rdflib.URIRef("http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#beginIndex"),
+             rdflib.Literal(0)) in graph)
+    assert ((rdflib.URIRef("http://example.org/corpus#xQAb&layer=words&idx=0"), 
+             rdflib.URIRef("http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#endIndex"),
+             rdflib.Literal(5)) in graph)
+    assert ((rdflib.URIRef("http://example.org/corpus#xQAb&layer=words&idx=0"),
+             rdflib.URIRef("http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#superString"),
+             rdflib.URIRef("http://example.org/corpus#xQAb&layer=text")) 
+            in graph)

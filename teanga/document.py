@@ -277,6 +277,13 @@ class Layer(ABC):
         """
         return zip(self.indexes(layer), self.data)
 
+    def root_layer(self) -> str:
+        """Return the name of the root layer of the layer."""
+        if self._meta.base is None:
+            return self._name
+        else:
+            return self._doc.layers[self._meta.base].root_layer()
+
     @abstractmethod
     def __len__(self):
         """Return the number of annotations in the layer."""

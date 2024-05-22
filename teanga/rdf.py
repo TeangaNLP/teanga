@@ -89,9 +89,9 @@ def _node_url(url: str, doc_id : str, layer: str,
     if layer_type == "characters":
         if end_idx:
             return (url + "#" + doc_id + "&layer=" + layer + 
-                    "&chars=" + str(idx) + "," + str(end_idx))
+                    "&char=" + str(idx) + "," + str(end_idx))
         else:
-            return url + "#" + doc_id + "&layer=" + layer + "&chars=" + str(idx)
+            return url + "#" + doc_id + "&layer=" + layer + "&char=" + str(idx)
     else:
         return url + "#" + doc_id + "&layer=" + layer + "&idx=" + str(idx)
     
@@ -128,3 +128,87 @@ def write_teanga_data(graph : rdflib.Graph,
         graph.add((node, teanga.data, rdflib.Literal(data)))
     else:
         raise ValueError("Unknown data type: " + data_type)
+
+def teanga_corpus_to_nif(graph, corpus, url :str) -> None:
+    """
+    Convert a Teanga Corpus to RDF using the NIF Namespace. The corpus
+    is added to the current graph
+
+    Parameters
+    ----------
+
+    graph : rdflib.Graph
+        A graph to add the corpus to (normally an empty graph)
+    corpus : teanga.Corpus
+        The corpus to convert
+    url : str
+        The URL of the Teanga Corpus
+    """
+    nif = rdflib.Namespace("http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#")
+    teanga = rdflib.Namespace("http://teanga.io/teanga#")
+    for document in corpus.docs:
+        document_id, document = document
+        doc_url = url + "#" + document_id
+        graph.add((rdflib.URIRef(doc_url), RDF.type, teanga.Document))
+        for layer in document.layers:
+            layer_desc = corpus.meta[layer]
+            if "uri" in layer_desc.meta:
+                layer_url = rdflib.URIRef(layer_desc.meta["uri"])
+            elif layer in TEANGA_BUILT_INS:
+                layer_url = teanga[layer]
+            else:
+                layer_url = url + "#" + layer
+            layer_url = rdflib.URIRef(layer_url)
+            if layer_desc.layer_type == "characters":
+                node_url = url + "#" + document_id + "&layer=" + layer
+                graph.add((rdflib.URIRef(doc_url), 
+                           teanga.document, 
+                           rdflib.URIRef(node_url)))
+                graph.add((rdflib.URIRef(node_url), 
+                           nif.referenceContext, 
+                           rdflib.URIRef(doc_url)))
+                graph.add((rdflib.URIRef(node_url), 
+                           RDF.type, nif.String))
+                graph.add((rdflib.URIRef(node_url),
+                           nif.isString, 
+                           rdflib.Literal(document[layer].text[0])))
+            else:
+                root_layer = document[layer].root_layer()
+                for idx, ((start_idx, end_idx), data) in enumerate(document[layer].
+                        indexes_data(root_layer)):
+                    node_url = _node_url(url, document_id, layer,
+                                         layer_desc.layer_type, idx)
+                    node = rdflib.URIRef(node_url)
+
+                    rel_start_idx, rel_end_idx = (document[layer].
+                                                  indexes(layer_desc.base)[idx])
+                    if layer_desc.layer_type == "span":
+                        base_url = _node_url(url, document_id, layer_desc.base,
+                                         corpus.meta[layer_desc.base].layer_type, 
+                                                rel_start_idx, rel_end_idx)
+                    else:
+                        base_url = _node_url(url, document_id, layer_desc.base,
+                                         corpus.meta[layer_desc.base].layer_type, 
+                                                rel_start_idx)
+                    graph.add((node, nif.superStringTrans, rdflib.URIRef(base_url)))
+
+                    root_url = url + "#" + document_id + "&layer=" + root_layer
+
+                    graph.add((node, nif.superString, rdflib.URIRef(root_url)))
+
+                    graph.add((node, RDF.type, nif.OffsetbasedString))
+                    graph.add((node, nif.beginIndex, rdflib.Literal(start_idx)))
+                    graph.add((node, nif.endIndex, rdflib.Literal(end_idx)))
+                    if isinstance(data, str):
+                        graph.add((node, layer_url, rdflib.Literal(data)))
+                    elif isinstance(data, int):
+                        pass
+                    elif isinstance(data, tuple):
+                        pass
+                    else:
+                        graph.add((node, RDF.value, layer_url))
+                    write_teanga_data(graph, node, data, teanga, layer_desc,
+                                      url, document_id, document)
+
+ 
+
