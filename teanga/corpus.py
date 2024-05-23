@@ -251,7 +251,10 @@ class Corpus:
         if self.corpus:
             return Document(self.meta, id=doc_id, **self.corpus.get_doc_by_id(doc_id))
         else:
-            return next(doc for doc in self._docs if doc[0] == doc_id)[1]
+            for doc in self._docs:
+                if doc[0] == doc_id:
+                    return doc[1]
+            raise Exception("Document with id " + doc_id + " not found.")
 
     @property
     def meta(self) -> dict[str, LayerDesc]:
@@ -388,7 +391,7 @@ link_types=None, target=None, default=None, meta={})}
         analysis on a per document basis.
         """
         return GroupedCorpus(self, 
-                             {doc_id: doc_id for doc_id in self.doc_ids})
+                             {doc_id: [doc_id] for doc_id in self.doc_ids})
 
 
     def by(self, layer:str) -> GroupedCorpus:

@@ -33,12 +33,13 @@ class GroupedCorpus:
         >>> doc2.words = [(0, 4), (5, 7), (8, 15), (16, 25)]
         >>> doc2.author = ["Mary"]
         >>> group = corpus.by("author")
-        >>> group.docs
-        {"John": [(0, doc1)], "Mary": [(1, doc2)]}
+        >>> group.docs.keys()
+        dict_keys(['John', 'Mary'])
         """
-        return [[(
+        return {group_id: [(
             doc_id, self.corpus.doc_by_id(doc_id)) 
-                 for doc_id in group] for group in self.groups]
+                 for doc_id in group] 
+                for group_id, group in self.groups.items()}
 
     def text_freq(self, layer:str, 
                   condition : Union[str, 
@@ -73,36 +74,36 @@ class GroupedCorpus:
         >>> doc1.words = [(0, 4), (5, 7), (8, 9), (10, 18)]
         >>> doc1.author = ["John"]
         >>> doc2 = corpus.add_doc("This is another document.")
-        >>> doc2.words = [(0, 4), (5, 7), (8, 15), (16, 25)]
+        >>> doc2.words = [(0, 4), (5, 7), (8, 15), (16, 24)]
         >>> doc2.author = ["Mary"]
         >>> group = corpus.by("author")
         >>> group.text_freq("words")
-        {"John": Counter({'This': 1, 'is': 1, 'a': 1, 'document': 1}),
-         "Mary": Counter({'This': 1, 'is': 1, 'another': 1, 'document': 1})}
+        {'John': Counter({'This': 1, 'is': 1, 'a': 1, 'document': 1}), \
+'Mary': Counter({'This': 1, 'is': 1, 'another': 1, 'document': 1})}
         """
         if condition is None:
             return {id: Counter(word
                 for _, doc in group
                 for word in doc[layer].text)
-                for id, group in self.docs}
+                for id, group in self.docs.items()}
         elif isinstance(condition, str):
             return {id: Counter(word
                 for _, doc in group
                            for word in doc[layer].text
                            if word == condition)
-                for id, group in self.docs}
+                for id, group in self.docs.items()}
         elif callable(condition):
             return {id: Counter(word
                 for _, doc in group
                 for word in doc[layer].text
                            if condition(word))
-                for id, group in self.docs}
+                for id, group in self.docs.items()}
         else:
             return {id: Counter(word
                 for _, doc in group
                 for word in doc[layer].text
                            if word in condition)
-                for id, group in self.docs}
+                for id, group in self.docs.items()}
 
     def val_freq(self, layer:str,
                  condition = None) -> Counter:
@@ -138,31 +139,31 @@ class GroupedCorpus:
         >>> doc2.pos = ["ADV", "VERB", "NOUN", "ADJ", "ADJ"]
         >>> group = corpus.by_doc()
         >>> group.val_freq("pos")
-        {"adcd": Counter({'ADJ': 2, 'NOUN': 1, 'VERB': 1, 'ADV': 1}),
-        "efgh": Counter({'ADV': 1, 'VERB': 1, 'NOUN': 1, 'ADJ': 2})}
+        {'9wpe': Counter({'ADJ': 2, 'NOUN': 1, 'VERB': 1, 'ADV': 1}), \
+'9d3t': Counter({'ADJ': 2, 'ADV': 1, 'VERB': 1, 'NOUN': 1})}
         """
         if condition is None:
             return {id: Counter(val
                 for _, doc in group
                 for val in doc[layer].data)
-                for id, group in self.docs}
+                for id, group in self.docs.items()}
         elif isinstance(condition, str):
             return {id: Counter(val
                 for _, doc in group
                 for val in doc[layer].data
                            if val == condition)
-                for id, group in self.docs}
+                for id, group in self.docs.items()}
         elif callable(condition):
             return {id: Counter(val
                 for _, doc in group
                 for val in doc[layer].data
                            if condition(val))
-                for id, group in self.docs}
+                for id, group in self.docs.items()}
         else:
             return {id: Counter(val
                 for _, doc in group
                 for val in doc[layer].data
                            if val in condition)
-                for id, group in self.docs}
+                for id, group in self.docs.items()}
 
 

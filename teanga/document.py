@@ -158,6 +158,14 @@ class Document:
             raise Exception("Layer with name " + name + " does not exist.")
         return self.layers[name]
 
+    def __iter__(self):
+        """Return an iterator over the layers."""
+        return iter(self.layers)
+
+    def __contains__(self, name:str) -> bool:
+        """Return whether a layer with the given name exists."""
+        return name in self.layers
+
     @deprecated(reason="Access layers using __getitem__ instead, e.g., doc['text']")
     def get_layer(self, name:str):
         return self[name]
