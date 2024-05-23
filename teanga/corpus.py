@@ -2,6 +2,7 @@ from .document import Document
 from .service import Service
 from .utils import teanga_id_for_doc
 from .layer_desc import LayerDesc, _layer_desc_from_kwargs, _from_layer_desc
+from .groups import GroupedCorpus
 
 try:
     import teanga_pyo3.teanga as teangadb
@@ -15,7 +16,7 @@ import yaml
 from io import StringIO
 from itertools import chain
 from typing import Union, Callable
-from collections import Counter
+from collections import Counter, defaultdict
 
 class Corpus:
     """Corpus class for storing and processing text data.
@@ -381,6 +382,26 @@ link_types=None, target=None, default=None, meta={})}
                 for _, doc in self.docs
                 for val in doc[layer].data
                            if val in condition)
+
+    def by_doc(self) -> GroupedCorpus:
+        """Group the corpus by document to enable analysis such as frequency
+        analysis on a per document basis.
+        """
+        return GroupedCorpus(self, 
+                             {doc_id: doc_id for doc_id in self.doc_ids})
+
+
+    def by(self, layer:str) -> GroupedCorpus:
+        """Group the corpus according to which documents have specific values
+        of a layer. Mostly used for metadata layers (e.g., "author", "genre")
+        """
+        grouping = defaultdict(list)
+        for doc_id, doc in self.docs:
+            if layer in doc:
+                for value in doc[layer].data:
+                    grouping[value].append(doc_id)
+        return GroupedCorpus(self, grouping)
+
 
     def to_yaml(self, path_or_buf : str):
         """Write the corpus to a yaml file.
