@@ -1,5 +1,8 @@
 from typing import Union, Callable
 from collections import Counter
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from teanga import Document
 
 class GroupedCorpus:
     """A corpus that is grouped by some criterion."""
@@ -9,7 +12,7 @@ class GroupedCorpus:
         self.groups = groups
 
     @property
-    def docs(self) -> dict[str,list[tuple[str, 'teanga.Document']]]:
+    def docs(self) -> dict[str,list[tuple[str, 'Document']]]:
         """Return the documents by group
     
         Returns:    
