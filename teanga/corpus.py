@@ -2,6 +2,7 @@ from .document import Document
 from .service import Service
 from .utils import teanga_id_for_doc
 from .layer_desc import LayerDesc, _layer_desc_from_kwargs, _from_layer_desc
+from .transforms import TransformedCorpus
 
 try:
     import teanga_pyo3.teanga as teangadb
@@ -14,6 +15,7 @@ import json
 import yaml
 from io import StringIO
 from itertools import chain
+from typing import Iterator, Callable
 
 class Corpus:
     """Corpus class for storing and processing text data.
@@ -203,7 +205,7 @@ class Corpus:
             return [doc[0] for doc in self._docs]
 
     @property
-    def docs(self) -> list[tuple[str, Document]]:
+    def docs(self) -> Iterator[tuple[str, Document]]:
         """Get all the documents in the corpus
 
         Examples:
@@ -211,15 +213,16 @@ class Corpus:
         >>> corpus = Corpus()
         >>> corpus.add_layer_meta("text")
         >>> doc = corpus.add_doc("This is a document.")
-        >>> corpus.docs
+        >>> list(corpus.docs)
         [('Kjco', Document('Kjco', {'text': CharacterLayer('This is a document.')}))]
         """
         if self.corpus:
-            return [(doc_id, Document(self.meta, id=doc_id, 
-                                     **self.corpus.get_doc_by_id(doc_id)))
-                    for doc_id in self.corpus.order]
+            for doc_id in self.corpus.order:
+                yield (doc_id, Document(self.meta, id=doc_id, 
+                                        **self.corpus.get_doc_by_id(doc_id)))
         else:
-            return self._docs
+            for doc in self._docs:
+                yield doc
 
     def doc_by_id(self, doc_id:str) -> Document:
         """
@@ -432,6 +435,63 @@ Kjco:\\n    text: This is a document.\\n'
         self.add_meta_from_service(service)
         for _, doc in self.docs:
             service.execute(doc)
+
+
+    def lower(self) -> TransformedCorpus:
+        """Lowercase all the text in the corpus.
+
+        Examples:
+        ---------
+        >>> corpus = Corpus()
+        >>> corpus.add_layer_meta("text")
+        >>> doc = corpus.add_doc("This is a document.")
+        >>> corpus = corpus.lower()
+        >>> list(corpus.docs)
+        [('Kjco', Document('Kjco', {'text': CharacterLayer('this is a document.')}))]
+        """
+        text_layers = [layer for layer in self.meta 
+                       if self.meta[layer].layer_type == "characters"]
+        return TransformedCorpus(self, {layer: lambda x: x.lower() 
+                                        for layer in text_layers})
+
+    def upper(self) -> TransformedCorpus:
+        """Uppercase all the text in the corpus.
+
+        Examples:
+        ---------
+        >>> corpus = Corpus()
+        >>> corpus.add_layer_meta("text")
+        >>> doc = corpus.add_doc("This is a document.")
+        >>> corpus = corpus.upper()
+        >>> list(corpus.docs)
+        [('Kjco', Document('Kjco', {'text': CharacterLayer('THIS IS A DOCUMENT.')}))]
+        """
+        text_layers = [layer for layer in self.meta 
+                       if self.meta[layer].layer_type == "characters"]
+        return TransformedCorpus(self, {layer: lambda x: x.upper()
+                                        for layer in text_layers})
+
+    def transform(self, layer: str, transform: 
+                  Callable[[str], str]) -> TransformedCorpus:
+        """Transform a layer in the corpus.
+
+        Parameters:
+        -----------
+        layer: str
+            The name of the layer to transform.
+        transform: Callable[[str], str]
+            The transformation function.
+
+        Examples:
+        ---------
+        >>> corpus = Corpus()
+        >>> corpus.add_layer_meta("text")
+        >>> doc = corpus.add_doc("This is a document.")
+        >>> corpus = corpus.transform("text", lambda x: x[:10])
+        >>> list(corpus.docs)
+        [('Kjco', Document('Kjco', {'text': CharacterLayer('This is a ')}))]
+        """
+        return TransformedCorpus(self, {layer: transform})
 
 def _yaml_str(s):
     s = yaml.safe_dump(s)

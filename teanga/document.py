@@ -19,6 +19,11 @@ class Document:
                          for key, value in kwargs.items() 
                          if not key.startswith("_")})
 
+    def copy(self):
+        """Return a copy of the document."""
+        return Document(self._meta, self.corpus, self.id, 
+                        **{key: value for key, value in self.layers.items()})
+
     @deprecated(reason="Use __setitem__ instead, e.g., doc['text'] = \
 'This is a document.'")
     def add_layer(self, name:str, value) -> 'Layer':
@@ -58,6 +63,9 @@ class Document:
             raise Exception("Layer with name " + name + " does not exist.")
         if value is None and self._meta[name].default is not None:
             value = self._meta[name].default
+        if isinstance(value, Layer):
+            self.layers[name] = value
+            return value
         if self._meta[name].layer_type == "characters":
             self.layers[name] = CharacterLayer(name, self, str(value))
         elif self._meta[name].base not in self.layers:
@@ -293,6 +301,11 @@ class Layer(ABC):
         """Return the annotation with the given index."""
         return self.raw[key]
 
+    @abstractmethod
+    def transform(self, transform_func):# -> Self:
+        """Transform the layer using a transformation function."""
+        pass
+
 class CharacterLayer(Layer):
     """A layer of characters"""
     
@@ -352,6 +365,9 @@ class CharacterLayer(Layer):
 
     def __len__(self):
         return len(self._text)
+
+    def transform(self, transform_func):# -> Self:
+        return CharacterLayer(self._name, self._doc, transform_func(self._text))
 
 class SeqLayer(Layer):
     """A layer that is in one-to-one correspondence with its sublayer.
@@ -419,6 +435,9 @@ class SeqLayer(Layer):
 
     def __len__(self):
         return len(self.seq)
+
+    def transform(self, transform_func):# -> Self:
+        return SeqLayer(self._name, self._doc, [transform_func(x) for x in self.seq])
 
 class StandoffLayer(Layer):
     """Common superclass of span, div and element layers. Cannot be used
@@ -509,6 +528,9 @@ class SpanLayer(StandoffLayer):
     def __repr__(self):
         return "SpanLayer(" + repr(self._data) + ")"
 
+    def transform(self, transform_func):# -> Self:
+        return SpanLayer(self._name, self._doc, [transform_func(x) for x in self._data])
+
 class DivLayer(StandoffLayer):
     """A layer where the sublayer is divided into non-overlapping parts.
     As such these layers have only a start index for each annotation, and that
@@ -571,6 +593,9 @@ class DivLayer(StandoffLayer):
     def __repr__(self):
         return "DivLayer(" + repr(self._data) + ")"
 
+    def transform(self, transform_func):# -> Self:
+        return DivLayer(self._name, self._doc, [transform_func(x) for x in self._data])
+
 class ElementLayer(StandoffLayer):
     """A layer where each annotation is an element of the sublayer. This allows
     for multiple annotations of a single element. Typical examples are
@@ -630,4 +655,8 @@ class ElementLayer(StandoffLayer):
 
     def __repr__(self):
         return "ElementLayer(" + repr(self._data) + ")"
+
+    def transform(self, transform_func):# -> Self:
+        return ElementLayer(self._name, self._doc, 
+                            [transform_func(x) for x in self._data])
 
