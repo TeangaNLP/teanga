@@ -128,7 +128,7 @@ def test_open_url():
     assert len(corpus.docs) == 1
     assert corpus.docs[0][1].text.text[0] == "Teanga2 data model"
 
-    def test_default_layers():
+def test_default_layers():
     corpus = teanga.Corpus()
     corpus.add_layer_meta("text", layer_type="characters")
     corpus.add_layer_meta("document", layer_type="div", base="text", default=[0])
