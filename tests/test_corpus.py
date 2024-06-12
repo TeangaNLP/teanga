@@ -1,4 +1,5 @@
 import teanga
+import yaml
 
 def test_yaml_conv_1():
     c = teanga.Corpus()
@@ -122,4 +123,18 @@ k0Jl:
         for layer in doc.layers:
             print(doc[layer].data)
 
+def test_open_url():
+    corpus = teanga.from_url("https://teanga.io/examples/ex1.yaml")
+    assert len(corpus.docs) == 1
+    assert corpus.docs[0][1].text.text[0] == "Teanga2 data model"
 
+def test_default_layers():
+    corpus = teanga.Corpus()
+    corpus.add_layer_meta("text", layer_type="characters")
+    corpus.add_layer_meta("document", layer_type="div", base="text", default=[0])
+    doc = corpus.add_doc(text="Hello world")
+    yaml_str = corpus.to_yaml_str()
+    obj = yaml.load(yaml_str, Loader=yaml.FullLoader)
+    assert obj["_meta"]["document"]["default"] == [0]
+    print(obj.keys())
+    assert "docuemnt" not in obj["bAiu"]

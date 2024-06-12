@@ -68,7 +68,8 @@ class Document:
             return value
         if self._meta[name].layer_type == "characters":
             self.layers[name] = CharacterLayer(name, self, str(value))
-        elif self._meta[name].base not in self.layers:
+        elif (self._meta[name].base not in self.layers and
+                self._meta[self._meta[name].base].default is None):
             raise Exception("Cannot add layer " + name + " because sublayer " +
             self._meta[name].base + " does not exist.")
         elif self._meta[name].layer_type == "seq":
@@ -136,17 +137,18 @@ class Document:
 "pos": ["DT", "VBZ", "DT", "NN", "."]})
         """
         added = set(self.layers.keys())
-        n = len(added)
+        to_add = set(layers.keys())
 
         for layer in self._meta:
             if layer not in layers and self._meta[layer].default is not None:
-                layers[layer] = self._meta[layer].default
+                added.add(layer)
 
-        while len(added) < len(layers) + n:
+        while len(to_add) > 0:
             for name, data in layers.items():
                 if self._meta[name].base is None or self._meta[name].base in added:
                     self[name] = data
                     added.add(name)
+                    to_add.remove(name)
                 elif (self._meta[name].base is not None 
                       and self._meta[name].base not in layers 
                       and self._meta[name].base not in added):
