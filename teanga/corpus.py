@@ -16,6 +16,7 @@ from io import StringIO
 from itertools import chain
 from typing import Union, Callable
 from collections import Counter
+from urllib.request import urlopen
 
 class Corpus:
     """Corpus class for storing and processing text data.
@@ -633,7 +634,7 @@ def read_yaml(path_or_buf, db_file:str=None) -> Corpus:
             teanga_db_fail()
         return teangadb.read_corpus_from_yaml_file(path_or_buf, db_file)
     else:
-        return yaml.load(path_or_buf, Loader=yaml.FullLoader, object_hook=_corpus_hook)
+        return _corpus_hook(yaml.load(path_or_buf, Loader=yaml.FullLoader))
 
 def read_yaml_str(yaml_str, db_file:str=None) -> Corpus:
     """Read a corpus from a yaml string.
@@ -658,6 +659,21 @@ Kjco:\\n   text: This is a document.\\n")
         return teangadb.read_corpus_from_yaml_string(yaml_str, db_file)
     else:
         return _corpus_hook(yaml.load(yaml_str, Loader=yaml.FullLoader))
+
+def from_url(url:str, db_file:str=None) -> Corpus:
+    """Read a corpus from a URL.
+
+    Parameters:
+    -----------
+
+    url: str
+        The URL to read the corpus from.
+    db_file: str
+        The path to the database file, if the corpus should be stored in a
+        database.
+    """
+    return read_yaml(urlopen(url), db_file)
+
 
 def teanga_db_fail():
     raise Exception("Teanga database not available. Please install the Teanga "
