@@ -83,7 +83,7 @@ class SpaCy(Service):
         doc.pos = [w.pos_ for w in result]
         doc.tag = [w.tag_ for w in result]
         doc.lemma = [w.lemma_ for w in result]
-        doc.morph = [w.morph for w in result]
+        doc.morph = [str(w.morph) for w in result]
         doc.dep = [(w.head.i, w.dep_) for w in result]
         doc.entity = [(e.start, e.end, e.label_) for e in result.ents]
         doc.sentences = [s.start for s in result.sents]
