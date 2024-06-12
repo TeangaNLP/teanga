@@ -30,7 +30,7 @@ jobs:
     - name: Setup Extra Dependencies
       run: |
         poetry install --with spacy
-        python -m spacy download en_core_web_sm
+        poetry run python -m spacy download en_core_web_sm
     - name: Test with pytest
       run: |
         poetry install --with dev
