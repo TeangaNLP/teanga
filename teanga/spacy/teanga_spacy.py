@@ -4,7 +4,7 @@ except ImportError:
     raise ImportError("SpaCY is required for the SpaCY service")
 from teanga import Service
 
-class SpacyService(Service):
+class SpaCy(Service):
     """A service that uses spaCy to tokenize and tag text.
 
     This service requires a SpaCY model name as a parameter. The model
@@ -26,7 +26,7 @@ class SpacyService(Service):
     >>> from teanga import Document, Corpus
     >>> corpus = Corpus()
     >>> corpus.add_layer_meta("text")
-    >>> service = SpacyService("en_core_web_sm")
+    >>> service = SpaCy("en_core_web_sm")
     >>> service.setup()
     >>> doc = corpus.add_doc("This is a test.")
     >>> corpus.apply(service)
