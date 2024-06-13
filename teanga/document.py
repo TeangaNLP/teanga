@@ -26,10 +26,10 @@ class Document:
 
     @deprecated(reason="Use __setitem__ instead, e.g., doc['text'] = \
 'This is a document.'")
-    def add_layer(self, name:str, value) -> 'Layer':
+    def add_layer(self, name:str, value : Union[str,list,'Layer']) -> 'Layer':
         self[name] = value
 
-    def __setitem__(self, name:str, value) -> 'Layer':
+    def __setitem__(self, name:str, value : Union[str,list,'Layer']) -> 'Layer':
         """Add or set a layer to the document.
         
         Parameters:
@@ -37,8 +37,9 @@ class Document:
         name: str
             Name of the layer.
         value: str
-            Value of the layer, a list of values that are suitable for the 
-            Teanga layer type.
+            Value of the layer, a single string or 
+            a list of values that are suitable for the 
+            Teanga layer type or a Layer object.
 
         Examples:
         ---------
