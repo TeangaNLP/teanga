@@ -31,7 +31,7 @@ class SpaCy(Service):
     >>> doc = corpus.add_doc("This is a test.")
     >>> corpus.apply(service)
     """
-    def __init__(self, model_name:str, excludes:list=None):
+    def __init__(self, model_name:str, excludes:list=[]):
         """Create a service for the SpaCY model name"""
         super().__init__()
         self.model_name = model_name
