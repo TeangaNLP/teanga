@@ -14,6 +14,7 @@ class Document:
         self._meta = meta
         self.layers = {}
         self.id = id
+        self.corpus = None
         self.add_layers({key: value 
                          for key, value in kwargs.items() 
                          if not key.startswith("_")})
