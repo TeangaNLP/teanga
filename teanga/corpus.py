@@ -268,7 +268,12 @@ class Corpus:
 link_types=None, target=None, default=None, meta={})}
         """
         if self.corpus:
-            return self.corpus.meta
+            return {
+                    key: LayerDesc(layer_type=layer.layer_type, base=layer.base,
+                                  data=layer.data, link_types=layer.link_types,
+                                  target=layer.target, default=layer.default,
+                                  meta=layer.meta)
+                    for key, layer in self.corpus.meta.items() }
         else:
             return self._meta
 
