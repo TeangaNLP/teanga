@@ -13,11 +13,11 @@ class Document:
                  corpus=None, id=None, **kwargs):
         self._meta = meta
         self.layers = {}
-        self.corpus = corpus
         self.id = id
         self.add_layers({key: value 
                          for key, value in kwargs.items() 
                          if not key.startswith("_")})
+        self.corpus = corpus
 
     @deprecated(reason="Use __setitem__ instead, e.g., doc['text'] = \
 'This is a document.'")
@@ -136,7 +136,8 @@ class Document:
                 added.add(layer)
 
         while len(to_add) > 0:
-            for name, data in layers.items():
+            for name in to_add.copy():
+                data = layers[name]
                 if self._meta[name].base is None or self._meta[name].base in added:
                     self[name] = data
                     added.add(name)
