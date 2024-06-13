@@ -136,7 +136,8 @@ class Document:
                 added.add(layer)
 
         while len(to_add) > 0:
-            for name, data in layers.items():
+            for name in to_add.copy():
+                data = layers[name]
                 if self._meta[name].base is None or self._meta[name].base in added:
                     self[name] = data
                     added.add(name)
