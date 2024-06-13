@@ -256,7 +256,8 @@ class Corpus:
         ...   doc = corpus.add_doc("This is a document.")
         """
         if self.corpus:
-            return Document(self.meta, id=doc_id, **self.corpus.get_doc_by_id(doc_id))
+            return Document(self.meta, id=doc_id, corpus=self.corpus,
+                            **self.corpus.get_doc_by_id(doc_id))
         else:
             return next(doc for doc in self._docs if doc[0] == doc_id)[1]
 
@@ -350,7 +351,7 @@ Kjco:\\n    text: This is a document.\\n'
                              self._dump_yaml_json(meta.default))
         for id, doc in self._docs:
             writer.write(id + ":\n")
-            for layer_id in doc.layers:
+            for layer_id in sorted(doc.layers):
                 writer.write("    ")
                 if isinstance(doc[layer_id].raw, str):
                     writer.write(layer_id)
