@@ -225,7 +225,7 @@ class Corpus:
         [('Kjco', Document('Kjco', {'text': CharacterLayer('This is a document.')}))]
         """
         if self.corpus:
-            return [(doc_id, Document(self.meta, id=doc_id, 
+            return [(doc_id, Document(self.meta, id=doc_id, corpus=self.corpus, 
                                      **self.corpus.get_doc_by_id(doc_id)))
                     for doc_id in self.corpus.order]
         else:
