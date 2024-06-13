@@ -13,11 +13,11 @@ class Document:
                  corpus=None, id=None, **kwargs):
         self._meta = meta
         self.layers = {}
-        self.corpus = corpus
         self.id = id
         self.add_layers({key: value 
                          for key, value in kwargs.items() 
                          if not key.startswith("_")})
+        self.corpus = corpus
 
     @deprecated(reason="Use __setitem__ instead, e.g., doc['text'] = \
 'This is a document.'")
