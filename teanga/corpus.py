@@ -71,13 +71,15 @@ class Corpus:
             if name in self.meta and self.meta[name] != desc:
                 raise Exception("Layer with name " + name +
                                 " already exists with different meta.")
-            self.meta[name] = desc
+            elif name not in self.meta:
+                self.add_layer_meta(name, **layer)
 
 
     def add_layer_meta(self, name:str=None,
-                  layer_type:str="characters", base:str=None, 
-                  data=None, link_types:list[str]=None,
-                  target:str=None, default=None):
+                       layer_type:str="characters", base:str=None, 
+                       data=None, link_types:list[str]=None,
+                       target:str=None, default=None,
+                       meta:dict={}):
         """Add a layer to the corpus.
         
         Parameters:
@@ -98,6 +100,8 @@ class Corpus:
             The name of the target layer, if the data is links.
         default:
             A default value if none is given
+        meta: dict
+            Metadata properties of the layer.
     """
         if self.corpus:
             self.corpus.add_layer_meta(
@@ -118,7 +122,8 @@ class Corpus:
         if base is None:
             raise Exception("Layer of type " + layer_type + " must be based on " +
             "another layer.")
-        self.meta[name] = LayerDesc(layer_type, base, data, link_types, target, default)
+        self.meta[name] = LayerDesc(layer_type, base, data, link_types, 
+                                    target, default, meta)
 
     def add_doc(self, *args, **kwargs) -> Document:
         """Add a document to the corpus.
