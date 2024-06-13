@@ -31,10 +31,11 @@ class SpaCy(Service):
     >>> doc = corpus.add_doc("This is a test.")
     >>> corpus.apply(service)
     """
-    def __init__(self, model_name):
+    def __init__(self, model_name:str, excludes:list=None):
         """Create a service for the SpaCY model name"""
         super().__init__()
         self.model_name = model_name
+        self.exclude = excludes
 
     def setup(self):
         """Load the SpaCY model"""
@@ -47,6 +48,9 @@ class SpaCy(Service):
 
     def produces(self):
         """Return the output of this service"""
+        if not hasattr(self, "nlp") or not self.nlp:
+            raise Exception("SpaCY model not loaded. "
+            + "Please call setup() on the service.")
         tag_labels = "string"
         dep_labels = "string"
         ner_labels = "string"
@@ -58,7 +62,7 @@ class SpaCy(Service):
             if module == "ner":
                 ner_labels = [t for t in pipe.labels]
 
-        return {
+        result = {
                 "tokens": {"type": "span", "base": "text" },
                 "pos": {"type": "seq", "base": "tokens", "data": 
                         ["ADJ","ADP","PUNCT","ADV","AUX","SYM","INTJ",
@@ -73,6 +77,11 @@ class SpaCy(Service):
                 "sentences": {"type": "div", "base": "tokens" }
         }
 
+        for e in self.exclude:
+            if e in result:
+                del result[e]
+        return result
+
     def execute(self, doc):
         """Execute SpaCy on the document"""
         if not hasattr(self, "nlp") or not self.nlp:
@@ -80,12 +89,19 @@ class SpaCy(Service):
             + "Please call setup() on the service.")
         result = self.nlp(doc.text.raw)
         doc.tokens = [(w.idx, w.idx + len(w)) for w in result]
-        doc.pos = [w.pos_ for w in result]
-        doc.tag = [w.tag_ for w in result]
-        doc.lemma = [w.lemma_ for w in result]
-        doc.morph = [str(w.morph) for w in result]
-        doc.dep = [(w.head.i, w.dep_) for w in result]
-        doc.entity = [(e.start, e.end, e.label_) for e in result.ents]
-        doc.sentences = [s.start for s in result.sents]
+        if "pos" not in self.exclude:
+            doc.pos = [w.pos_ for w in result]
+        if "tag" not in self.exclude:
+            doc.tag = [w.tag_ for w in result]
+        if "lemma" not in self.exclude:
+            doc.lemma = [w.lemma_ for w in result]
+        if "morph" not in self.exclude:
+            doc.morph = [str(w.morph) for w in result]
+        if "dep" not in self.exclude:
+            doc.dep = [(w.head.i, w.dep_) for w in result]
+        if "entity" not in self.exclude:
+            doc.entity = [(e.start, e.end, e.label_) for e in result.ents]
+        if "sentences" not in self.exclude:
+            doc.sentences = [s.start for s in result.sents]
 
 
