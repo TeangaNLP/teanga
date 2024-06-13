@@ -12,6 +12,7 @@ import shutil
 import os
 import json
 import yaml
+import gzip
 from io import StringIO
 from itertools import chain
 from urllib.request import urlopen
@@ -26,8 +27,11 @@ class Corpus:
         >>> corpus.add_layer_meta("text")
         >>> doc = corpus.add_doc("This is a document.")
     """
-    def __init__(self, db=None, new=False):
-        if db:
+    def __init__(self, db=None, new=False, db_corpus=None):
+        if db_corpus:
+            self.corpus = db_corpus
+            self.meta = self.corpus.meta
+        elif db:
             if not TEANGA_DB:
                 teanga_db_fail()
             if new and os.path.exists(db):
@@ -486,7 +490,8 @@ def read_json_str(json_str:str, db_file:str=None) -> Corpus:
     if db_file:
         if not TEANGA_DB:
             teanga_db_fail()
-        return teangadb.read_corpus_from_json_string(json_str, db_file)
+        return Corpus(db_corpus=teangadb.read_corpus_from_json_string(
+            json_str, db_file))
     else:
         return json.loads(json_str, object_hook=_corpus_hook)
 
@@ -505,7 +510,8 @@ def read_json(path_or_buf, db_file:str=None) -> Corpus:
     if db_file:
         if not TEANGA_DB:
             teanga_db_fail()
-        return teangadb.read_corpus_from_json_file(path_or_buf, db_file)
+        return Corpus(db_corpus=teangadb.read_corpus_from_json_file(
+            path_or_buf, db_file))
     else:
         return json.load(path_or_buf, object_hook=_corpus_hook)
 
@@ -524,9 +530,11 @@ def read_yaml(path_or_buf, db_file:str=None) -> Corpus:
     if db_file:
         if not TEANGA_DB:
             teanga_db_fail()
-        return teangadb.read_corpus_from_yaml_file(path_or_buf, db_file)
+        return Corpus(db_corpus=teangadb.read_corpus_from_yaml_file(
+            path_or_buf, db_file))
+    
     else:
-        return _corpus_hook(yaml.load(path_or_buf, Loader=yaml.FullLoader))
+        return _corpus_hook(yaml.load(open(path_or_buf), Loader=yaml.FullLoader))
 
 def read_yaml_str(yaml_str, db_file:str=None) -> Corpus:
     """Read a corpus from a yaml string.
@@ -548,7 +556,8 @@ Kjco:\\n   text: This is a document.\\n")
     if db_file:
         if not TEANGA_DB:
             teanga_db_fail()
-        return teangadb.read_corpus_from_yaml_string(yaml_str, db_file)
+        return Corpus(db_corpus=teangadb.read_corpus_from_yaml_string(
+            yaml_str, db_file))
     else:
         return _corpus_hook(yaml.load(yaml_str, Loader=yaml.FullLoader))
 
@@ -563,8 +572,18 @@ def from_url(url:str, db_file:str=None) -> Corpus:
     db_file: str
         The path to the database file, if the corpus should be stored in a
         database.
-    """
-    return read_yaml(urlopen(url), db_file)
+    """ 
+    if db_file:
+        if not TEANGA_DB:
+            teanga_db_fail()
+        return Corpus(db_corpus=teangadb.read_corpus_from_yaml_url(
+            url, db_file))
+    else:
+        if url.endswith(".gz"):
+            with gzip.open(urlopen(url), "rt") as f:
+                return _corpus_hook(yaml.load(f, Loader=yaml.FullLoader))
+        else:
+            return _corpus_hook(yaml.load(urlopen(url), Loader=yaml.FullLoader))
 
 
 def teanga_db_fail():
