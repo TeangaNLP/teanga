@@ -536,7 +536,7 @@ class DivLayer(StandoffLayer):
         >>> doc = Document({"text": LayerDesc(layer_type="characters"),
         ... "sentences": LayerDesc(layer_type="div", base="text")},
         ... text="This is an example. This is another example.")
-        >>> doc["sentences"] = [[0], [19]]
+        >>> doc["sentences"] = [0, 19]
         >>> doc["sentences"].data
         [None, None]
         """
@@ -556,7 +556,7 @@ class DivLayer(StandoffLayer):
         >>> doc = Document({"text": LayerDesc(layer_type="characters"),
         ... "sentences": LayerDesc(layer_type="div", base="text")},
         ... text="This is an example. This is another example.")
-        >>> doc["sentences"] = [[0], [19]]
+        >>> doc["sentences"] = [0, 19]
         >>> doc["sentences"].indexes("sentences")
         [(0, 1), (1, 2)]
         >>> doc["sentences"].indexes("text")
@@ -565,12 +565,14 @@ class DivLayer(StandoffLayer):
         if layer == self._name:
             return list(zip(range(len(self._data)), range(1, len(self._data) + 1)))
         elif layer == self._meta.base:
-            return list(pairwise(chain((s[0] for s in self._data), 
+            return list(pairwise(chain((s for s in self._data), 
                                   [len(self._doc.layers[self._meta.base])])))
         else:
             subindexes = list(self._doc.layers[self._meta.base].indexes(layer))
-            return list(pairwise(chain((subindexes[s[0]] for s in self._data), 
-                                  [len(self._doc.layers[self._meta.base])])))
+            return list(pairwise(
+                chain(
+                    (subindexes[s][0] for s in self._data), 
+                    [len(self._doc.layers[layer])])))
 
     def __repr__(self):
         return "DivLayer(" + repr(self._data) + ")"
