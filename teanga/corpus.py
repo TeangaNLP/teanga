@@ -13,6 +13,7 @@ import shutil
 import os
 import json
 import yaml
+import gzip
 from io import StringIO
 from itertools import chain
 from typing import Iterator, Callable
@@ -28,8 +29,11 @@ class Corpus:
         >>> corpus.add_layer_meta("text")
         >>> doc = corpus.add_doc("This is a document.")
     """
-    def __init__(self, db=None, new=False):
-        if db:
+    def __init__(self, db=None, new=False, db_corpus=None):
+        if db_corpus:
+            self.corpus = db_corpus
+            self.meta = self.corpus.meta
+        elif db:
             if not TEANGA_DB:
                 teanga_db_fail()
             if new and os.path.exists(db):
@@ -69,13 +73,15 @@ class Corpus:
             if name in self.meta and self.meta[name] != desc:
                 raise Exception("Layer with name " + name +
                                 " already exists with different meta.")
-            self.meta[name] = desc
+            elif name not in self.meta:
+                self.add_layer_meta(name, **layer)
 
 
     def add_layer_meta(self, name:str=None,
-                  layer_type:str="characters", base:str=None, 
-                  data=None, link_types:list[str]=None,
-                  target:str=None, default=None):
+                       layer_type:str="characters", base:str=None, 
+                       data=None, link_types:list[str]=None,
+                       target:str=None, default=None,
+                       meta:dict={}):
         """Add a layer to the corpus.
         
         Parameters:
@@ -96,6 +102,8 @@ class Corpus:
             The name of the target layer, if the data is links.
         default:
             A default value if none is given
+        meta: dict
+            Metadata properties of the layer.
     """
         if self.corpus:
             self.corpus.add_layer_meta(
@@ -116,7 +124,8 @@ class Corpus:
         if base is None:
             raise Exception("Layer of type " + layer_type + " must be based on " +
             "another layer.")
-        self.meta[name] = LayerDesc(layer_type, base, data, link_types, target, default)
+        self.meta[name] = LayerDesc(layer_type, base, data, link_types, 
+                                    target, default, meta)
 
     def add_doc(self, *args, **kwargs) -> Document:
         """Add a document to the corpus.
@@ -219,7 +228,7 @@ class Corpus:
         """
         if self.corpus:
             for doc_id in self.corpus.order:
-                yield (doc_id, Document(self.meta, id=doc_id, 
+                yield (doc_id, Document(self.meta, id=doc_id, corpus=self.corpus, 
                                         **self.corpus.get_doc_by_id(doc_id)))
         else:
             for doc in self._docs:
@@ -250,7 +259,8 @@ class Corpus:
         ...   doc = corpus.add_doc("This is a document.")
         """
         if self.corpus:
-            return Document(self.meta, id=doc_id, **self.corpus.get_doc_by_id(doc_id))
+            return Document(self.meta, id=doc_id, corpus=self.corpus,
+                            **self.corpus.get_doc_by_id(doc_id))
         else:
             return next(doc for doc in self._docs if doc[0] == doc_id)[1]
 
@@ -267,7 +277,12 @@ class Corpus:
 link_types=None, target=None, default=None, meta={})}
         """
         if self.corpus:
-            return self.corpus.meta
+            return {
+                    key: LayerDesc(layer_type=layer.layer_type, base=layer.base,
+                                  data=layer.data, link_types=layer.link_types,
+                                  target=layer.target, default=layer.default,
+                                  meta=layer.meta)
+                    for key, layer in self.corpus.meta.items() }
         else:
             return self._meta
 
@@ -339,7 +354,7 @@ Kjco:\\n    text: This is a document.\\n'
                              self._dump_yaml_json(meta.default))
         for id, doc in self._docs:
             writer.write(id + ":\n")
-            for layer_id in doc.layers:
+            for layer_id in sorted(doc.layers):
                 writer.write("    ")
                 if isinstance(doc[layer_id].raw, str):
                     writer.write(layer_id)
@@ -546,7 +561,8 @@ def read_json_str(json_str:str, db_file:str=None) -> Corpus:
     if db_file:
         if not TEANGA_DB:
             teanga_db_fail()
-        return teangadb.read_corpus_from_json_string(json_str, db_file)
+        return Corpus(db_corpus=teangadb.read_corpus_from_json_string(
+            json_str, db_file))
     else:
         return json.loads(json_str, object_hook=_corpus_hook)
 
@@ -565,7 +581,8 @@ def read_json(path_or_buf, db_file:str=None) -> Corpus:
     if db_file:
         if not TEANGA_DB:
             teanga_db_fail()
-        return teangadb.read_corpus_from_json_file(path_or_buf, db_file)
+        return Corpus(db_corpus=teangadb.read_corpus_from_json_file(
+            path_or_buf, db_file))
     else:
         return json.load(path_or_buf, object_hook=_corpus_hook)
 
@@ -584,9 +601,11 @@ def read_yaml(path_or_buf, db_file:str=None) -> Corpus:
     if db_file:
         if not TEANGA_DB:
             teanga_db_fail()
-        return teangadb.read_corpus_from_yaml_file(path_or_buf, db_file)
+        return Corpus(db_corpus=teangadb.read_corpus_from_yaml_file(
+            path_or_buf, db_file))
+    
     else:
-        return _corpus_hook(yaml.load(path_or_buf, Loader=yaml.FullLoader))
+        return _corpus_hook(yaml.load(open(path_or_buf), Loader=yaml.FullLoader))
 
 def read_yaml_str(yaml_str, db_file:str=None) -> Corpus:
     """Read a corpus from a yaml string.
@@ -608,7 +627,8 @@ Kjco:\\n   text: This is a document.\\n")
     if db_file:
         if not TEANGA_DB:
             teanga_db_fail()
-        return teangadb.read_corpus_from_yaml_string(yaml_str, db_file)
+        return Corpus(db_corpus=teangadb.read_corpus_from_yaml_string(
+            yaml_str, db_file))
     else:
         return _corpus_hook(yaml.load(yaml_str, Loader=yaml.FullLoader))
 
@@ -623,8 +643,18 @@ def from_url(url:str, db_file:str=None) -> Corpus:
     db_file: str
         The path to the database file, if the corpus should be stored in a
         database.
-    """
-    return read_yaml(urlopen(url), db_file)
+    """ 
+    if db_file:
+        if not TEANGA_DB:
+            teanga_db_fail()
+        return Corpus(db_corpus=teangadb.read_corpus_from_yaml_url(
+            url, db_file))
+    else:
+        if url.endswith(".gz"):
+            with gzip.open(urlopen(url), "rt") as f:
+                return _corpus_hook(yaml.load(f, Loader=yaml.FullLoader))
+        else:
+            return _corpus_hook(yaml.load(urlopen(url), Loader=yaml.FullLoader))
 
 
 def teanga_db_fail():
