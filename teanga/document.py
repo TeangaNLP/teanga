@@ -77,7 +77,14 @@ class Document:
         elif self._meta[name].layer_type == "seq":
             if not isinstance(value, list):
                 raise Exception("Value of layer " + name + " must be a list.")
-            if len(value) != len(self.layers[self._meta[name].base]):
+            if self._meta[name].base in self.layers:
+                base_layer_len = len(self.layers[self._meta[name].base])
+            elif self._meta[self._meta[name].base].default is not None:
+                base_layer_len = len(self._meta[self._meta[name].base].default)
+            else:
+                raise Exception("Cannot add layer " + name + " because sublayer " +
+                    self._meta[name].base + " does not exist.")
+            if len(value) != base_layer_len:
                 raise Exception("Value of layer " + name + " must have the " +
                 "same length as layer " + self._meta[name].base + ".")
             self.layers[name] = SeqLayer(name, self, value)
@@ -170,6 +177,14 @@ class Document:
         if name not in self._meta:
             raise Exception("Layer with name " + name + " does not exist.")
         return self.layers[name]
+
+    def __iter__(self):
+        """Return an iterator over the layers."""
+        return iter(self.layers)
+
+    def __contains__(self, name:str) -> bool:
+        """Return whether a layer with the given name exists."""
+        return name in self.layers
 
     @deprecated(reason="Access layers using __getitem__ instead, e.g., doc['text']")
     def get_layer(self, name:str):
