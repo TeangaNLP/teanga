@@ -13,18 +13,24 @@ class Document:
                  corpus=None, id=None, **kwargs):
         self._meta = meta
         self.layers = {}
-        self.corpus = corpus
         self.id = id
+        self.corpus = None
         self.add_layers({key: value 
                          for key, value in kwargs.items() 
                          if not key.startswith("_")})
+        self.corpus = corpus
+
+    def copy(self):
+        """Return a copy of the document."""
+        return Document(self._meta, self.corpus, self.id, 
+                        **{key: value for key, value in self.layers.items()})
 
     @deprecated(reason="Use __setitem__ instead, e.g., doc['text'] = \
 'This is a document.'")
-    def add_layer(self, name:str, value) -> 'Layer':
+    def add_layer(self, name:str, value : Union[str,list,'Layer']) -> 'Layer':
         self[name] = value
 
-    def __setitem__(self, name:str, value) -> 'Layer':
+    def __setitem__(self, name:str, value : Union[str,list,'Layer']) -> 'Layer':
         """Add or set a layer to the document.
         
         Parameters:
@@ -32,8 +38,9 @@ class Document:
         name: str
             Name of the layer.
         value: str
-            Value of the layer, a list of values that are suitable for the 
-            Teanga layer type.
+            Value of the layer, a single string or 
+            a list of values that are suitable for the 
+            Teanga layer type or a Layer object.
 
         Examples:
         ---------
@@ -58,6 +65,9 @@ class Document:
             raise Exception("Layer with name " + name + " does not exist.")
         if value is None and self._meta[name].default is not None:
             value = self._meta[name].default
+        if isinstance(value, Layer):
+            self.layers[name] = value
+            return value
         if self._meta[name].layer_type == "characters":
             self.layers[name] = CharacterLayer(name, self, str(value))
         elif (self._meta[name].base not in self.layers and
@@ -143,7 +153,8 @@ class Document:
                 added.add(layer)
 
         while len(to_add) > 0:
-            for name, data in layers.items():
+            for name in to_add.copy():
+                data = layers[name]
                 if self._meta[name].base is None or self._meta[name].base in added:
                     self[name] = data
                     added.add(name)
@@ -310,6 +321,11 @@ class Layer(ABC):
         """Return the annotation with the given index."""
         return self.raw[key]
 
+    @abstractmethod
+    def transform(self, transform_func):# -> Self:
+        """Transform the layer using a transformation function."""
+        pass
+
 class CharacterLayer(Layer):
     """A layer of characters"""
     
@@ -369,6 +385,9 @@ class CharacterLayer(Layer):
 
     def __len__(self):
         return len(self._text)
+
+    def transform(self, transform_func):# -> Self:
+        return CharacterLayer(self._name, self._doc, transform_func(self._text))
 
 class SeqLayer(Layer):
     """A layer that is in one-to-one correspondence with its sublayer.
@@ -436,6 +455,9 @@ class SeqLayer(Layer):
 
     def __len__(self):
         return len(self.seq)
+
+    def transform(self, transform_func):# -> Self:
+        return SeqLayer(self._name, self._doc, [transform_func(x) for x in self.seq])
 
 class StandoffLayer(Layer):
     """Common superclass of span, div and element layers. Cannot be used
@@ -526,6 +548,9 @@ class SpanLayer(StandoffLayer):
     def __repr__(self):
         return "SpanLayer(" + repr(self._data) + ")"
 
+    def transform(self, transform_func):# -> Self:
+        return SpanLayer(self._name, self._doc, [transform_func(x) for x in self._data])
+
 class DivLayer(StandoffLayer):
     """A layer where the sublayer is divided into non-overlapping parts.
     As such these layers have only a start index for each annotation, and that
@@ -549,7 +574,7 @@ class DivLayer(StandoffLayer):
         >>> doc = Document({"text": LayerDesc(layer_type="characters"),
         ... "sentences": LayerDesc(layer_type="div", base="text")},
         ... text="This is an example. This is another example.")
-        >>> doc["sentences"] = [[0], [19]]
+        >>> doc["sentences"] = [0, 19]
         >>> doc["sentences"].data
         [None, None]
         """
@@ -569,7 +594,7 @@ class DivLayer(StandoffLayer):
         >>> doc = Document({"text": LayerDesc(layer_type="characters"),
         ... "sentences": LayerDesc(layer_type="div", base="text")},
         ... text="This is an example. This is another example.")
-        >>> doc["sentences"] = [[0], [19]]
+        >>> doc["sentences"] = [0, 19]
         >>> doc["sentences"].indexes("sentences")
         [(0, 1), (1, 2)]
         >>> doc["sentences"].indexes("text")
@@ -578,15 +603,20 @@ class DivLayer(StandoffLayer):
         if layer == self._name:
             return list(zip(range(len(self._data)), range(1, len(self._data) + 1)))
         elif layer == self._meta.base:
-            return list(pairwise(chain((s[0] for s in self._data), 
+            return list(pairwise(chain((s for s in self._data), 
                                   [len(self._doc.layers[self._meta.base])])))
         else:
             subindexes = list(self._doc.layers[self._meta.base].indexes(layer))
-            return list(pairwise(chain((subindexes[s[0]] for s in self._data), 
-                                  [len(self._doc.layers[self._meta.base])])))
+            return list(pairwise(
+                chain(
+                    (subindexes[s][0] for s in self._data), 
+                    [len(self._doc.layers[layer])])))
 
     def __repr__(self):
         return "DivLayer(" + repr(self._data) + ")"
+
+    def transform(self, transform_func):# -> Self:
+        return DivLayer(self._name, self._doc, [transform_func(x) for x in self._data])
 
 class ElementLayer(StandoffLayer):
     """A layer where each annotation is an element of the sublayer. This allows
@@ -647,4 +677,8 @@ class ElementLayer(StandoffLayer):
 
     def __repr__(self):
         return "ElementLayer(" + repr(self._data) + ")"
+
+    def transform(self, transform_func):# -> Self:
+        return ElementLayer(self._name, self._doc, 
+                            [transform_func(x) for x in self._data])
 
