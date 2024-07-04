@@ -616,7 +616,7 @@ class SpanLayer(StandoffLayer):
     def __repr__(self):
         return "SpanLayer(" + repr(self._data) + ")"
 
-   def transform(self, transform_func):# -> Self:
+    def transform(self, transform_func):# -> Self:
         return SpanLayer(self._name, self._doc, [transform_func(x) for x in self._data])
 
 def _1st_idx(d):
