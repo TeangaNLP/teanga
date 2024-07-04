@@ -1,4 +1,5 @@
 import teanga
+import yaml
 
 def test_yaml_conv_1():
     c = teanga.Corpus()
@@ -30,11 +31,11 @@ def test_yaml_conv_1():
         type: span
         base: en
 cBbB:
-    en: Hello
-    de: Guten Tag
-    en_tokens: [[0, 5]]
-    de_tokens: [[0, 5], [6, 9]]
     align: [[0, 0], [0, 1]]
+    de: Guten Tag
+    de_tokens: [[0, 5], [6, 9]]
+    en: Hello
+    en_tokens: [[0, 5]]
 """
     assert c.to_yaml_str() == yaml
 
@@ -122,4 +123,31 @@ k0Jl:
         for layer in doc.layers:
             print(doc[layer].data)
 
+def test_open_url():
+    corpus = teanga.from_url("https://teanga.io/examples/ex1.yaml")
+    assert len(corpus.docs) == 1
+    assert corpus.docs[0][1].text.text[0] == "Teanga2 data model"
 
+def test_default_layers():
+    corpus = teanga.Corpus()
+    corpus.add_layer_meta("text", layer_type="characters")
+    corpus.add_layer_meta("document", layer_type="div", base="text", default=[0])
+    doc = corpus.add_doc(text="Hello world")
+    yaml_str = corpus.to_yaml_str()
+    obj = yaml.load(yaml_str, Loader=yaml.FullLoader)
+    assert obj["_meta"]["document"]["default"] == [0]
+    print(obj.keys())
+    assert "docuemnt" not in obj["bAiu"]
+
+def test_sentences():
+    corpus = teanga.Corpus()
+    corpus.add_layer_meta("text", layer_type="characters")
+    corpus.add_layer_meta("words", layer_type="span", base="text")
+    corpus.add_layer_meta("sentences", layer_type="div", base="words")
+    doc = corpus.add_doc(text="Hello world. This is a test.")
+    doc.words = [[0, 5], [6, 11], [11, 12], [13, 15], [16, 16], [17, 20]]
+    doc.sentences = [0, 3]
+    print(list(doc.sentences.indexes("text")))
+    sentences = doc.sentences.text
+    assert sentences[0] == "Hello world. "
+    assert sentences[1] == "This is a test."

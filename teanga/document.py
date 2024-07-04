@@ -13,11 +13,12 @@ class Document:
                  corpus=None, id=None, **kwargs):
         self._meta = meta
         self.layers = {}
-        self.corpus = corpus
         self.id = id
+        self.corpus = None
         self.add_layers({key: value 
                          for key, value in kwargs.items() 
                          if not key.startswith("_")})
+        self.corpus = corpus
 
     @deprecated(reason="Use __setitem__ instead, e.g., doc['text'] = \
 'This is a document.'")
@@ -60,7 +61,8 @@ class Document:
             value = self._meta[name].default
         if self._meta[name].layer_type == "characters":
             self.layers[name] = CharacterLayer(name, self, str(value))
-        elif self._meta[name].base not in self.layers:
+        elif (self._meta[name].base not in self.layers and
+                self._meta[self._meta[name].base].default is None):
             raise Exception("Cannot add layer " + name + " because sublayer " +
             self._meta[name].base + " does not exist.")
         elif self._meta[name].layer_type == "seq":
@@ -128,17 +130,19 @@ class Document:
 "pos": ["DT", "VBZ", "DT", "NN", "."]})
         """
         added = set(self.layers.keys())
-        n = len(added)
+        to_add = set(layers.keys())
 
         for layer in self._meta:
             if layer not in layers and self._meta[layer].default is not None:
-                layers[layer] = self._meta[layer].default
+                added.add(layer)
 
-        while len(added) < len(layers) + n:
-            for name, data in layers.items():
+        while len(to_add) > 0:
+            for name in to_add.copy():
+                data = layers[name]
                 if self._meta[name].base is None or self._meta[name].base in added:
                     self[name] = data
                     added.add(name)
+                    to_add.remove(name)
                 elif (self._meta[name].base is not None 
                       and self._meta[name].base not in layers 
                       and self._meta[name].base not in added):
@@ -606,7 +610,7 @@ class DivLayer(StandoffLayer):
         >>> doc = Document({"text": LayerDesc(layer_type="characters"),
         ... "sentences": LayerDesc(layer_type="div", base="text")},
         ... text="This is an example. This is another example.")
-        >>> doc["sentences"] = [[0], [19]]
+        >>> doc["sentences"] = [0, 19]
         >>> doc["sentences"].data
         [None, None]
         """
@@ -626,7 +630,7 @@ class DivLayer(StandoffLayer):
         >>> doc = Document({"text": LayerDesc(layer_type="characters"),
         ... "sentences": LayerDesc(layer_type="div", base="text")},
         ... text="This is an example. This is another example.")
-        >>> doc["sentences"] = [[0], [19]]
+        >>> doc["sentences"] = [0, 19]
         >>> doc["sentences"].indexes("sentences")
         [(0, 1), (1, 2)]
         >>> doc["sentences"].indexes("text")
@@ -635,12 +639,14 @@ class DivLayer(StandoffLayer):
         if layer == self._name:
             return list(zip(range(len(self._data)), range(1, len(self._data) + 1)))
         elif layer == self._meta.base:
-            return list(pairwise(chain((_1st_idx(s) for s in self._data), 
+            return list(pairwise(chain((s for s in self._data), 
                                   [len(self._doc.layers[self._meta.base])])))
         else:
             subindexes = list(self._doc.layers[self._meta.base].indexes(layer))
-            return list(pairwise(chain((subindexes[_1st_idx(s)] for s in self._data), 
-                                  [len(self._doc.layers[self._meta.base])])))
+            return list(pairwise(
+                chain(
+                    (subindexes[s][0] for s in self._data), 
+                    [len(self._doc.layers[layer])])))
 
     def __repr__(self):
         return "DivLayer(" + repr(self._data) + ")"
