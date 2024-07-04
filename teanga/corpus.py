@@ -306,11 +306,11 @@ link_types=None, target=None, default=None, meta={})}
         >>> corpus.add_layer_meta("words", layer_type="span", base="text")
         >>> corpus.add_layer_meta("sentences", layer_type="div", base="words")
         >>> doc = corpus.add_doc("This is a sentence. This is another sentence.")
-        >>> doc.words = [(0, 4), (5, 7), (8, 9), (10, 18), (19, 23), (24, 26), \
-(27, 35), (36, 44)]
+        >>> doc.words = [(0, 4), (5, 7), (8, 9), (10, 18), (20, 24), (25, 27),
+        ...               (28, 35), (36, 44)]
         >>> doc.sentences = [0, 4]
         >>> doc.view("words", "sentences")
-        [['This', 'is', 'a', 'sentence', '.'], ['This', 'is', 'another', 'sentence.']]
+        [['This', 'is', 'a', 'sentence'], ['This', 'is', 'another', 'sentence']]
         """
         for doc_id, doc in self.docs:
             yield doc.view(*args)
