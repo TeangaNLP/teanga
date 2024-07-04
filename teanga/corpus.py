@@ -2,6 +2,8 @@ from .document import Document
 from .service import Service
 from .utils import teanga_id_for_doc
 from .layer_desc import LayerDesc, _layer_desc_from_kwargs, _from_layer_desc
+from .groups import GroupedCorpus
+from .transforms import TransformedCorpus
 
 try:
     import teanga_pyo3.teanga as teangadb
@@ -15,6 +17,8 @@ import yaml
 import gzip
 from io import StringIO
 from itertools import chain
+from typing import Iterator, Union, Callable
+from collections import Counter, defaultdict
 from urllib.request import urlopen
 
 class Corpus:
@@ -213,7 +217,7 @@ class Corpus:
             return [doc[0] for doc in self._docs]
 
     @property
-    def docs(self) -> list[tuple[str, Document]]:
+    def docs(self) -> Iterator[tuple[str, Document]]:
         """Get all the documents in the corpus
 
         Examples:
@@ -221,15 +225,16 @@ class Corpus:
         >>> corpus = Corpus()
         >>> corpus.add_layer_meta("text")
         >>> doc = corpus.add_doc("This is a document.")
-        >>> corpus.docs
+        >>> list(corpus.docs)
         [('Kjco', Document('Kjco', {'text': CharacterLayer('This is a document.')}))]
         """
         if self.corpus:
-            return [(doc_id, Document(self.meta, id=doc_id, corpus=self.corpus, 
-                                     **self.corpus.get_doc_by_id(doc_id)))
-                    for doc_id in self.corpus.order]
+            for doc_id in self.corpus.order:
+                yield (doc_id, Document(self.meta, id=doc_id, corpus=self.corpus, 
+                                        **self.corpus.get_doc_by_id(doc_id)))
         else:
-            return self._docs
+            for doc in self._docs:
+                yield doc
 
     def doc_by_id(self, doc_id:str) -> Document:
         """
@@ -259,7 +264,10 @@ class Corpus:
             return Document(self.meta, id=doc_id, corpus=self.corpus,
                             **self.corpus.get_doc_by_id(doc_id))
         else:
-            return next(doc for doc in self._docs if doc[0] == doc_id)[1]
+            for doc in self._docs:
+                if doc[0] == doc_id:
+                    return doc[1]
+            raise Exception("Document with id " + doc_id + " not found.")
 
     @property
     def meta(self) -> dict[str, LayerDesc]:
@@ -314,6 +322,131 @@ link_types=None, target=None, default=None, meta={})}
         """
         for doc_id, doc in self.docs:
             yield doc.view(*args)
+
+    def text_freq(self, layer:str, 
+                  condition : Union[str, 
+            Callable[[str], bool], list] = None) -> dict[str, int]:
+        """Get the frequence of a text string in the corpus.
+
+        Parameters:
+        -----------
+        layer
+            The layer to get the frequency of (e.g. "text")
+        condition
+            A filter to match to. If a single string is given, the frequency
+            of this single word is returned. If a list of strings is given, the 
+            frequency of each string is returned. If a function is given, all 
+            strings are returned for which the function returns True.
+
+        Returns:
+        --------
+        A dictionary with the frequency of each string.
+
+        Examples:
+        ---------
+        >>> corpus = Corpus()
+        >>> corpus.add_layer_meta("text")
+        >>> corpus.add_layer_meta("words", layer_type="span", base="text")
+        >>> doc = corpus.add_doc("This is a document.")
+        >>> doc.words = [(0, 4), (5, 7), (8, 9), (10, 18)]
+        >>> corpus.text_freq("words")
+        Counter({'This': 1, 'is': 1, 'a': 1, 'document': 1})
+        >>> corpus.text_freq("words", lambda x: "i" in x)
+        Counter({'This': 1, 'is': 1})
+        """
+        if condition is None:
+            return Counter(word
+                for _, doc in self.docs
+                for word in doc[layer].text)
+        elif isinstance(condition, str):
+            return Counter(word
+                for _, doc in self.docs
+                           for word in doc[layer].text
+                           if word == condition)
+        elif callable(condition):
+            return Counter(word
+                for _, doc in self.docs
+                for word in doc[layer].text
+                           if condition(word))
+        else:
+            return Counter(word
+                for _, doc in self.docs
+                for word in doc[layer].text
+                           if word in condition)
+
+    def val_freq(self, layer:str,
+                 condition = None) -> Counter:
+        """Get the frequency of a value in a layer.
+
+        Parameters:
+        -----------
+        layer
+            The layer to get the frequency of (e.g. "pos")
+        condition
+            The value to get the frequency of. If a single value is given, the
+            frequency of this single value is returned. If a list of values is
+            given, the frequency of each value is returned. If a function is
+            given, all values are returned for which the function returns True.
+
+        Returns:
+        --------
+        A dictionary with the frequency of each value.
+
+        Examples:
+        ---------
+        >>> corpus = Corpus()
+        >>> corpus.add_layer_meta("text")
+        >>> corpus.add_layer_meta("words", layer_type="span", base="text")
+        >>> corpus.add_layer_meta("pos", layer_type="seq", base="words",
+        ...                        data=["NOUN", "VERB", "ADJ"])
+        >>> doc = corpus.add_doc("Colorless green ideas sleep furiously.")
+        >>> doc.words = [(0, 9), (10, 15), (16, 21), (22, 28), (29, 37)]
+        >>> doc.pos = ["ADJ", "ADJ", "NOUN", "VERB", "ADV"]
+        >>> corpus.val_freq("pos")
+        Counter({'ADJ': 2, 'NOUN': 1, 'VERB': 1, 'ADV': 1})
+        >>> corpus.val_freq("pos", ["NOUN", "VERB"])
+        Counter({'NOUN': 1, 'VERB': 1})
+        >>> corpus.val_freq("pos", lambda x: x[0] == "A")
+        Counter({'ADJ': 2, 'ADV': 1})
+        """
+        if condition is None:
+            return Counter(val
+                for _, doc in self.docs
+                for val in doc[layer].data)
+        elif isinstance(condition, str):
+            return Counter(val
+                for _, doc in self.docs
+                for val in doc[layer].data
+                           if val == condition)
+        elif callable(condition):
+            return Counter(val
+                for _, doc in self.docs
+                for val in doc[layer].data
+                           if condition(val))
+        else:
+            return Counter(val
+                for _, doc in self.docs
+                for val in doc[layer].data
+                           if val in condition)
+
+    def by_doc(self) -> GroupedCorpus:
+        """Group the corpus by document to enable analysis such as frequency
+        analysis on a per document basis.
+        """
+        return GroupedCorpus(self, 
+                             {doc_id: [doc_id] for doc_id in self.doc_ids})
+
+
+    def by(self, layer:str) -> GroupedCorpus:
+        """Group the corpus according to which documents have specific values
+        of a layer. Mostly used for metadata layers (e.g., "author", "genre")
+        """
+        grouping = defaultdict(list)
+        for doc_id, doc in self.docs:
+            if layer in doc:
+                for value in doc[layer].data:
+                    grouping[value].append(doc_id)
+        return GroupedCorpus(self, grouping)
 
     def to_yaml(self, path_or_buf : str):
         """Write the corpus to a yaml file.
@@ -473,6 +606,63 @@ Kjco:\\n    text: This is a document.\\n'
         self.add_meta_from_service(service)
         for _, doc in self.docs:
             service.execute(doc)
+
+
+    def lower(self) -> TransformedCorpus:
+        """Lowercase all the text in the corpus.
+
+        Examples:
+        ---------
+        >>> corpus = Corpus()
+        >>> corpus.add_layer_meta("text")
+        >>> doc = corpus.add_doc("This is a document.")
+        >>> corpus = corpus.lower()
+        >>> list(corpus.docs)
+        [('Kjco', Document('Kjco', {'text': CharacterLayer('this is a document.')}))]
+        """
+        text_layers = [layer for layer in self.meta 
+                       if self.meta[layer].layer_type == "characters"]
+        return TransformedCorpus(self, {layer: lambda x: x.lower() 
+                                        for layer in text_layers})
+
+    def upper(self) -> TransformedCorpus:
+        """Uppercase all the text in the corpus.
+
+        Examples:
+        ---------
+        >>> corpus = Corpus()
+        >>> corpus.add_layer_meta("text")
+        >>> doc = corpus.add_doc("This is a document.")
+        >>> corpus = corpus.upper()
+        >>> list(corpus.docs)
+        [('Kjco', Document('Kjco', {'text': CharacterLayer('THIS IS A DOCUMENT.')}))]
+        """
+        text_layers = [layer for layer in self.meta 
+                       if self.meta[layer].layer_type == "characters"]
+        return TransformedCorpus(self, {layer: lambda x: x.upper()
+                                        for layer in text_layers})
+
+    def transform(self, layer: str, transform: 
+                  Callable[[str], str]) -> TransformedCorpus:
+        """Transform a layer in the corpus.
+
+        Parameters:
+        -----------
+        layer: str
+            The name of the layer to transform.
+        transform: Callable[[str], str]
+            The transformation function.
+
+        Examples:
+        ---------
+        >>> corpus = Corpus()
+        >>> corpus.add_layer_meta("text")
+        >>> doc = corpus.add_doc("This is a document.")
+        >>> corpus = corpus.transform("text", lambda x: x[:10])
+        >>> list(corpus.docs)
+        [('Kjco', Document('Kjco', {'text': CharacterLayer('This is a ')}))]
+        """
+        return TransformedCorpus(self, {layer: transform})
 
 def _yaml_str(s):
     s = yaml.safe_dump(s)
