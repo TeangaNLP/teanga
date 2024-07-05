@@ -54,11 +54,11 @@ class Document:
         >>> doc["pos"] = ["DT", "VBZ", "DT", "NN", "."]
         >>> doc
         Document('Kjco', {'text': CharacterLayer('This is a document.'), \
-'words': SpanLayer([(0, 4), (5, 7), (8, 9), (10, 18), (18, 19)]), \
+'words': SpanLayer([[0, 4], [5, 7], [8, 9], [10, 18], [18, 19]]), \
 'pos': SeqLayer(['DT', 'VBZ', 'DT', 'NN', '.'])})
         >>> corpus.doc_by_id("Kjco")
         Document('Kjco', {'text': CharacterLayer('This is a document.'), \
-'words': SpanLayer([(0, 4), (5, 7), (8, 9), (10, 18), (18, 19)]), \
+'words': SpanLayer([[0, 4], [5, 7], [8, 9], [10, 18], [18, 19]]), \
 'pos': SeqLayer(['DT', 'VBZ', 'DT', 'NN', '.'])})
         """
         if name not in self._meta:
@@ -77,6 +77,7 @@ class Document:
         elif self._meta[name].layer_type == "seq":
             if not isinstance(value, list):
                 raise Exception("Value of layer " + name + " must be a list.")
+            value = [validate_value(v, 0) for v in value] 
             if self._meta[name].base in self.layers:
                 base_layer_len = len(self.layers[self._meta[name].base])
             elif self._meta[self._meta[name].base].default is not None:
@@ -91,14 +92,17 @@ class Document:
         elif self._meta[name].layer_type == "span":
             if not isinstance(value, list):
                 raise Exception("Value of layer " + name + " must be a list.")
+            value = [validate_value(v, 2) for v in value] 
             self.layers[name] = SpanLayer(name, self, value)
         elif self._meta[name].layer_type == "div":
             if not isinstance(value, list):
                 raise Exception("Value of layer " + name + " must be a list.")
+            value = [validate_value(v, 1) for v in value] 
             self.layers[name] = DivLayer(name, self, value)
         elif self._meta[name].layer_type == "element":
             if not isinstance(value, list):
                 raise Exception("Value of layer " + name + " must be a list.")
+            value = [validate_value(v, 1) for v in value] 
             self.layers[name] = ElementLayer(name, self, value)
         else:
             raise Exception("Unknown layer type " + self._meta[name].layer_type + 
@@ -251,6 +255,50 @@ class Document:
 
     def __repr__(self):
         return "Document(" + repr(self.id) + ", " + repr(self.layers) + ")"
+
+def validate_value(value, index_length):
+    """Validate a single value in a layer and normalise it if necessary.
+
+    Values must be 0-2 integer indexes followed by a string, an integer or an 
+    integer and then a string. If this results in a list of 1 element that list
+    should be dropped."""
+    if isinstance(value, tuple):
+        value = list(value)
+    if not isinstance(value, list): 
+        if index_length >= 2:
+            raise Exception("Bad value: " + repr(value))
+        if index_length == 1 and not isinstance(value, numbers.Integral):
+            raise Exception("Bad value: " + repr(value))
+        if (index_length == 0 and not isinstance(value, str) and 
+            not isinstance(value, numbers.Integral)):
+            raise Exception("Bad value: " + repr(value))
+        return value
+    else:
+        if index_length > 0:
+            for i in range(index_length):
+                if not isinstance(value[i], numbers.Integral):
+                    raise Exception("Bad value: " + repr(value))
+        if len(value) == 1:
+            if (not isinstance(value[0], str)
+                and not isinstance(value[0], numbers.Integral)):
+                raise Exception("Bad value: " + repr(value))
+            return value[0]
+        elif len(value) == index_length:
+            return value
+        elif len(value) == index_length + 1:
+            import sys
+            if (not isinstance(value[index_length], str) 
+                    and not isinstance(value[index_length], numbers.Integral)):
+                raise Exception("Bad value: " + repr(value))
+            return value
+        elif len(value) == index_length + 2:
+            if (not isinstance(value[index_length], numbers.Integral) 
+                    or not isinstance(value[index_length + 1], str)):
+                raise Exception("Bad value: " + repr(value))
+            return value
+        else:
+            raise Exception("Bad value: " + repr(value))
+    
 
 class Layer(ABC):
     """A layer of annotation"""
