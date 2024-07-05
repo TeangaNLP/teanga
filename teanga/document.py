@@ -606,7 +606,7 @@ class SpanLayer(StandoffLayer):
         elif layer == self._meta.base:
             return [(s[0], s[1]) for s in self._data]
         else:
-            subindexes = list(self._doc.layers[self._meta.base]. indexes(layer))
+            subindexes = list(self._doc.layers[self._meta.base].indexes(layer))
             return [(subindexes[s[0]], subindexes[s[1]]) for s in self._data]
 
     def __repr__(self):

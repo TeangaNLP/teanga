@@ -501,9 +501,11 @@ link_types=None, target=None, default=None, meta={})}
             raise Exception("Cannot specify both query and kwargs.")
         if self.corpus:
             if kwargs:
-                return self.corpus.search(kwargs)
+                query = self.normalise_query(kwargs)
             else:
-                return self.corpus.search(query)
+                query = self.normalise_query(query)
+            for result in self.corpus.search(query):
+                yield result
         else:
             if kwargs:
                 for doc_id, doc in self.docs:
@@ -517,6 +519,26 @@ link_types=None, target=None, default=None, meta={})}
                             break
                     else:
                         yield doc_id
+
+    def normalise_query(self, query):
+        """Normalise a query by replacing all field values with either `$eq` or 
+        `$text`"""
+        q2 = {}
+        for key, value in query.items():
+            if isinstance(value, list):
+                if all(isinstance(v, str) for v in value):
+                    if key in self.meta and self.meta[key].data is None:
+                        q2[key] = {"$text_in": value}
+                    else:
+                        q2[key] = {"$in": value}
+            elif isinstance(value, dict):
+                q2[key] = value
+            elif key in self.meta and self.meta[key].data is None:
+                q2[key] = {"$text": value}
+            else:
+                q2[key] = {"$eq": value}
+        return q2
+        
 
     def _doc_matches(self, doc, key, value):
         if key == "$exists":
