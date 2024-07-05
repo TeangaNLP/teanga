@@ -423,7 +423,6 @@ link_types=None, target=None, default=None, meta={})}
                     grouping[value].append(doc_id)
         return GroupedCorpus(self, grouping)
 
-
     def to_yaml(self, path_or_buf : str):
         """Write the corpus to a yaml file.
 
