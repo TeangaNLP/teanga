@@ -423,6 +423,140 @@ link_types=None, target=None, default=None, meta={})}
                     grouping[value].append(doc_id)
         return GroupedCorpus(self, grouping)
 
+    def search(self, query=None, **kwargs) -> Iterator[str]:
+        """Search for documents in the corpus.
+
+        Parameters:
+        -----------
+        kwargs, query:
+            The search criteria. The keys are the layer names and the values
+            can be either a string, a list of strings or a dictionary with values
+            describing the search criteria.
+
+            If the value is a string the search is interpreted as an exact 
+            match. If the layer has no data this is applied to the text 
+            otherwise it is applied to the data.
+
+            If the value is a list of strings, the search is interpreted as a
+            search for any of the strings in the list.
+
+            For dictionaries, the following keys are supported:
+            `$text`: The value on the base character layer equal this value.
+            `$text_ne`: The value on the base character layer must not equal this value.
+            `$eq`: The value must be equal to this value.
+            `$ne`: The value must not be equal to this value.
+            `$gt`: The value must be greater than this value.
+            `$lt`: The value must be less than this value.
+            `$gte`: The value must be greater than or equal to this value.
+            `$lte`: The value must be less than or equal to this value.
+            `$in`: The value must be in this list.
+            `$nin`: The value must not be in this list.
+            `$text_in`: The value on the base character layer must be in this list.
+            `$text_nin`: The value on the base character layer must not be in this list.
+            `$regex`: The value must match this regular expression.
+            `$text_regex`: The value on the base character layer must match 
+                this regular expression.
+            `$and`: All the conditions in this list must be true.
+            `$or`: At least one of the conditions in this list must be true.
+            `$not`: The condition in this list must not be true.
+            `$exists`: A particular layer must exist.
+
+        Returns:
+        --------
+        An iterator over the document ids that match the search criteria.
+
+        Examples:
+        ---------
+        >>> corpus = Corpus()
+        >>> corpus.add_layer_meta("text")
+        >>> corpus.add_layer_meta("words", layer_type="span", base="text")
+        >>> corpus.add_layer_meta("pos", layer_type="seq", base="words",
+        ...                        data=["NOUN", "VERB", "ADJ"])
+        >>> corpus.add_layer_meta("lemma", layer_type="seq", base="words",
+        ...                        data="string")
+        >>> doc = corpus.add_doc("Colorless green ideas sleep furiously.")
+        >>> doc.words = [(0, 9), (10, 15), (16, 21), (22, 27), (28, 37)]
+        >>> doc.pos = ["ADJ", "ADJ", "NOUN", "VERB", "ADV"]
+        >>> doc.lemma = ["colorless", "green", "idea", "sleep", "furiously"]
+        >>> list(corpus.search(pos="NOUN"))
+        ['9wpe']
+        >>> list(corpus.search(pos=["NOUN", "VERB"]))
+        ['9wpe']
+        >>> list(corpus.search(pos={"$in": ["NOUN", "VERB"]}))
+        ['9wpe']
+        >>> list(corpus.search(pos={"$regex": "N.*"}))
+        ['9wpe']
+        >>> list(corpus.search(pos="VERB", lemma="sleep"))
+        ['9wpe']
+        >>> list(corpus.search(pos="VERB", words="idea"))
+        []
+        >>> list(corpus.search(pos="VERB", words="ideas"))
+        ['9wpe']
+        >>> list(corpus.search({"pos": "VERB", "lemma": "sleep"}))
+        ['9wpe']
+        >>> list(corpus.search({"$and": {"pos": "VERB", "lemma": "sleep"}}))
+        ['9wpe']
+        """
+        if kwargs and query:
+            raise Exception("Cannot specify both query and kwargs.")
+        if self.corpus:
+            if kwargs:
+                query = self.normalise_query(kwargs)
+            else:
+                query = self.normalise_query(query)
+            for result in self.corpus.search(query):
+                yield result
+        else:
+            if kwargs:
+                for doc_id, doc in self.docs:
+                    if all(next(doc[layer].matches(value), None) 
+                           for layer, value in kwargs.items()):
+                        yield doc_id
+            else:
+                for doc_id, doc in self.docs:
+                    for key, value in query.items():
+                        if not self._doc_matches(doc, key, value):
+                            break
+                    else:
+                        yield doc_id
+
+    def normalise_query(self, query):
+        """Normalise a query by replacing all field values with either `$eq` or 
+        `$text`"""
+        q2 = {}
+        for key, value in query.items():
+            if isinstance(value, list):
+                if all(isinstance(v, str) for v in value):
+                    if key in self.meta and self.meta[key].data is None:
+                        q2[key] = {"$text_in": value}
+                    else:
+                        q2[key] = {"$in": value}
+            elif isinstance(value, dict):
+                q2[key] = value
+            elif key in self.meta and self.meta[key].data is None:
+                q2[key] = {"$text": value}
+            else:
+                q2[key] = {"$eq": value}
+        return q2
+        
+
+    def _doc_matches(self, doc, key, value):
+        if key == "$exists":
+            return value in doc.layers
+        elif key == "$and":
+            return all(self._doc_matches(doc, k, v) for k, v in value.items())
+        elif key == "$or":
+            return any(self._doc_matches(doc, k, v) for k, v in value.items())
+        elif key == "$not":
+            if isinstance(value, dict):
+                return all(self._doc_matches(doc, k, v) for k, v in value.items())
+            else:
+                raise Exception("Invalid $not query.")
+        elif key in self.meta:
+            return doc[key].matches(value)
+        else:
+            raise Exception("Invalid key: " + key)
+
     def to_yaml(self, path_or_buf : str):
         """Write the corpus to a yaml file.
 
