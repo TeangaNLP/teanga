@@ -557,7 +557,6 @@ link_types=None, target=None, default=None, meta={})}
         else:
             raise Exception("Invalid key: " + key)
 
-
     def to_yaml(self, path_or_buf : str):
         """Write the corpus to a yaml file.
 
