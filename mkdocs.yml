@@ -7,7 +7,7 @@ theme:
 
 nav:
   - index.md
-  - reference.md
+  - Code Reference: reference/ 
   - tutorials.md
   - how-to-guides.md
   - explanation.md
@@ -17,5 +17,8 @@ plugins:
   - gen-files:
       scripts:
         - mkdocs-docs/scripts/gen_pages.py  # or any other name or path
+  - literate-nav:
+      nav_file: SUMMARY.md
   - mkdocstrings:
      default_handler: python
+
