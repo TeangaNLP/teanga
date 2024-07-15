@@ -1,0 +1,17 @@
+docs_dir: mkdocs-docs
+site_name: teanga2
+
+theme:
+  name: "material"
+
+
+nav:
+  - index.md
+  - reference.md
+  - tutorials.md
+  - how-to-guides.md
+  - explanation.md
+
+plugins:
+  - mkdocstrings:
+     default_handler: python
