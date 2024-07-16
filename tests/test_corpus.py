@@ -152,3 +152,13 @@ def test_sentences():
     sentences = doc.sentences.text
     assert sentences[0] == "Hello world. "
     assert sentences[1] == "This is a test."
+
+def test_issue_14():
+    corpus = teanga.Corpus()
+    corpus.add_layer_meta("text", layer_type="characters")
+    corpus.add_layer_meta("words", layer_type="span", base="text")
+    corpus.add_layer_meta("upos", layer_type="seq", base="words", data=["DET","NOUN","VERB"])
+    doc = corpus.add_doc(text="This is an example")
+    doc.words = [[0,4], [5,7], [8,10], [11,17]]
+    doc.upos = [["DET"], ["VERB"], ["DET"], ["NOUN"]]
+    assert(doc.upos.data == ["DET", "VERB", "DET", "NOUN"])
