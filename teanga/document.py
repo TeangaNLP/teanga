@@ -4,8 +4,9 @@ from typing import Generator
 import numbers
 from itertools import chain, pairwise
 from deprecated import deprecated
-from typing import Union, Tuple
+from typing import Union, Tuple, Iterator
 from .layer_desc import LayerDesc
+import regex as re
 
 class Document:
     """Document class for storing and processing text data."""
@@ -240,7 +241,7 @@ class Document:
             indexes = self.layers[layer_name].indexes(text_layer)
             return (self.layers[text_layer].text[0][start:end]
                     for start, end in indexes)
-    
+
     def to_json(self) -> str:
         """Return the JSON representation of the document."""
         return {layer_id: self.layers[layer_id].raw
@@ -298,7 +299,40 @@ def validate_value(value, index_length):
             return value
         else:
             raise Exception("Bad value: " + repr(value))
-    
+
+def _key_match(data, text, key, match) -> bool:
+    if key == "$text":
+        return text == match
+    elif key == "$text_ne":
+        return text != match
+    elif key == "$eq":
+        return data == match
+    elif key == "$ne":
+        return data != match
+    elif key == "$gt":
+        return data > match
+    elif key == "$lt":
+        return data < match
+    elif key == "$gte":
+        return data >= match
+    elif key == "$lte":
+        return data <= match
+    elif key == "$in":
+        return data in match
+    elif key == "$nin":
+        return data not in match
+    elif key == "$text_in":
+        return text in match
+    elif key == "$text_nin":
+        return text not in match
+    elif key == "$regex":
+        return re.match(match, data)
+    elif key == "$text_regex":
+        return re.match(match, text)
+    elif key in ["$exists", "$and", "$or", "$not"]:
+        raise Exception("Operator " + key + " occurs in wrong context")
+    else:
+        raise Exception("Unknown key: " + key)
 
 class Layer(ABC):
     """A layer of annotation"""
@@ -359,6 +393,35 @@ class Layer(ABC):
             return self._name
         else:
             return self._doc.layers[self._meta.base].root_layer()
+
+    def matches(self, value: Union[str,list,dict]) -> Iterator[int]:
+        """Return the indexes of the annotations that match the given value.
+
+        Parameters:
+        -----------
+        value: Union[str,list,dict]
+            The value to match as described in the `view` method of 
+            the `Corpus` class.
+        """
+        if isinstance(value, str):
+            if self._meta.data is None:
+                return (i for i, x in enumerate(self.text) if x == value)
+            else:
+                return (i for i, x in enumerate(self.data) if x == value)
+        elif isinstance(value, list):
+            if self._meta.data is None:
+                return (i for i, x in enumerate(self.text) if x in value)
+            else:
+                return (i for i, x in enumerate(self.data) if x in value)
+        elif isinstance(value, dict):
+            if any(k.startswith("$text") for k in value):
+                return (i for i, (d, t) in enumerate(zip(self.data, self.text))
+                        if all(_key_match(d, t, k, v) for k, v in value.items()))
+            else:
+                return (i for i, d in enumerate(self.data)
+                        if all(_key_match(d, None, k, v) for k, v in value.items()))
+        else:
+            raise Exception("Bad value: " + repr(value))
 
     @abstractmethod
     def __len__(self):
@@ -590,7 +653,7 @@ class SpanLayer(StandoffLayer):
         elif layer == self._meta.base:
             return [(s[0], s[1]) for s in self._data]
         else:
-            subindexes = list(self._doc.layers[self._meta.base]. indexes(layer))
+            subindexes = list(self._doc.layers[self._meta.base].indexes(layer))
             return [(subindexes[s[0]], subindexes[s[1]]) for s in self._data]
 
     def __repr__(self):
