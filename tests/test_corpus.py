@@ -125,8 +125,9 @@ k0Jl:
 
 def test_open_url():
     corpus = teanga.from_url("https://teanga.io/examples/ex1.yaml")
-    assert len(corpus.docs) == 1
-    assert corpus.docs[0][1].text.text[0] == "Teanga2 data model"
+    corpus_docs = list(corpus.docs)
+    assert len(corpus_docs) == 1
+    assert corpus_docs[0][1].text.text[0] == "Teanga2 data model"
 
 def test_default_layers():
     corpus = teanga.Corpus()
