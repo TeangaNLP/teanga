@@ -14,6 +14,9 @@ class SpaCy(Service):
 
     python -m spacy download en_core_web_sm
 
+    Further information on SpaCY models can be found at:
+    https://spacy.io/models
+
     The SpaCY model is loaded in the setup() method. The model is then
     applied to the text in the execute() method. The SpaCY model
     produces a number of annotations, including tokens, part-of-speech
