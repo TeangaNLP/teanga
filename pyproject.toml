@@ -17,6 +17,10 @@ regex = "^2024.5.15"
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.2"
 
+
+[tool.poetry.group.spacy.dependencies]
+spacy = "^3.7.5"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
