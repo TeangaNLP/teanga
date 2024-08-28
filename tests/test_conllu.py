@@ -65,9 +65,10 @@ TEANGA_2 = """_meta:
   feats:
     base: tokens
     data: string
-  head:
+  deprel:
     base: tokens
     data: link
+    link_types: [ "acl", "acl:relcl", "advcl", "advcl:relcl", "advmod", "advmod:emph", "advmod:lmod", "amod", "appos", "aux", "aux:pass", "case", "cc", "cc:preconj", "ccomp", "clf", "compound", "compound:lvc", "compound:prt", "compound:redup", "compound:svc", "conj", "cop", "csubj", "csubj:outer", "csubj:pass", "dep", "det", "det:numgov", "det:nummod", "det:poss", "discourse", "dislocated", "expl", "expl:impers", "expl:pass", "expl:pv", "fixed", "flat", "flat:foreign", "flat:name", "goeswith", "iobj", "list", "mark", "nmod", "nmod:poss", "nmod:tmod", "nsubj", "nsubj:outer", "nsubj:pass", "nummod", "nummod:gov", "obj", "obl", "obl:agent", "obl:arg", "obl:lmod", "obl:tmod", "orphan", "parataxis", "punct", "reparandum", "root", "vocative", "xcomp"]
   deps:
     base: tokens
     data: string
@@ -83,9 +84,10 @@ xxxx:
   upos: ["SCONJ", "ADJ", "ADP", "DET", "ADJ", "NOUN", "AUX", "ADJ", "ADP"]
   xpos: ["IN", "JJ", "IN", "DT", "JJ", "NN", "VBZ", "JJ", "IN"]
   feats: ["_", "Degree=Pos", "_", "Definite=Def|PronType=Art", "Degree=Pos", "Number=Sing", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin", "Degree=Pos", "_"]
-  head: [9, 9, 7, 7, 7, 3, 9, 20, 13]
-  deps: ["mark", "nsubj", "case", "det", "amod", "nmod", "cop", "advcl", "case"]
+  deprel: [[(9, "mark"), (9, "nsubj"), (7, "case"), (7, "det"), (7, "amod"), (3, "nmod"), (9, "cop"), (20, "advcl"), (13, "case")]]
+  deps: ["9:mark", "9:nsubj", "7:case", "7:det", "7:amod", "3:nmod:of", "9:cop", "20:advcl:while", "13:case"]
   misc: ["_", "_", "_", "_", "_", "_", "_", "_", "_"]"""
+
 
 
 def test_conllu_1():
