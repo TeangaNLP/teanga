@@ -198,3 +198,10 @@ If put directly as a document, this indicates that the document is stored in
 another file and the YAML document is effectively copied directly in as this
 document.
 
+### Run tests
+
+To run the tests, you need the following command:
+
+```bash
+poetry run pytest && poetry run pytest --doctest-modules teanga
+```
