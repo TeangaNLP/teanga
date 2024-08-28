@@ -50,41 +50,48 @@ TEANGA_2 = """_meta:
     base: text
     type: span
   newdoc_id:
-    type: string
+    type: characters
   sent_id:
     type: characters
   lemma:
+    type: seq
     base: tokens
     data: string
   upos:
+    type: seq
     base: tokens
     data: ["ADJ", "ADP", "ADV", "AUX", "CCONJ", "DET", "INTJ", "NOUN", "NUM", "PART", "PRON", "PROPN", "PUNCT", "SCONJ", "VERB", "X" ]
   xpos:
+    type: seq
     base: tokens
     data: string
   feats:
+    type: seq
     base: tokens
     data: string
   deprel:
+    type: seq
     base: tokens
     data: link
     link_types: [ "acl", "acl:relcl", "advcl", "advcl:relcl", "advmod", "advmod:emph", "advmod:lmod", "amod", "appos", "aux", "aux:pass", "case", "cc", "cc:preconj", "ccomp", "clf", "compound", "compound:lvc", "compound:prt", "compound:redup", "compound:svc", "conj", "cop", "csubj", "csubj:outer", "csubj:pass", "dep", "det", "det:numgov", "det:nummod", "det:poss", "discourse", "dislocated", "expl", "expl:impers", "expl:pass", "expl:pv", "fixed", "flat", "flat:foreign", "flat:name", "goeswith", "iobj", "list", "mark", "nmod", "nmod:poss", "nmod:tmod", "nsubj", "nsubj:outer", "nsubj:pass", "nummod", "nummod:gov", "obj", "obl", "obl:agent", "obl:arg", "obl:lmod", "obl:tmod", "orphan", "parataxis", "punct", "reparandum", "root", "vocative", "xcomp"]
   deps:
+    type: seq
     base: tokens
     data: string
   misc:
+    type: seq
     base: tokens
     data: string
-xxxx:
+gma4:
   newdoc_id: n01001
   sent_id: n01001011
   text: “While much of the digital transition is unprecedented in
-  tokens: [[0,1], [2,6], [7,11], [12,14], [15,17], [18,25], [26,28], [29,31], [32,45], [46,47]]
+  tokens: [[1,6], [7,11], [12,14], [15,17], [18,25], [26,28], [29,31], [32,45], [46,47]]
   lemma: ["While", "much", "of", "the", "digital", "transition", "be", "unprecedented", "in"]
   upos: ["SCONJ", "ADJ", "ADP", "DET", "ADJ", "NOUN", "AUX", "ADJ", "ADP"]
   xpos: ["IN", "JJ", "IN", "DT", "JJ", "NN", "VBZ", "JJ", "IN"]
   feats: ["_", "Degree=Pos", "_", "Definite=Def|PronType=Art", "Degree=Pos", "Number=Sing", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin", "Degree=Pos", "_"]
-  deprel: [[(9, "mark"), (9, "nsubj"), (7, "case"), (7, "det"), (7, "amod"), (3, "nmod"), (9, "cop"), (20, "advcl"), (13, "case")]]
+  deprel: [[9, "mark"], [9, "nsubj"], [7, "case"], [7, "det"], [7, "amod"], [3, "nmod"], [9, "cop"], [20, "advcl"], [13, "case"]]
   deps: ["9:mark", "9:nsubj", "7:case", "7:det", "7:amod", "3:nmod:of", "9:cop", "20:advcl:while", "13:case"]
   misc: ["_", "_", "_", "_", "_", "_", "_", "_", "_"]"""
 
@@ -93,10 +100,10 @@ xxxx:
 def test_conllu_1():
     teanga_corpus = read_yaml_str(TEANGA_1)
     conllu_corpus = read_conllu_str(CONLLU_1)
-    assert teanga_corpus == conllu_corpus
+    assert teanga_corpus.to_json_str() == conllu_corpus.to_json_str()
 
 
 def test_conllu_2():
     teanga_corpus = read_yaml_str(TEANGA_2)
     conllu_corpus = read_conllu_str(CONLLU_2)
-    assert teanga_corpus == conllu_corpus
+    assert teanga_corpus.to_json_str() == conllu_corpus.to_json_str()
