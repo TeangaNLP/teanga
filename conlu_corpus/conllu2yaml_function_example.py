@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 #
 
-import conllu2yamlnew
+import conllu2yamlnew2
 
 
-conllu2yamlnew.convert_all_files(['zh_patentchar-ud-test.conllu', 'grc_ptnk-ud-test.conllu'])
+conllu2yamlnew2.convert_all_files(['sga_dipsgg-ud-test.conllu', 'ga_twittirish-ud-train.conllu'])
 

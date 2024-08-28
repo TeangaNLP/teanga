@@ -1,0 +1,6289 @@
+sent.1:
+  feat.Abbr:
+  - 'Yes'
+  - null
+  feat.Case:
+  - null
+  - Dat
+  feat.Degree:
+  - null
+  - Pos
+  feat.Number:
+  - null
+  - Plur
+  text: .i. libardaib
+  tokens:
+  - - 0
+    - 3
+  - - 4
+    - 13
+  upos:
+  - ADV
+  - ADJ
+sent.10:
+  feat.AdpType:
+  - Prep
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Case:
+  - null
+  - Dat
+  - Dat
+  - Gen
+  - null
+  - Gen
+  feat.Definite:
+  - Ind
+  - Def
+  - null
+  - null
+  - null
+  - null
+  feat.Number:
+  - null
+  - Sing
+  - Sing
+  - Sing
+  - null
+  - Sing
+  text: "hicach ceniul fis \u204A ecni"
+  tokens:
+  - - 0
+    - 2
+  - - 2
+    - 6
+  - - 7
+    - 13
+  - - 14
+    - 17
+  - - 18
+    - 19
+  - - 20
+    - 24
+  upos:
+  - ADP
+  - DET
+  - NOUN
+  - NOUN
+  - CCONJ
+  - NOUN
+sent.11:
+  feat.Abbr:
+  - 'Yes'
+  - null
+  - null
+  feat.Case:
+  - null
+  - Nom
+  - Nom
+  feat.Gender:
+  - null
+  - Masc
+  - null
+  feat.Number:
+  - null
+  - Sing
+  - Sing
+  feat.PronType:
+  - null
+  - Art
+  - null
+  feat.Typo:
+  - null
+  - 'Yes'
+  - null
+  text: ".i. in\u1E0Dtairdircus"
+  tokens:
+  - - 0
+    - 3
+  - - 4
+    - 8
+  - - 8
+    - 17
+  upos:
+  - ADV
+  - DET
+  - NOUN
+sent.12:
+  feat.Abbr:
+  - 'Yes'
+  - null
+  - null
+  - null
+  feat.Case:
+  - null
+  - Nom
+  - Nom
+  - null
+  feat.Gender:
+  - null
+  - Fem
+  - null
+  - null
+  feat.Number:
+  - null
+  - Sing
+  - Sing
+  - null
+  feat.PronType:
+  - null
+  - Art
+  - null
+  - Dem
+  text: .i. indias sin
+  tokens:
+  - - 0
+    - 3
+  - - 4
+    - 6
+  - - 6
+    - 10
+  - - 11
+    - 14
+  upos:
+  - ADV
+  - DET
+  - NOUN
+  - PART
+sent.1274:
+  feat.Case:
+  - null
+  - null
+  - Gen
+  - null
+  feat.Foreign:
+  - null
+  - 'Yes'
+  - null
+  - 'Yes'
+  feat.Number:
+  - null
+  - null
+  - Sing
+  - null
+  text: "\u169B\u1683\u1693\u168F\u1694\u1690\u1680\u1689\u1690\u1694\u1680\u1686\u1691\
+    \u1687\u1694\u1693"
+  tokens:
+  - - 0
+    - 1
+  - - 1
+    - 6
+  - - 7
+    - 10
+  - - 11
+    - 16
+  upos:
+  - PUNCT
+  - NOUN
+  - NOUN
+  - NOUN
+sent.1298:
+  feat.Case:
+  - Nom
+  - Gen
+  feat.Number:
+  - Sing
+  - Plur
+  text: "daman \u1E61ianach"
+  tokens:
+  - - 0
+    - 5
+  - - 6
+    - 13
+  upos:
+  - NOUN
+  - NOUN
+sent.13:
+  feat.Abbr:
+  - 'Yes'
+  - null
+  - null
+  - null
+  feat.AdpType:
+  - null
+  - null
+  - null
+  - Prep
+  feat.Case:
+  - null
+  - null
+  - Nom
+  - null
+  feat.Definite:
+  - null
+  - null
+  - null
+  - Ind
+  feat.NumType:
+  - null
+  - Ord
+  - null
+  - null
+  feat.Number:
+  - null
+  - null
+  - Sing
+  - Plur
+  feat.Person:
+  - null
+  - null
+  - null
+  - '3'
+  feat.PronType:
+  - null
+  - null
+  - null
+  - Prs
+  text: .i. trisfer friu
+  tokens:
+  - - 0
+    - 3
+  - - 4
+    - 8
+  - - 8
+    - 11
+  - - 12
+    - 16
+  upos:
+  - ADV
+  - NUM
+  - NOUN
+  - ADP
+sent.1311:
+  feat.Case:
+  - Nom
+  feat.Number:
+  - Sing
+  text: hirud
+  tokens:
+  - - 0
+    - 5
+  upos:
+  - NOUN
+sent.14:
+  feat.Abbr:
+  - 'Yes'
+  - null
+  - null
+  - null
+  - null
+  feat.AdpType:
+  - null
+  - null
+  - null
+  - Prep
+  - null
+  feat.Case:
+  - null
+  - null
+  - null
+  - null
+  - Dat
+  feat.Definite:
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  feat.Mood:
+  - null
+  - null
+  - Sub
+  - null
+  - null
+  feat.Number:
+  - null
+  - null
+  - Sing
+  - null
+  - Sing
+  feat.Person:
+  - null
+  - null
+  - '3'
+  - null
+  - null
+  feat.Polarity:
+  - null
+  - null
+  - Pos
+  - null
+  - null
+  feat.Tense:
+  - null
+  - null
+  - Past
+  - null
+  - null
+  feat.VerbType:
+  - null
+  - null
+  - Cop
+  - null
+  - null
+  text: .i. amal bid do dia
+  tokens:
+  - - 0
+    - 3
+  - - 4
+    - 8
+  - - 9
+    - 12
+  - - 13
+    - 15
+  - - 16
+    - 19
+  upos:
+  - ADV
+  - SCONJ
+  - AUX
+  - ADP
+  - NOUN
+sent.15:
+  feat.Abbr:
+  - 'Yes'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.AdpType:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Prep
+  - null
+  - Prep
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Prep
+  - Prep
+  - null
+  - Prep
+  - null
+  - Prep
+  - null
+  - Prep
+  - null
+  feat.Case:
+  - null
+  - null
+  - null
+  - Nom
+  - null
+  - null
+  - Nom
+  - Nom
+  - Nom
+  - null
+  - Dat
+  - null
+  - Acc
+  - Gen
+  - Gen
+  - Gen
+  - null
+  - null
+  - null
+  - null
+  - Dat
+  - null
+  - null
+  - null
+  - Dat
+  - null
+  - null
+  feat.Definite:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - Ind
+  - null
+  - Ind
+  - null
+  - Ind
+  - null
+  - Ind
+  - null
+  feat.Degree:
+  - null
+  - null
+  - null
+  - Pos
+  - null
+  - null
+  - Pos
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Cmp
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Gender:
+  - null
+  - null
+  - null
+  - Fem
+  - null
+  - null
+  - Fem
+  - Fem
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Masc
+  - null
+  - null
+  - null
+  - Masc,Neut
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Masc,Neut
+  - null
+  feat.Mood:
+  - null
+  - null
+  - Sub
+  - null
+  - null
+  - Sub
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Number:
+  - null
+  - null
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - Sing
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - null
+  - Sing
+  - Sing
+  - Sing
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - null
+  - Sing
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - Sing
+  - null
+  feat.Person:
+  - null
+  - null
+  - '3'
+  - null
+  - null
+  - '3'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - '3'
+  - null
+  - '3'
+  - null
+  - null
+  - '2'
+  - '2'
+  - null
+  - null
+  - '3'
+  - null
+  feat.Polarity:
+  - null
+  - null
+  - Pos
+  - null
+  - null
+  - Pos
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Pos
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.PronType:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Art
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Art
+  - null
+  - null
+  - null
+  - Prs
+  - null
+  - null
+  - Prs
+  - Emp
+  - null
+  - null
+  - Prs
+  - null
+  feat.Tense:
+  - null
+  - null
+  - Pres
+  - null
+  - null
+  - Pres
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Fut
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.VerbType:
+  - null
+  - null
+  - Cop
+  - null
+  - null
+  - Cop
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Cop
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  text: ".i. cid bec cid mar indinducb\xE1l \xF3 dia tarh\xE9si denmo ind libuir bith\
+    \ m\xE1 de do buith daitsiu hi coimthecht oco.,"
+  tokens:
+  - - 0
+    - 3
+  - - 4
+    - 6
+  - - 6
+    - 7
+  - - 8
+    - 11
+  - - 12
+    - 14
+  - - 14
+    - 15
+  - - 16
+    - 19
+  - - 20
+    - 23
+  - - 23
+    - 31
+  - - 32
+    - 33
+  - - 34
+    - 37
+  - - 38
+    - 41
+  - - 41
+    - 45
+  - - 46
+    - 51
+  - - 52
+    - 55
+  - - 56
+    - 62
+  - - 63
+    - 67
+  - - 68
+    - 70
+  - - 71
+    - 73
+  - - 74
+    - 76
+  - - 77
+    - 82
+  - - 83
+    - 87
+  - - 87
+    - 90
+  - - 91
+    - 93
+  - - 94
+    - 104
+  - - 105
+    - 108
+  - - 108
+    - 110
+  upos:
+  - ADV
+  - SCONJ
+  - AUX
+  - ADJ
+  - SCONJ
+  - AUX
+  - ADJ
+  - DET
+  - NOUN
+  - ADP
+  - NOUN
+  - ADP
+  - NOUN
+  - NOUN
+  - DET
+  - NOUN
+  - AUX
+  - ADJ
+  - ADP
+  - ADP
+  - NOUN
+  - ADP
+  - PRON
+  - ADP
+  - NOUN
+  - ADP
+  - PUNCT
+sent.1520:
+  feat.Case:
+  - Nom
+  feat.Number:
+  - Sing
+  text: bruach
+  tokens:
+  - - 0
+    - 6
+  upos:
+  - NOUN
+sent.16:
+  feat.Abbr:
+  - 'Yes'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.AdpType:
+  - null
+  - null
+  - null
+  - Prep
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Prep
+  feat.Case:
+  - null
+  - null
+  - Nom
+  - null
+  - Dat
+  - Dat
+  - null
+  - null
+  - null
+  - Nom
+  - null
+  feat.Definite:
+  - null
+  - null
+  - null
+  - Ind
+  - Def
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  feat.Gender:
+  - null
+  - Masc,Neut
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Masc,Neut
+  feat.Mood:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Sub
+  - null
+  - null
+  feat.Number:
+  - null
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - Sing
+  - null
+  - null
+  - Sing
+  - Sing
+  - Sing
+  feat.PartType:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Aug
+  - null
+  - null
+  feat.Person:
+  - null
+  - '3'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - '3'
+  - null
+  - '3'
+  feat.Polarity:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Neg
+  - null
+  - null
+  - null
+  feat.Poss:
+  - null
+  - 'Yes'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.PronType:
+  - null
+  - Prs
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Prs
+  feat.Tense:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Pres
+  - null
+  - null
+  feat.Voice:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Act
+  - null
+  - null
+  text: .i. athitol re cach libur ar naroib cummasc foir
+  tokens:
+  - - 0
+    - 3
+  - - 4
+    - 5
+  - - 5
+    - 11
+  - - 12
+    - 14
+  - - 15
+    - 19
+  - - 20
+    - 25
+  - - 26
+    - 28
+  - - 29
+    - 31
+  - - 31
+    - 35
+  - - 36
+    - 43
+  - - 44
+    - 48
+  upos:
+  - ADV
+  - PRON
+  - NOUN
+  - ADP
+  - DET
+  - NOUN
+  - SCONJ
+  - SCONJ
+  - VERB
+  - NOUN
+  - ADP
+sent.17:
+  feat.Abbr:
+  - 'Yes'
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.AdpType:
+  - null
+  - null
+  - null
+  - null
+  - Prep
+  - null
+  feat.Definite:
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  feat.Foreign:
+  - null
+  - 'Yes'
+  - 'Yes'
+  - 'Yes'
+  - null
+  - 'Yes'
+  feat.Typo:
+  - null
+  - null
+  - 'Yes'
+  - null
+  - null
+  - null
+  text: ".i. ut accentus .d. h\xED .c"
+  tokens:
+  - - 0
+    - 3
+  - - 4
+    - 6
+  - - 7
+    - 15
+  - - 16
+    - 19
+  - - 20
+    - 22
+  - - 23
+    - 25
+  upos:
+  - ADV
+  - SCONJ
+  - NOUN
+  - X
+  - ADP
+  - X
+sent.1731:
+  feat.AdpType:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Prep
+  feat.Case:
+  - Nom
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Nom
+  - null
+  feat.Definite:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  feat.Foreign:
+  - null
+  - null
+  - 'Yes'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Gender:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Masc,Neut
+  feat.Mood:
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  feat.Number:
+  - Sing
+  - Sing
+  - null
+  - null
+  - null
+  - null
+  - Sing
+  - Sing
+  - Sing
+  feat.PartType:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Vb
+  - null
+  - null
+  - null
+  feat.Person:
+  - null
+  - '3'
+  - null
+  - null
+  - null
+  - null
+  - '3'
+  - null
+  - '3'
+  feat.Polarity:
+  - null
+  - Pos
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.PronType:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Prs
+  feat.Tense:
+  - null
+  - Pres
+  - null
+  - null
+  - null
+  - null
+  - Pres
+  - null
+  - null
+  feat.VerbType:
+  - null
+  - Cop
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Voice:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Act
+  - null
+  - null
+  text: "immargal is femininum dano \u204A ata forbart and"
+  tokens:
+  - - 0
+    - 8
+  - - 9
+    - 11
+  - - 12
+    - 21
+  - - 22
+    - 26
+  - - 27
+    - 28
+  - - 29
+    - 30
+  - - 30
+    - 32
+  - - 33
+    - 40
+  - - 41
+    - 44
+  upos:
+  - NOUN
+  - AUX
+  - NOUN
+  - ADV
+  - CCONJ
+  - PART
+  - VERB
+  - NOUN
+  - ADP
+sent.18:
+  feat.Abbr:
+  - 'Yes'
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.AdpType:
+  - null
+  - Prep
+  - null
+  - null
+  - null
+  - null
+  feat.Case:
+  - null
+  - null
+  - Dat
+  - null
+  - null
+  - null
+  feat.Definite:
+  - null
+  - Def
+  - null
+  - null
+  - null
+  - null
+  feat.Gender:
+  - null
+  - null
+  - Neut
+  - null
+  - null
+  - null
+  feat.Mood:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  feat.Number:
+  - null
+  - null
+  - Plur
+  - null
+  - null
+  - Plur
+  feat.PartType:
+  - null
+  - null
+  - null
+  - Dct
+  - Vb
+  - null
+  feat.Person:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - '3'
+  feat.PronType:
+  - null
+  - null
+  - Art
+  - null
+  - null
+  - null
+  feat.Tense:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Pres
+  feat.Voice:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Act
+  text: ".i. donaib h\xED thecmo\u1E45gat"
+  tokens:
+  - - 0
+    - 3
+  - - 4
+    - 6
+  - - 6
+    - 10
+  - - 11
+    - 13
+  - - 14
+    - 16
+  - - 16
+    - 24
+  upos:
+  - ADV
+  - ADP
+  - DET
+  - PART
+  - PART
+  - VERB
+sent.1806:
+  feat.Case:
+  - null
+  - Nom
+  - Gen
+  feat.Number:
+  - null
+  - Sing
+  - Sing
+  text: "\u169B\u1683\u1693\u1682\u1680\u168B\u1690\u168F\u1688\u1690\u1694\u1685"
+  tokens:
+  - - 0
+    - 1
+  - - 1
+    - 4
+  - - 5
+    - 12
+  upos:
+  - PUNCT
+  - NOUN
+  - PROPN
+sent.19:
+  feat.Abbr:
+  - 'Yes'
+  - null
+  - null
+  - null
+  feat.AdpType:
+  - null
+  - Prep
+  - null
+  - null
+  feat.Case:
+  - null
+  - null
+  - Dat
+  - Dat
+  feat.Definite:
+  - null
+  - Def
+  - null
+  - null
+  feat.Gender:
+  - null
+  - null
+  - Masc
+  - null
+  feat.Number:
+  - null
+  - null
+  - Plur
+  - Plur
+  feat.PronType:
+  - null
+  - null
+  - Art
+  - null
+  text: ".i. dinaib d\xE9ainmmnichdechaib"
+  tokens:
+  - - 0
+    - 3
+  - - 4
+    - 6
+  - - 6
+    - 10
+  - - 11
+    - 29
+  upos:
+  - ADV
+  - ADP
+  - DET
+  - NOUN
+sent.2:
+  feat.Abbr:
+  - 'Yes'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.AdpType:
+  - null
+  - null
+  - null
+  - Prep
+  - null
+  - Prep
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Case:
+  - null
+  - null
+  - null
+  - null
+  - Dat
+  - null
+  - Acc
+  - Gen
+  - Gen
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Acc
+  feat.Definite:
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Gender:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Masc
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Mood:
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  - Sub
+  - null
+  - null
+  feat.Number:
+  - null
+  - null
+  - Sing
+  - null
+  - Sing
+  - null
+  - Plur
+  - Plur
+  - Plur
+  - null
+  - Plur
+  - null
+  - Sing
+  - Plur
+  - Plur
+  feat.PartType:
+  - null
+  - Vb
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Person:
+  - null
+  - null
+  - '3'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - '3'
+  - null
+  - '3'
+  - '3'
+  - null
+  feat.Polarity:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Pos
+  - null
+  - null
+  feat.Poss:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - 'Yes'
+  - null
+  feat.PronType:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Art
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Prs
+  - null
+  feat.Tense:
+  - null
+  - null
+  - Pres
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Pres
+  - null
+  - Pres
+  - null
+  - null
+  feat.VerbType:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Cop
+  - null
+  - null
+  feat.Voice:
+  - null
+  - null
+  - Act
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Act
+  - null
+  - null
+  - null
+  - null
+  text: ".i. att\xE1 di\u1E61eirc la laitnori innagrec co seichetar cid acomroicniu"
+  tokens:
+  - - 0
+    - 3
+  - - 4
+    - 6
+  - - 6
+    - 8
+  - - 9
+    - 11
+  - - 11
+    - 16
+  - - 17
+    - 19
+  - - 20
+    - 28
+  - - 29
+    - 33
+  - - 33
+    - 37
+  - - 38
+    - 40
+  - - 41
+    - 50
+  - - 51
+    - 53
+  - - 53
+    - 54
+  - - 55
+    - 56
+  - - 56
+    - 66
+  upos:
+  - ADV
+  - PART
+  - VERB
+  - ADP
+  - NOUN
+  - ADP
+  - NOUN
+  - DET
+  - NOUN
+  - SCONJ
+  - VERB
+  - SCONJ
+  - AUX
+  - PRON
+  - NOUN
+sent.20:
+  feat.Abbr:
+  - 'Yes'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.AdpType:
+  - null
+  - null
+  - null
+  - null
+  - Prep
+  - null
+  - null
+  - null
+  - Prep
+  - null
+  feat.Aspect:
+  - null
+  - null
+  - null
+  - Hab
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Case:
+  - null
+  - Nom
+  - Nom
+  - null
+  - null
+  - Acc
+  - null
+  - Acc
+  - null
+  - Dat
+  feat.Definite:
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  feat.Gender:
+  - null
+  - Neut
+  - null
+  - null
+  - null
+  - Fem
+  - null
+  - null
+  - null
+  - null
+  feat.Mood:
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.NumType:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Card
+  - null
+  - null
+  - null
+  feat.Number:
+  - null
+  - Sing
+  - Sing
+  - Sing
+  - null
+  - Dual
+  - null
+  - Dual
+  - null
+  - Sing
+  feat.Person:
+  - null
+  - null
+  - null
+  - '3'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.PronType:
+  - null
+  - Art
+  - null
+  - null
+  - null
+  - Art
+  - null
+  - null
+  - null
+  - null
+  feat.Tense:
+  - null
+  - null
+  - null
+  - Pres
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Voice:
+  - null
+  - null
+  - null
+  - Act
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  text: ".i. acob\xE1s \u1E41b\xEDs etar \u1E45 dirainn hi com\u1E61uidiguth"
+  tokens:
+  - - 0
+    - 3
+  - - 4
+    - 5
+  - - 5
+    - 10
+  - - 11
+    - 15
+  - - 16
+    - 20
+  - - 21
+    - 22
+  - - 23
+    - 25
+  - - 25
+    - 30
+  - - 31
+    - 33
+  - - 34
+    - 46
+  upos:
+  - ADV
+  - DET
+  - NOUN
+  - VERB
+  - ADP
+  - DET
+  - NUM
+  - NOUN
+  - ADP
+  - NOUN
+sent.2096:
+  feat.Case:
+  - Nom
+  - Gen
+  - Nom
+  feat.Gender:
+  - Neut
+  - null
+  - null
+  feat.Number:
+  - Sing
+  - Sing
+  - Sing
+  feat.PronType:
+  - Art
+  - null
+  - null
+  text: "aconm\xEDr"
+  tokens:
+  - - 0
+    - 1
+  - - 1
+    - 4
+  - - 4
+    - 7
+  upos:
+  - DET
+  - NOUN
+  - NOUN
+sent.2178:
+  feat.AdpType:
+  - null
+  - null
+  - null
+  - null
+  - Prep
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Prep
+  - null
+  - null
+  - null
+  - Prep
+  - null
+  feat.Case:
+  - null
+  - Nom
+  - Nom
+  - Nom
+  - null
+  - Dat
+  - null
+  - null
+  - Gen
+  - null
+  - Acc
+  - null
+  - null
+  - Acc
+  - Gen
+  - Gen
+  - null
+  - Dat
+  - Dat
+  - Dat
+  - null
+  - Dat
+  feat.Definite:
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Def
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  feat.Degree:
+  - null
+  - Pos
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Pos
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Pos
+  - null
+  - null
+  - null
+  - Pos
+  - null
+  - null
+  feat.Gender:
+  - null
+  - Fem
+  - Fem
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Neut
+  - null
+  - Fem
+  - null
+  - null
+  - null
+  - null
+  feat.Mood:
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Number:
+  - Sing
+  - Sing
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - null
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - null
+  - Sing
+  - Sing
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - Sing
+  - Sing
+  - null
+  - Sing
+  feat.PartType:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Vb
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Person:
+  - '3'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - '3'
+  - null
+  - null
+  - null
+  - null
+  - '1'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Polarity:
+  - Pos
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Neg
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Prefix:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - 'Yes'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.PronType:
+  - null
+  - null
+  - Art
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Art
+  - null
+  - null
+  - null
+  - null
+  feat.Tense:
+  - Pres
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Pres
+  - null
+  - null
+  - null
+  - null
+  - Pres
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.VerbType:
+  - Cop
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Voice:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Act
+  - null
+  - null
+  - null
+  - null
+  - Act
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  text: "IS acher ing\xE1ith innocht fufuasna fairggae find\u1E1Folt ni \xE1gor r\xE9\
+    imm mora minn dond l\xE1echraid lainn \xF3alothlind"
+  tokens:
+  - - 0
+    - 2
+  - - 3
+    - 8
+  - - 9
+    - 11
+  - - 11
+    - 16
+  - - 17
+    - 18
+  - - 18
+    - 24
+  - - 25
+    - 27
+  - - 27
+    - 33
+  - - 34
+    - 42
+  - - 43
+    - 47
+  - - 47
+    - 51
+  - - 52
+    - 54
+  - - 55
+    - 59
+  - - 60
+    - 65
+  - - 66
+    - 70
+  - - 71
+    - 75
+  - - 76
+    - 78
+  - - 78
+    - 80
+  - - 81
+    - 90
+  - - 91
+    - 96
+  - - 97
+    - 99
+  - - 99
+    - 107
+  upos:
+  - AUX
+  - ADJ
+  - DET
+  - NOUN
+  - ADP
+  - NOUN
+  - PART
+  - VERB
+  - NOUN
+  - ADJ
+  - NOUN
+  - PART
+  - VERB
+  - NOUN
+  - NOUN
+  - ADJ
+  - ADP
+  - DET
+  - NOUN
+  - ADJ
+  - ADP
+  - PROPN
+sent.2196:
+  feat.Case:
+  - Nom
+  - Gen
+  feat.Number:
+  - Sing
+  - Sing
+  text: "cen\xE9le \u1E41biid"
+  tokens:
+  - - 0
+    - 6
+  - - 7
+    - 12
+  upos:
+  - NOUN
+  - NOUN
+sent.2198:
+  feat.AdpType:
+  - null
+  - Prep
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Case:
+  - Nom
+  - null
+  - Dat
+  - Gen
+  - null
+  - null
+  - null
+  feat.Definite:
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Foreign:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - 'Yes'
+  - null
+  feat.Number:
+  - Sing
+  - null
+  - Sing
+  - Sing
+  - null
+  - null
+  - null
+  text: "bendacht for anmmain ferguso\xB7 amen\xB7\u2013"
+  tokens:
+  - - 0
+    - 8
+  - - 9
+    - 12
+  - - 13
+    - 20
+  - - 21
+    - 28
+  - - 28
+    - 29
+  - - 30
+    - 34
+  - - 34
+    - 36
+  upos:
+  - NOUN
+  - ADP
+  - NOUN
+  - PROPN
+  - PUNCT
+  - ADV
+  - PUNCT
+sent.2199:
+  feat.AdpType:
+  - null
+  - null
+  - Prep
+  - null
+  feat.Case:
+  - null
+  - Nom
+  - null
+  - null
+  feat.Definite:
+  - null
+  - null
+  - Ind
+  - null
+  feat.Degree:
+  - Pos
+  - null
+  - null
+  - null
+  feat.Number:
+  - null
+  - Sing
+  - Sing
+  - null
+  feat.Person:
+  - null
+  - null
+  - '1'
+  - null
+  feat.Prefix:
+  - 'Yes'
+  - null
+  - null
+  - null
+  feat.PronType:
+  - null
+  - null
+  - Prs
+  - null
+  text: "mar uar dom\xB7\u2013"
+  tokens:
+  - - 0
+    - 3
+  - - 4
+    - 7
+  - - 8
+    - 11
+  - - 11
+    - 13
+  upos:
+  - ADJ
+  - NOUN
+  - ADP
+  - PUNCT
+sent.2534:
+  feat.Case:
+  - Nom
+  - null
+  - null
+  - Voc
+  feat.Degree:
+  - null
+  - null
+  - Pos
+  - null
+  feat.Number:
+  - Sing
+  - null
+  - null
+  - Sing
+  feat.PartType:
+  - null
+  - Voc
+  - null
+  - null
+  feat.Prefix:
+  - null
+  - null
+  - 'Yes'
+  - null
+  text: "s\xE9n an\xF3ibingen"
+  tokens:
+  - - 0
+    - 3
+  - - 4
+    - 5
+  - - 5
+    - 9
+  - - 9
+    - 14
+  upos:
+  - NOUN
+  - PART
+  - ADJ
+  - NOUN
+sent.2547:
+  feat.Case:
+  - Nom
+  - null
+  feat.Foreign:
+  - null
+  - 'Yes'
+  feat.Number:
+  - Sing
+  - null
+  text: ruadri adest
+  tokens:
+  - - 0
+    - 6
+  - - 7
+    - 12
+  upos:
+  - PROPN
+  - VERB
+sent.2612:
+  feat.AdpType:
+  - null
+  - null
+  - Prep
+  feat.Case:
+  - null
+  - Nom
+  - null
+  feat.Definite:
+  - null
+  - null
+  - Ind
+  feat.Degree:
+  - null
+  - Pos
+  - null
+  feat.Mood:
+  - Ind
+  - null
+  - null
+  feat.Number:
+  - Sing
+  - Sing
+  - Sing
+  feat.Person:
+  - '3'
+  - null
+  - '1'
+  feat.Polarity:
+  - Pos
+  - null
+  - null
+  feat.PronType:
+  - null
+  - null
+  - Prs
+  feat.Tense:
+  - Pres
+  - null
+  - null
+  feat.VerbType:
+  - Cop
+  - null
+  - null
+  text: "isdorch\xE6 dom"
+  tokens:
+  - - 0
+    - 2
+  - - 2
+    - 8
+  - - 9
+    - 12
+  upos:
+  - AUX
+  - ADJ
+  - ADP
+sent.2632:
+  feat.Case:
+  - null
+  - null
+  - Nom
+  feat.Degree:
+  - null
+  - Pos
+  - null
+  feat.Number:
+  - null
+  - null
+  - Sing
+  feat.Prefix:
+  - null
+  - 'Yes'
+  - null
+  text: "\u169B\u168B\u1694\u1685\u1680\u1689\u1686\u1690\u1684\u1689"
+  tokens:
+  - - 0
+    - 1
+  - - 1
+    - 4
+  - - 5
+    - 10
+  upos:
+  - PUNCT
+  - ADJ
+  - NOUN
+sent.2663:
+  feat.Case:
+  - null
+  - null
+  - Nom
+  feat.Number:
+  - null
+  - Sing
+  - Sing
+  feat.Person:
+  - null
+  - '1'
+  - null
+  feat.Poss:
+  - null
+  - 'Yes'
+  - null
+  feat.PronType:
+  - null
+  - Prs
+  - null
+  text: uit mo chrob
+  tokens:
+  - - 0
+    - 3
+  - - 4
+    - 6
+  - - 7
+    - 12
+  upos:
+  - INTJ
+  - PRON
+  - NOUN
+sent.2703:
+  feat.Case:
+  - Nom
+  feat.Number:
+  - Sing
+  text: finguine
+  tokens:
+  - - 0
+    - 8
+  upos:
+  - PROPN
+sent.2784:
+  feat.Case:
+  - Nom
+  feat.Number:
+  - Sing
+  text: lathaeirt
+  tokens:
+  - - 0
+    - 9
+  upos:
+  - NOUN
+sent.2805:
+  feat.Mood:
+  - null
+  - Ind
+  feat.Number:
+  - null
+  - Sing
+  feat.PartType:
+  - Vb
+  - null
+  feat.Person:
+  - null
+  - '3'
+  feat.Tense:
+  - null
+  - Pres
+  feat.Voice:
+  - null
+  - Act
+  text: follega
+  tokens:
+  - - 0
+    - 2
+  - - 2
+    - 7
+  upos:
+  - PART
+  - VERB
+sent.2833:
+  feat.Case:
+  - null
+  - Nom
+  feat.Number:
+  - null
+  - Sing
+  feat.Typo:
+  - null
+  - 'Yes'
+  text: "\u169B\u1689\u1691\u1689\u1690\u168F\u1688"
+  tokens:
+  - - 0
+    - 1
+  - - 1
+    - 7
+  upos:
+  - PUNCT
+  - NOUN
+sent.2846:
+  feat.Case:
+  - Nom
+  feat.Number:
+  - Sing
+  text: donngus
+  tokens:
+  - - 0
+    - 7
+  upos:
+  - PROPN
+sent.2847:
+  feat.Case:
+  - null
+  - Nom
+  feat.Number:
+  - null
+  - Sing
+  feat.Typo:
+  - null
+  - 'Yes'
+  text: "\u169B\u1689\u1691\u1689\u1690\u168F\u1688"
+  tokens:
+  - - 0
+    - 1
+  - - 1
+    - 7
+  upos:
+  - PUNCT
+  - NOUN
+sent.2852:
+  feat.Abbr:
+  - null
+  - null
+  - null
+  - null
+  - 'Yes'
+  - null
+  - null
+  - null
+  - null
+  feat.AdpType:
+  - Prep
+  - null
+  - null
+  - Prep
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Case:
+  - null
+  - Dat
+  - Dat
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Nom
+  feat.Definite:
+  - Ind
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Number:
+  - null
+  - Sing
+  - Sing
+  - Plur
+  - null
+  - Sing
+  - Sing
+  - null
+  - Sing
+  feat.Person:
+  - null
+  - null
+  - null
+  - '1'
+  - null
+  - '1'
+  - '1'
+  - null
+  - null
+  feat.PronType:
+  - null
+  - null
+  - null
+  - Prs
+  - null
+  - Prs
+  - Emp
+  - null
+  - null
+  text: "do inis maddoc d\xFAn .i. mei sse \u204A choirbbre"
+  tokens:
+  - - 0
+    - 2
+  - - 3
+    - 7
+  - - 8
+    - 14
+  - - 15
+    - 18
+  - - 19
+    - 22
+  - - 23
+    - 26
+  - - 27
+    - 30
+  - - 31
+    - 32
+  - - 33
+    - 42
+  upos:
+  - ADP
+  - NOUN
+  - PROPN
+  - ADP
+  - ADV
+  - PRON
+  - PRON
+  - CCONJ
+  - PROPN
+sent.2853:
+  feat.Case:
+  - null
+  - Nom
+  - Nom
+  - Nom
+  - null
+  - Nom
+  - Nom
+  feat.Degree:
+  - null
+  - Pos
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Foreign:
+  - null
+  - null
+  - null
+  - null
+  - 'Yes'
+  - null
+  - null
+  feat.Gender:
+  - null
+  - Masc
+  - Masc
+  - null
+  - null
+  - Neut
+  - null
+  feat.Mood:
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Number:
+  - Sing
+  - Sing
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - Sing
+  feat.Person:
+  - '3'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Polarity:
+  - Pos
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.PronType:
+  - null
+  - null
+  - Art
+  - null
+  - null
+  - Art
+  - null
+  feat.Tense:
+  - Pres
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.VerbType:
+  - Cop
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  text: isgann inmemrum et ascribend
+  tokens:
+  - - 0
+    - 2
+  - - 2
+    - 6
+  - - 7
+    - 9
+  - - 9
+    - 15
+  - - 16
+    - 18
+  - - 19
+    - 20
+  - - 20
+    - 28
+  upos:
+  - AUX
+  - ADJ
+  - DET
+  - NOUN
+  - CCONJ
+  - DET
+  - NOUN
+sent.2854:
+  feat.Case:
+  - Nom
+  feat.Number:
+  - Sing
+  text: "\u1689\u1691\u1689\u1690\u168F\u1688"
+  tokens:
+  - - 0
+    - 6
+  upos:
+  - NOUN
+sent.2861:
+  feat.Case:
+  - null
+  - null
+  - Nom
+  - null
+  - Nom
+  - Nom
+  - null
+  feat.Degree:
+  - null
+  - null
+  - Pos
+  - null
+  - null
+  - null
+  - null
+  feat.Gender:
+  - null
+  - null
+  - null
+  - null
+  - Masc
+  - null
+  - null
+  feat.Mood:
+  - Ind
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  feat.Number:
+  - Sing
+  - null
+  - Sing
+  - Sing
+  - Sing
+  - Sing
+  - null
+  feat.PartType:
+  - null
+  - null
+  - null
+  - Aug
+  - null
+  - null
+  - null
+  feat.Person:
+  - '3'
+  - null
+  - null
+  - '3'
+  - null
+  - null
+  - null
+  feat.Polarity:
+  - Neg
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Prefix:
+  - null
+  - 'Yes'
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.PronType:
+  - null
+  - null
+  - null
+  - null
+  - Art
+  - null
+  - Dem
+  feat.Tense:
+  - Pres
+  - null
+  - null
+  - Past
+  - null
+  - null
+  - null
+  feat.VerbType:
+  - Cop
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Voice:
+  - null
+  - null
+  - null
+  - Pass
+  - null
+  - null
+  - null
+  text: "n\xED \u01FDrmall roscr\xEDbad inletr\xE1imso"
+  tokens:
+  - - 0
+    - 2
+  - - 3
+    - 5
+  - - 5
+    - 9
+  - - 10
+    - 19
+  - - 20
+    - 22
+  - - 22
+    - 29
+  - - 29
+    - 31
+  upos:
+  - AUX
+  - PART
+  - ADJ
+  - VERB
+  - DET
+  - NOUN
+  - PART
+sent.2862:
+  feat.Case:
+  - null
+  - null
+  - Nom
+  - Nom
+  - null
+  feat.Gender:
+  - null
+  - Masc,Neut
+  - null
+  - Fem
+  - null
+  feat.Number:
+  - null
+  - Sing
+  - Sing
+  - Sing
+  - null
+  feat.Person:
+  - null
+  - '3'
+  - null
+  - null
+  - null
+  feat.Poss:
+  - null
+  - 'Yes'
+  - null
+  - null
+  - null
+  feat.PronType:
+  - null
+  - Prs
+  - null
+  - Art
+  - Dem
+  feat.Typo:
+  - null
+  - null
+  - 'Yes'
+  - null
+  - null
+  text: "\u169B\u1690\u1680\u1699\u1691\u1689\u1690\u168F\u1688\u1680\u1694\u1685\u1680\
+    \u1684\u1691"
+  tokens:
+  - - 0
+    - 1
+  - - 1
+    - 2
+  - - 3
+    - 9
+  - - 10
+    - 12
+  - - 13
+    - 15
+  upos:
+  - PUNCT
+  - PRON
+  - NOUN
+  - DET
+  - PART
+sent.288:
+  feat.Mood:
+  - Ind
+  feat.Number:
+  - Sing
+  feat.Person:
+  - '1'
+  feat.Tense:
+  - Pres
+  feat.Voice:
+  - Act
+  text: braigim
+  tokens:
+  - - 0
+    - 7
+  upos:
+  - VERB
+sent.2919:
+  feat.Abbr:
+  - 'Yes'
+  - null
+  - null
+  - null
+  - null
+  feat.Case:
+  - null
+  - null
+  - null
+  - Nom
+  - null
+  feat.Gender:
+  - null
+  - null
+  - Neut
+  - null
+  - null
+  feat.Number:
+  - null
+  - null
+  - Sing
+  - Sing
+  - null
+  feat.Person:
+  - null
+  - null
+  - '3'
+  - null
+  - null
+  feat.Polarity:
+  - null
+  - null
+  - Neg
+  - null
+  - null
+  feat.PronClass:
+  - null
+  - null
+  - Neg
+  - null
+  - null
+  feat.PronType:
+  - null
+  - null
+  - Prs
+  - null
+  - null
+  text: .i. connach ainm samlaid
+  tokens:
+  - - 0
+    - 3
+  - - 4
+    - 7
+  - - 7
+    - 11
+  - - 12
+    - 16
+  - - 17
+    - 24
+  upos:
+  - ADV
+  - SCONJ
+  - SCONJ
+  - NOUN
+  - ADV
+sent.2962:
+  feat.Case:
+  - null
+  - Nom
+  feat.Degree:
+  - null
+  - Pos
+  feat.Mood:
+  - Ind
+  - null
+  feat.Number:
+  - Sing
+  - Sing
+  feat.Person:
+  - '3'
+  - null
+  feat.Polarity:
+  - Neg
+  - null
+  feat.Tense:
+  - Pres
+  - null
+  feat.VerbType:
+  - Cop
+  - null
+  text: "n\xED mmall"
+  tokens:
+  - - 0
+    - 2
+  - - 3
+    - 8
+  upos:
+  - AUX
+  - ADJ
+sent.3:
+  feat.Case:
+  - Dat
+  - Dat
+  - null
+  feat.Gender:
+  - Fem
+  - null
+  - null
+  feat.Number:
+  - Sing
+  - Sing
+  - null
+  feat.PronType:
+  - Art
+  - null
+  - Dem
+  text: "inm\xE9itso"
+  tokens:
+  - - 0
+    - 2
+  - - 2
+    - 6
+  - - 6
+    - 8
+  upos:
+  - DET
+  - NOUN
+  - PART
+sent.3078:
+  feat.AdpType:
+  - null
+  - null
+  - null
+  - null
+  - Prep
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Prep
+  - Prep
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Case:
+  - Nom
+  - Gen
+  - null
+  - Gen
+  - null
+  - Acc
+  - Gen
+  - null
+  - null
+  - Nom
+  - null
+  - Nom
+  - null
+  - null
+  - Dat
+  - Dat
+  - null
+  - Acc
+  - Acc
+  - null
+  feat.Definite:
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - Def
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Degree:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Pos
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Gender:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Masc,Neut
+  - null
+  - null
+  - null
+  - Neut
+  - null
+  - null
+  - Masc
+  - null
+  - null
+  feat.Mood:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Sub
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  feat.Number:
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - null
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - Sing
+  - Sing
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - Sing
+  - Sing
+  - Sing
+  - Sing
+  - null
+  feat.PartType:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Aug
+  - null
+  - null
+  - null
+  feat.Person:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - '3'
+  - null
+  - '3'
+  - null
+  - '1'
+  - null
+  - null
+  - null
+  - '3'
+  - null
+  - null
+  - null
+  feat.Polarity:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Neg
+  - Pos
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Poss:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - 'Yes'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.PronType:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Rel
+  - null
+  - Prs
+  - null
+  - Prs
+  - null
+  - Art
+  - null
+  - null
+  - Art
+  - null
+  - Dem
+  feat.Tense:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Pres
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Past
+  - null
+  - null
+  - null
+  feat.VerbType:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Cop
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Voice:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Pass
+  - null
+  - null
+  - null
+  text: "maithas patric \u204A brigtae ar m\xE1el brigtae namba olcc amenma frimm\
+    \ arinscribund roscribad indulso"
+  tokens:
+  - - 0
+    - 7
+  - - 8
+    - 14
+  - - 15
+    - 16
+  - - 17
+    - 24
+  - - 25
+    - 27
+  - - 28
+    - 32
+  - - 33
+    - 40
+  - - 41
+    - 43
+  - - 43
+    - 46
+  - - 47
+    - 51
+  - - 52
+    - 53
+  - - 53
+    - 58
+  - - 59
+    - 64
+  - - 65
+    - 67
+  - - 67
+    - 69
+  - - 69
+    - 77
+  - - 78
+    - 87
+  - - 88
+    - 90
+  - - 90
+    - 93
+  - - 93
+    - 95
+  upos:
+  - NOUN
+  - PROPN
+  - CCONJ
+  - PROPN
+  - ADP
+  - PROPN
+  - PROPN
+  - SCONJ
+  - AUX
+  - ADJ
+  - PRON
+  - NOUN
+  - ADP
+  - ADP
+  - DET
+  - NOUN
+  - VERB
+  - DET
+  - NOUN
+  - PART
+sent.3079:
+  feat.Case:
+  - null
+  - Nom
+  - null
+  - null
+  - Nom
+  - null
+  - Voc
+  feat.Mood:
+  - Ind
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  feat.Number:
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - Sing
+  - null
+  - Sing
+  feat.PartType:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Voc
+  - null
+  feat.Person:
+  - '3'
+  - null
+  - null
+  - '3'
+  - null
+  - null
+  - null
+  feat.Tense:
+  - Pres
+  - null
+  - null
+  - Pres
+  - null
+  - null
+  - null
+  feat.Voice:
+  - Act
+  - null
+  - null
+  - Act
+  - null
+  - null
+  - null
+  text: "maraith sercc c\xE9in mardda aithne am\xE1elec\xE1n"
+  tokens:
+  - - 0
+    - 7
+  - - 8
+    - 13
+  - - 14
+    - 18
+  - - 19
+    - 25
+  - - 26
+    - 32
+  - - 33
+    - 34
+  - - 34
+    - 42
+  upos:
+  - VERB
+  - NOUN
+  - ADV
+  - VERB
+  - NOUN
+  - PART
+  - PROPN
+sent.3080:
+  feat.Case:
+  - null
+  - Nom
+  feat.Number:
+  - null
+  - Sing
+  text: "\u169B\u1682\u1690\u1688\u1686\u1693\u1694\u168F\u1688"
+  tokens:
+  - - 0
+    - 1
+  - - 1
+    - 9
+  upos:
+  - PUNCT
+  - NOUN
+sent.3094:
+  feat.Number:
+  - null
+  - Sing
+  - Sing
+  feat.PartType:
+  - Voc
+  - null
+  - null
+  feat.Person:
+  - null
+  - '2'
+  - '2'
+  feat.PronType:
+  - null
+  - Prs
+  - Emp
+  text: athvsv
+  tokens:
+  - - 0
+    - 1
+  - - 1
+    - 4
+  - - 4
+    - 6
+  upos:
+  - PART
+  - PRON
+  - PRON
+sent.3102:
+  feat.AdpType:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Prep
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Prep
+  - null
+  - null
+  - Prep
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Prep
+  - null
+  - null
+  feat.Case:
+  - null
+  - null
+  - null
+  - Gen
+  - Nom
+  - null
+  - null
+  - null
+  - Nom
+  - Gen
+  - Nom
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Nom
+  - Nom
+  - Nom
+  - null
+  - null
+  - null
+  - Nom
+  - Gen
+  - Gen
+  - null
+  - null
+  - null
+  - null
+  - Gen
+  - null
+  - Nom
+  - Nom
+  - null
+  - Dat
+  - Dat
+  - null
+  - Dat
+  - Gen
+  - null
+  - null
+  - null
+  - null
+  - Nom
+  - null
+  - Nom
+  - null
+  - null
+  - Gen
+  - Acc
+  feat.Definite:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  feat.Degree:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Pos
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Pos
+  - null
+  - Pos
+  - null
+  - null
+  - Pos
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Pos
+  - null
+  - null
+  - null
+  - null
+  feat.Gender:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Masc
+  - Masc
+  - null
+  - null
+  - null
+  - null
+  - Masc
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Fem
+  - null
+  - null
+  - Masc
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Mood:
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Sub
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  feat.Number:
+  - null
+  - Sing
+  - Sing
+  - Plur
+  - Sing
+  - null
+  - Sing
+  - Sing
+  - Sing
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - null
+  - null
+  - Sing
+  - Sing
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - Sing
+  - Sing
+  - Plur
+  - Plur
+  - null
+  - null
+  - Sing
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - Sing
+  - null
+  - Plur
+  - Plur
+  - null
+  - null
+  - null
+  - Sing
+  - Sing
+  - Sing
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - Sing
+  feat.PartType:
+  - Vb
+  - null
+  - null
+  - null
+  - null
+  - Vb
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Rel
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Vb
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Vb
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Vb
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Person:
+  - null
+  - '1'
+  - '3'
+  - null
+  - null
+  - null
+  - '1'
+  - '3'
+  - null
+  - null
+  - null
+  - null
+  - '1'
+  - null
+  - null
+  - '1'
+  - null
+  - null
+  - null
+  - null
+  - '1'
+  - '3'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - '1'
+  - '3'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - '1'
+  - null
+  - '3'
+  - null
+  - '1'
+  - null
+  - null
+  - null
+  feat.Polarity:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Neg
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Poss:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - 'Yes'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Prefix:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - 'Yes'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.PronClass:
+  - null
+  - A
+  - null
+  - null
+  - null
+  - null
+  - A
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - A
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - A
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - A
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.PronType:
+  - null
+  - Prs
+  - null
+  - null
+  - null
+  - null
+  - Prs
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Prs
+  - null
+  - Art
+  - null
+  - null
+  - Prs
+  - null
+  - null
+  - Art
+  - null
+  - null
+  - null
+  - Prs
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Prs
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Tense:
+  - null
+  - null
+  - Pres
+  - null
+  - null
+  - null
+  - null
+  - Pres
+  - null
+  - null
+  - null
+  - null
+  - Fut
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Pres
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Pres
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Pres
+  - null
+  - Pres
+  - null
+  - null
+  - null
+  feat.Voice:
+  - null
+  - null
+  - Act
+  - null
+  - null
+  - null
+  - null
+  - Act
+  - null
+  - null
+  - null
+  - null
+  - Act
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Act
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Act
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Act
+  - null
+  - Act
+  - null
+  - null
+  - null
+  text: "Domfarcai fidbaidae f\xE1l fomchain l\xF3id luin l\xFAad nad c\xE9l\xB7 huas\
+    \ mo lebr\xE1n indl\xEDnech fomchain tr\xEDrech inna\u1E45\xE9n \xB7\xB7, Fommchain\
+    \ c\xF3i menn medair mass hi\u1E41brot glass de dindgnaibdoss\xB7 debrath nomchoimmdiu\
+    \ c\xF3ima c\xE1inscr\xEDbaimm for\xF3ida ross"
+  tokens:
+  - - 0
+    - 2
+  - - 2
+    - 3
+  - - 3
+    - 9
+  - - 10
+    - 19
+  - - 20
+    - 23
+  - - 24
+    - 26
+  - - 26
+    - 27
+  - - 27
+    - 32
+  - - 33
+    - 37
+  - - 38
+    - 42
+  - - 43
+    - 47
+  - - 48
+    - 51
+  - - 52
+    - 55
+  - - 55
+    - 56
+  - - 57
+    - 61
+  - - 62
+    - 64
+  - - 65
+    - 71
+  - - 72
+    - 75
+  - - 75
+    - 81
+  - - 82
+    - 84
+  - - 84
+    - 85
+  - - 85
+    - 90
+  - - 91
+    - 98
+  - - 99
+    - 103
+  - - 103
+    - 106
+  - - 107
+    - 110
+  - - 111
+    - 113
+  - - 113
+    - 115
+  - - 115
+    - 120
+  - - 121
+    - 124
+  - - 125
+    - 129
+  - - 130
+    - 136
+  - - 137
+    - 141
+  - - 142
+    - 144
+  - - 144
+    - 149
+  - - 150
+    - 155
+  - - 156
+    - 158
+  - - 159
+    - 168
+  - - 168
+    - 172
+  - - 172
+    - 173
+  - - 174
+    - 181
+  - - 182
+    - 184
+  - - 184
+    - 185
+  - - 185
+    - 194
+  - - 195
+    - 200
+  - - 201
+    - 205
+  - - 205
+    - 214
+  - - 215
+    - 217
+  - - 217
+    - 222
+  - - 223
+    - 227
+  upos:
+  - PART
+  - PRON
+  - VERB
+  - NOUN
+  - NOUN
+  - PART
+  - PRON
+  - VERB
+  - NOUN
+  - NOUN
+  - NOUN
+  - PART
+  - VERB
+  - PUNCT
+  - ADP
+  - PRON
+  - NOUN
+  - DET
+  - ADJ
+  - PART
+  - PRON
+  - VERB
+  - NOUN
+  - DET
+  - NOUN
+  - PUNCT
+  - PART
+  - PRON
+  - VERB
+  - NOUN
+  - ADJ
+  - NOUN
+  - ADJ
+  - ADP
+  - NOUN
+  - ADJ
+  - ADP
+  - NOUN
+  - NOUN
+  - PUNCT
+  - INTJ
+  - PART
+  - PRON
+  - NOUN
+  - VERB
+  - ADJ
+  - VERB
+  - ADP
+  - NOUN
+  - NOUN
+sent.3118:
+  feat.Case:
+  - Nom
+  feat.Number:
+  - Sing
+  text: dongus
+  tokens:
+  - - 0
+    - 6
+  upos:
+  - PROPN
+sent.3228:
+  feat.Abbr:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - 'Yes'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.AdpType:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Prep
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Definite:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Degree:
+  - null
+  - null
+  - null
+  - null
+  - Pos
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Mood:
+  - Ind
+  - null
+  - null
+  - Sub
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Number:
+  - Sing
+  - null
+  - null
+  - Sing
+  - null
+  - Sing
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Person:
+  - '1'
+  - null
+  - null
+  - '3'
+  - null
+  - '2'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Polarity:
+  - null
+  - null
+  - null
+  - Pos
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.PronType:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Prs
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Tense:
+  - Fut
+  - null
+  - null
+  - Pres
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.VerbType:
+  - null
+  - null
+  - null
+  - Cop
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Voice:
+  - Act
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  text: "tiach didiv mad ferr lat .i. d\xB7o\xB7o\xB7"
+  tokens:
+  - - 0
+    - 5
+  - - 6
+    - 11
+  - - 12
+    - 14
+  - - 14
+    - 15
+  - - 16
+    - 20
+  - - 21
+    - 24
+  - - 25
+    - 28
+  - - 29
+    - 30
+  - - 30
+    - 31
+  - - 31
+    - 32
+  - - 32
+    - 33
+  - - 33
+    - 34
+  - - 34
+    - 35
+  upos:
+  - VERB
+  - ADV
+  - SCONJ
+  - AUX
+  - ADJ
+  - ADP
+  - ADV
+  - X
+  - PUNCT
+  - X
+  - PUNCT
+  - X
+  - PUNCT
+sent.3259:
+  feat.Case:
+  - null
+  - null
+  - null
+  - Nom
+  - null
+  - null
+  - Voc
+  - null
+  feat.Degree:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Pos
+  - null
+  - null
+  feat.Number:
+  - null
+  - null
+  - Sing
+  - Sing
+  - null
+  - null
+  - Sing
+  - null
+  feat.PartType:
+  - null
+  - null
+  - null
+  - null
+  - Voc
+  - null
+  - null
+  - null
+  feat.Person:
+  - null
+  - null
+  - '1'
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Poss:
+  - null
+  - null
+  - 'Yes'
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Prefix:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - 'Yes'
+  - null
+  - null
+  feat.PronType:
+  - null
+  - null
+  - Prs
+  - null
+  - null
+  - null
+  - null
+  - null
+  text: "\xB7\xB7, uch mochliab an\xF3ibingen \xB7\xB7\u2013"
+  tokens:
+  - - 0
+    - 3
+  - - 4
+    - 7
+  - - 8
+    - 10
+  - - 10
+    - 16
+  - - 17
+    - 18
+  - - 18
+    - 22
+  - - 22
+    - 27
+  - - 28
+    - 31
+  upos:
+  - PUNCT
+  - INTJ
+  - PRON
+  - NOUN
+  - PART
+  - ADJ
+  - NOUN
+  - PUNCT
+sent.3385:
+  feat.Case:
+  - Nom
+  - Nom
+  - null
+  - Nom
+  - null
+  - null
+  - null
+  - Acc
+  - Acc
+  feat.Definite:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  feat.Degree:
+  - null
+  - Pos
+  - Pos
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Pos
+  feat.Gender:
+  - null
+  - Masc
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Neut
+  feat.Mood:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  feat.Number:
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - null
+  - null
+  - Sing
+  - Sing
+  - Sing
+  feat.Person:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - '1'
+  - null
+  - null
+  feat.Polarity:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Neg
+  - null
+  - null
+  - null
+  feat.Prefix:
+  - null
+  - null
+  - 'Yes'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Tense:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Pres
+  - null
+  - null
+  feat.Voice:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Act
+  - null
+  - null
+  text: "memmbrum naue drochdub \xF3 n\xEDepur na haill"
+  tokens:
+  - - 0
+    - 8
+  - - 9
+    - 13
+  - - 14
+    - 19
+  - - 19
+    - 22
+  - - 23
+    - 24
+  - - 25
+    - 27
+  - - 27
+    - 31
+  - - 32
+    - 34
+  - - 35
+    - 40
+  upos:
+  - NOUN
+  - ADJ
+  - ADJ
+  - NOUN
+  - INTJ
+  - PART
+  - VERB
+  - DET
+  - ADJ
+sent.3460:
+  feat.Case:
+  - null
+  - Nom
+  - Nom
+  feat.Degree:
+  - null
+  - Pos
+  - null
+  feat.Gender:
+  - null
+  - Masc
+  - null
+  feat.Mood:
+  - Ind
+  - null
+  - null
+  feat.Number:
+  - Sing
+  - Sing
+  - Sing
+  feat.Person:
+  - '3'
+  - null
+  - null
+  feat.Polarity:
+  - Pos
+  - null
+  - null
+  feat.Tense:
+  - Pres
+  - null
+  - null
+  feat.VerbType:
+  - Cop
+  - null
+  - null
+  text: isgann membrumm
+  tokens:
+  - - 0
+    - 2
+  - - 2
+    - 6
+  - - 7
+    - 15
+  upos:
+  - AUX
+  - ADJ
+  - NOUN
+sent.3461:
+  feat.AdpType:
+  - null
+  - null
+  - null
+  - Prep
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Case:
+  - null
+  - null
+  - Acc
+  - null
+  - Dat
+  - Dat
+  - null
+  - null
+  - Acc
+  - null
+  - Acc
+  - null
+  - Nom
+  - Nom
+  - null
+  - null
+  - Voc
+  - Gen
+  - null
+  - null
+  - null
+  - Nom
+  - Nom
+  - Gen
+  feat.Definite:
+  - null
+  - null
+  - null
+  - Def
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Degree:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Pos
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Gender:
+  - null
+  - null
+  - null
+  - null
+  - Fem
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Masc
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Fem
+  - null
+  - null
+  feat.Mood:
+  - Imp
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  feat.Number:
+  - Sing
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - null
+  - Sing
+  - Sing
+  - null
+  - null
+  - Sing
+  - Plur
+  - null
+  - Sing
+  - Sing
+  - Sing
+  - Sing
+  - Sing
+  feat.PartType:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Voc
+  - null
+  - null
+  - Aug
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Person:
+  - '2'
+  - '2'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - '2'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - '2'
+  - '3'
+  - null
+  - null
+  - null
+  feat.Polarity:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Neg
+  - null
+  - null
+  - Neg
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Poss:
+  - null
+  - 'Yes'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.PronClass:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - A
+  - null
+  - null
+  - null
+  - null
+  feat.PronType:
+  - null
+  - Prs
+  - null
+  - null
+  - Art
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Art
+  - Dem
+  - null
+  - null
+  - null
+  - null
+  - Prs
+  - null
+  - Art
+  - null
+  - null
+  feat.Tense:
+  - Pres
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Fut
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Past
+  - null
+  - null
+  - null
+  feat.Voice:
+  - Act
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Act
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Act
+  - null
+  - null
+  - null
+  text: "Gaib do chuil isin charcair nir\xF3is chluim nacolcaid \xB7 truag insin amail\
+    \ bachal rot giuil ind\u1E61rathar dodcaid"
+  tokens:
+  - - 0
+    - 4
+  - - 5
+    - 7
+  - - 8
+    - 13
+  - - 14
+    - 15
+  - - 15
+    - 18
+  - - 19
+    - 27
+  - - 28
+    - 30
+  - - 30
+    - 34
+  - - 35
+    - 41
+  - - 42
+    - 44
+  - - 44
+    - 51
+  - - 52
+    - 53
+  - - 54
+    - 59
+  - - 60
+    - 62
+  - - 62
+    - 65
+  - - 66
+    - 67
+  - - 67
+    - 71
+  - - 72
+    - 78
+  - - 79
+    - 81
+  - - 81
+    - 82
+  - - 83
+    - 88
+  - - 89
+    - 92
+  - - 92
+    - 99
+  - - 100
+    - 107
+  upos:
+  - VERB
+  - PRON
+  - NOUN
+  - ADP
+  - DET
+  - NOUN
+  - PART
+  - VERB
+  - NOUN
+  - CCONJ
+  - NOUN
+  - PUNCT
+  - ADJ
+  - DET
+  - PART
+  - PART
+  - PROPN
+  - NOUN
+  - PART
+  - PRON
+  - VERB
+  - DET
+  - NOUN
+  - NOUN
+sent.3462:
+  feat.Case:
+  - Nom
+  - Gen
+  feat.Number:
+  - Sing
+  - Sing
+  text: medon lai
+  tokens:
+  - - 0
+    - 5
+  - - 6
+    - 9
+  upos:
+  - NOUN
+  - NOUN
+sent.3463:
+  feat.Case:
+  - Nom
+  - null
+  - Gen
+  feat.Number:
+  - Sing
+  - null
+  - Sing
+  feat.Prefix:
+  - null
+  - 'Yes'
+  - null
+  text: satharnn samchasc
+  tokens:
+  - - 0
+    - 8
+  - - 9
+    - 12
+  - - 12
+    - 17
+  upos:
+  - NOUN
+  - NOUN
+  - NOUN
+sent.3469:
+  feat.Case:
+  - null
+  - Nom
+  - Nom
+  - Nom
+  feat.Degree:
+  - null
+  - Pos
+  - null
+  - null
+  feat.Gender:
+  - null
+  - Neut
+  - Neut
+  - null
+  feat.Mood:
+  - Ind
+  - null
+  - null
+  - null
+  feat.Number:
+  - Sing
+  - Sing
+  - Sing
+  - Sing
+  feat.Person:
+  - '3'
+  - null
+  - null
+  - null
+  feat.Polarity:
+  - Pos
+  - null
+  - null
+  - null
+  feat.PronType:
+  - null
+  - null
+  - Art
+  - null
+  feat.Tense:
+  - Pres
+  - null
+  - null
+  - null
+  feat.VerbType:
+  - Cop
+  - null
+  - null
+  - null
+  text: istana andub
+  tokens:
+  - - 0
+    - 2
+  - - 2
+    - 6
+  - - 7
+    - 8
+  - - 8
+    - 12
+  upos:
+  - AUX
+  - ADJ
+  - DET
+  - NOUN
+sent.4:
+  feat.Case:
+  - null
+  - null
+  - null
+  - Nom
+  - Nom
+  - null
+  - null
+  - null
+  feat.Gender:
+  - null
+  - Fem
+  - null
+  - Fem
+  - null
+  - null
+  - null
+  - Masc,Neut
+  feat.Mood:
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Ind
+  - null
+  feat.Number:
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - Sing
+  feat.PartType:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Aug
+  - null
+  feat.Person:
+  - '3'
+  - '3'
+  - null
+  - null
+  - null
+  - null
+  - '3'
+  - '3'
+  feat.Polarity:
+  - Pos
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.PronType:
+  - null
+  - Prs
+  - null
+  - Art
+  - null
+  - Dem
+  - null
+  - Emp
+  feat.Tense:
+  - Pres
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Past
+  - null
+  feat.VerbType:
+  - Cop
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Voice:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Act
+  - null
+  text: "iss\xED tra indiassa rosechestar som"
+  tokens:
+  - - 0
+    - 2
+  - - 2
+    - 4
+  - - 5
+    - 8
+  - - 9
+    - 11
+  - - 11
+    - 15
+  - - 15
+    - 17
+  - - 18
+    - 29
+  - - 30
+    - 33
+  upos:
+  - AUX
+  - PRON
+  - ADV
+  - DET
+  - NOUN
+  - PART
+  - VERB
+  - PRON
+sent.5:
+  feat.Abbr:
+  - 'Yes'
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.AdpType:
+  - null
+  - Prep
+  - null
+  - null
+  - null
+  - null
+  feat.Case:
+  - null
+  - null
+  - Acc
+  - Gen
+  - null
+  - null
+  feat.Definite:
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  feat.Gender:
+  - null
+  - null
+  - null
+  - Masc
+  - null
+  - null
+  feat.Number:
+  - null
+  - null
+  - Sing
+  - Plur
+  - null
+  - null
+  feat.PartType:
+  - null
+  - null
+  - null
+  - null
+  - Dct
+  - null
+  feat.PronType:
+  - null
+  - null
+  - null
+  - Art
+  - null
+  - Dem
+  text: ".i. indead innan\xEDsin"
+  tokens:
+  - - 0
+    - 3
+  - - 4
+    - 5
+  - - 5
+    - 10
+  - - 11
+    - 15
+  - - 15
+    - 17
+  - - 17
+    - 20
+  upos:
+  - ADV
+  - ADP
+  - NOUN
+  - DET
+  - PART
+  - PART
+sent.6:
+  feat.Abbr:
+  - 'Yes'
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.AdpType:
+  - null
+  - null
+  - Prep
+  - null
+  - Prep
+  - Prep
+  - null
+  - null
+  feat.Case:
+  - null
+  - null
+  - null
+  - Dat
+  - null
+  - null
+  - null
+  - Acc
+  feat.Definite:
+  - null
+  - null
+  - Ind
+  - null
+  - Ind
+  - Ind
+  - null
+  - null
+  feat.Gender:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - Masc,Neut
+  - null
+  feat.Mood:
+  - null
+  - Ind
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Number:
+  - null
+  - Sing
+  - null
+  - Sing
+  - Sing
+  - null
+  - Sing
+  - Sing
+  feat.Person:
+  - null
+  - '3'
+  - null
+  - null
+  - '1'
+  - null
+  - '3'
+  - null
+  feat.Polarity:
+  - null
+  - Pos
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.Poss:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - 'Yes'
+  - null
+  feat.PronType:
+  - null
+  - null
+  - null
+  - null
+  - Prs
+  - null
+  - Prs
+  - null
+  feat.Tense:
+  - null
+  - Pres
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  feat.VerbType:
+  - null
+  - Cop
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  text: ".i. is huasneurt dom aradoid\u1E45gi"
+  tokens:
+  - - 0
+    - 3
+  - - 4
+    - 6
+  - - 7
+    - 11
+  - - 11
+    - 16
+  - - 17
+    - 20
+  - - 21
+    - 23
+  - - 23
+    - 24
+  - - 24
+    - 31
+  upos:
+  - ADV
+  - AUX
+  - ADP
+  - NOUN
+  - ADP
+  - ADP
+  - PRON
+  - NOUN
+sent.7:
+  feat.Abbr:
+  - 'Yes'
+  - null
+  - null
+  - null
+  feat.Mood:
+  - null
+  - null
+  - null
+  - Sub
+  feat.Number:
+  - null
+  - null
+  - null
+  - Sing
+  feat.PartType:
+  - null
+  - null
+  - Vb
+  - null
+  feat.Person:
+  - null
+  - null
+  - null
+  - '1'
+  feat.Tense:
+  - null
+  - null
+  - null
+  - Pres
+  feat.Voice:
+  - null
+  - null
+  - null
+  - Act
+  text: .i. ci insamlar
+  tokens:
+  - - 0
+    - 3
+  - - 4
+    - 6
+  - - 7
+    - 9
+  - - 9
+    - 15
+  upos:
+  - ADV
+  - SCONJ
+  - PART
+  - VERB
+sent.8:
+  feat.Case:
+  - Nom
+  feat.Number:
+  - Sing
+  text: aite
+  tokens:
+  - - 0
+    - 4
+  upos:
+  - NOUN
+sent.9:
+  feat.Case:
+  - Gen
+  - Gen
+  feat.Gender:
+  - Fem
+  - null
+  feat.Number:
+  - Sing
+  - Sing
+  feat.PronType:
+  - Art
+  - null
+  text: "innaflaithemnacht\xE6"
+  tokens:
+  - - 0
+    - 4
+  - - 4
+    - 18
+  upos:
+  - DET
+  - NOUN
