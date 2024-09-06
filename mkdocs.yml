@@ -22,9 +22,11 @@ theme:
 
 nav:
   - index.md
-  - Code Reference: reference/ 
+  - Code Reference: 
+    - teanga.corpus: reference/reference-corpus.md
+    - teanga.document: reference/reference-document.md
   - Tutorials:
-    - A: tutorials/tutorials.md
+    - A: tutorials/tutorials.md 
     - Getting Started: tutorials/getting-started.md
   - explanation.md
 
@@ -35,12 +37,3 @@ plugins:
         - mkdocs-docs/scripts/gen_pages.py  # or any other name or path
   - mkdocstrings:
      default_handler: python
-extra:
-  social:
-    - icon: fontawesome/brands/github
-      link: https://github.com/teanga/teanga2
-    - icon: fontawesome/brands/twitter
-      link: https://twitter.com/your-project-url
-  markdown_extensions:
-    - toc:
-        permalink: true
