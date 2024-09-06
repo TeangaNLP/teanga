@@ -1,15 +1,31 @@
 docs_dir: mkdocs-docs
 site_name: teanga2
+repo_url: https://github.com/TeangaNLP/teanga2
+repo_name: TeangaNLP/teanga2
+
 
 theme:
   name: "material"
+  icon:
+    repo: fontawesome/brands/git-alt
+  logo: assets/images/teanga-logo.svg  # Add your logo image in the specified folder
+  favicon: assets/images/favicon.ico  # Optional: set a favicon
+  features:
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.progress
+    - navigation.tabs  # Enables the top navigation bar with tabs
+    - header.autohide  # Makes the header autohide on scroll
+    - content.code.annotate  # Annotated code blocks for more detailed explanations
+
 
 
 nav:
   - index.md
   - Code Reference: reference/ 
-  - tutorials.md
-  - how-to-guides.md
+  - Tutorials:
+    - A: tutorials/tutorials.md
+    - Getting Started: tutorials/getting-started.md
   - explanation.md
 
 plugins:
@@ -17,8 +33,14 @@ plugins:
   - gen-files:
       scripts:
         - mkdocs-docs/scripts/gen_pages.py  # or any other name or path
-  - literate-nav:
-      nav_file: SUMMARY.md
   - mkdocstrings:
      default_handler: python
-
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/teanga/teanga2
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/your-project-url
+  markdown_extensions:
+    - toc:
+        permalink: true
