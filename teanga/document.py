@@ -9,7 +9,9 @@ from .layer_desc import LayerDesc
 import regex as re
 
 class Document:
-    """Document class for storing and processing text data."""
+    """Document class for storing and processing text data.
+
+    """
     def __init__(self, meta:dict[str,Union[LayerDesc,dict]], 
                  corpus=None, id=None, **kwargs):
         self._meta = meta
@@ -35,32 +37,31 @@ class Document:
         """Add or set a layer to the document.
         
         Parameters:
-        -----------
-        name: str
-            Name of the layer.
-        value: str
-            Value of the layer, a single string or 
-            a list of values that are suitable for the 
-            Teanga layer type or a Layer object.
+            name: str
+                Name of the layer.
+            value: str
+                Value of the layer, a single string or 
+                a list of values that are suitable for the 
+                Teanga layer type or a Layer object.
 
         Examples:
-        ---------
-        >>> from teanga import Corpus
-        >>> corpus = Corpus()
-        >>> corpus.add_layer_meta("text")
-        >>> corpus.add_layer_meta("words", layer_type="span", base="text")
-        >>> corpus.add_layer_meta("pos", layer_type="seq", base="words", data="string")
-        >>> doc = corpus.add_doc("This is a document.")
-        >>> doc["words"] = [(0,4), (5,7), (8,9), (10,18), (18,19)]
-        >>> doc["pos"] = ["DT", "VBZ", "DT", "NN", "."]
-        >>> doc
-        Document('Kjco', {'text': CharacterLayer('This is a document.'), \
-'words': SpanLayer([[0, 4], [5, 7], [8, 9], [10, 18], [18, 19]]), \
-'pos': SeqLayer(['DT', 'VBZ', 'DT', 'NN', '.'])})
-        >>> corpus.doc_by_id("Kjco")
-        Document('Kjco', {'text': CharacterLayer('This is a document.'), \
-'words': SpanLayer([[0, 4], [5, 7], [8, 9], [10, 18], [18, 19]]), \
-'pos': SeqLayer(['DT', 'VBZ', 'DT', 'NN', '.'])})
+            >>> from teanga import Corpus
+            >>> corpus = Corpus()
+            >>> corpus.add_layer_meta("text")
+            >>> corpus.add_layer_meta("words", layer_type="span", base="text")
+            >>> corpus.add_layer_meta("pos", layer_type="seq", base="words", data="string")
+            >>> doc = corpus.add_doc("This is a document.")
+            >>> doc["words"] = [(0,4), (5,7), (8,9), (10,18), (18,19)]
+            >>> doc["pos"] = ["DT", "VBZ", "DT", "NN", "."]
+            >>> doc
+            Document('Kjco', {'text': CharacterLayer('This is a document.'), \
+    'words': SpanLayer([[0, 4], [5, 7], [8, 9], [10, 18], [18, 19]]), \
+    'pos': SeqLayer(['DT', 'VBZ', 'DT', 'NN', '.'])})
+            >>> corpus.doc_by_id("Kjco")
+            Document('Kjco', {'text': CharacterLayer('This is a document.'), \
+    'words': SpanLayer([[0, 4], [5, 7], [8, 9], [10, 18], [18, 19]]), \
+    'pos': SeqLayer(['DT', 'VBZ', 'DT', 'NN', '.'])})
+
         """
         if name not in self._meta:
             raise Exception("Layer with name " + name + " does not exist.")
@@ -133,23 +134,19 @@ class Document:
         """Add multiple layers in one go.
 
         Parameters:
-        -----------
-
-        layers: dict
-            A dictionary of layer names and values.
+            layers: dict
+                A dictionary of layer names and values.
 
         Examples:
-        ---------
-
-        >>> from teanga import Corpus
-        >>> corpus = Corpus()
-        >>> corpus.add_layer_meta("text")
-        >>> corpus.add_layer_meta("words", layer_type="span", base="text")
-        >>> corpus.add_layer_meta("pos", layer_type="seq", base="words", data="string")
-        >>> doc = corpus.add_doc("This is a document.")
-        >>> doc.add_layers({"words": [(0,4), (5,7), (8,9), (10,18), (18,19)], \
-"pos": ["DT", "VBZ", "DT", "NN", "."]})
-        """
+            >>> from teanga import Corpus
+            >>> corpus = Corpus()
+            >>> corpus.add_layer_meta("text")
+            >>> corpus.add_layer_meta("words", layer_type="span", base="text")
+            >>> corpus.add_layer_meta("pos", layer_type="seq", base="words", data="string")
+            >>> doc = corpus.add_doc("This is a document.")
+            >>> doc.add_layers({"words": [(0,4), (5,7), (8,9), (10,18), (18,19)], \
+    "pos": ["DT", "VBZ", "DT", "NN", "."]})
+            """
         added = set(self.layers.keys())
         to_add = set(layers.keys())
 
@@ -174,10 +171,8 @@ class Document:
         """Return the value of a layer.
 
         Parameters:
-        -----------
-
-        name: str
-            The name of the layer.
+            name: str
+                The name of the layer.
         """
         if name not in self._meta:
             raise Exception("Layer with name " + name + " does not exist.")
@@ -203,32 +198,28 @@ class Document:
         """Return the text for a layer.
 
         Parameters:
-        -----------
-
-        layer_name: str
-            The name of the layer.
+            layer_name: str
+                The name of the layer.
         
         Returns:
-        --------
-        A generator that yields the text for the layer.
+            A generator that yields the text for the layer.
 
         Examples:
-        ---------
-        >>> from teanga import Corpus
-        >>> corpus = Corpus()
-        >>> corpus.add_layer_meta("text")
-        >>> corpus.add_layer_meta("words", layer_type="span", base="text")
-        >>> corpus.add_layer_meta("pos", layer_type="seq", base="words")
-        >>> doc = corpus.add_doc("This is a document.")
-        >>> doc.words = [[0,4], [5,7], [8,9], [10,18], [18,19]]
-        >>> doc.pos = ["DT", "VBZ", "DT", "NN", "."]
-        >>> list(doc.text_for_layer("text"))
-        ['T', 'h', 'i', 's', ' ', 'i', 's', ' ', 'a', ' ', 'd', 'o', \
-'c', 'u', 'm', 'e', 'n', 't', '.']
-        >>> list(doc.text_for_layer("words"))
-        ['This', 'is', 'a', 'document', '.']
-        >>> list(doc.text_for_layer("pos"))
-        ['This', 'is', 'a', 'document', '.']
+            >>> from teanga import Corpus
+            >>> corpus = Corpus()
+            >>> corpus.add_layer_meta("text")
+            >>> corpus.add_layer_meta("words", layer_type="span", base="text")
+            >>> corpus.add_layer_meta("pos", layer_type="seq", base="words")
+            >>> doc = corpus.add_doc("This is a document.")
+            >>> doc.words = [[0,4], [5,7], [8,9], [10,18], [18,19]]
+            >>> doc.pos = ["DT", "VBZ", "DT", "NN", "."]
+            >>> list(doc.text_for_layer("text"))
+            ['T', 'h', 'i', 's', ' ', 'i', 's', ' ', 'a', ' ', 'd', 'o', \
+    'c', 'u', 'm', 'e', 'n', 't', '.']
+            >>> list(doc.text_for_layer("words"))
+            ['This', 'is', 'a', 'document', '.']
+            >>> list(doc.text_for_layer("pos"))
+            ['This', 'is', 'a', 'document', '.']
         """
         if layer_name not in self._meta:
             raise Exception("Layer with name " + layer_name + " does not exist.")
@@ -374,16 +365,15 @@ class Layer(ABC):
         the indexes of the annotations of this layer.
 
         Examples:
-        ---------
-        >>> from .layer_desc import LayerDesc
-        >>> doc = Document({"text": LayerDesc(layer_type="characters"),
-        ... "words": LayerDesc(layer_type="seq", base="text")})
-        >>> doc["text"] = "This"
-        >>> list(doc["text"].indexes_data("text"))
-        [((0, 1), None), ((1, 2), None), ((2, 3), None), ((3, 4), None)]
-        >>> doc["words"] = ["A", "B", "C", "D"]
-        >>> list(doc["words"].indexes_data("words"))
-        [((0, 1), 'A'), ((1, 2), 'B'), ((2, 3), 'C'), ((3, 4), 'D')]
+            >>> from .layer_desc import LayerDesc
+            >>> doc = Document({"text": LayerDesc(layer_type="characters"),
+            ... "words": LayerDesc(layer_type="seq", base="text")})
+            >>> doc["text"] = "This"
+            >>> list(doc["text"].indexes_data("text"))
+            [((0, 1), None), ((1, 2), None), ((2, 3), None), ((3, 4), None)]
+            >>> doc["words"] = ["A", "B", "C", "D"]
+            >>> list(doc["words"].indexes_data("words"))
+            [((0, 1), 'A'), ((1, 2), 'B'), ((2, 3), 'C'), ((3, 4), 'D')]
         """
         return zip(self.indexes(layer), self.data)
 
@@ -398,10 +388,9 @@ class Layer(ABC):
         """Return the indexes of the annotations that match the given value.
 
         Parameters:
-        -----------
-        value: Union[str,list,dict]
-            The value to match as described in the `view` method of 
-            the `Corpus` class.
+            value: Union[str,list,dict]
+                The value to match as described in the `view` method of 
+                the `Corpus` class.
         """
         if isinstance(value, str):
             if self._meta.data is None:
@@ -450,11 +439,10 @@ class CharacterLayer(Layer):
         Return the data values of the layer.
 
         Examples:
-        ---------
-        >>> doc = Document({"text": LayerDesc(layer_type="characters")})
-        >>> doc["text"] = "This"
-        >>> doc["text"].data
-        [None, None, None, None]
+            >>> doc = Document({"text": LayerDesc(layer_type="characters")})
+            >>> doc["text"] = "This"
+            >>> doc["text"].data
+            [None, None, None, None]
         """
         return [None] * len(self._text)
 
@@ -468,11 +456,10 @@ class CharacterLayer(Layer):
         Return the underlying text grouped by the annotations of this layer.
 
         Examples:
-        ---------
-        >>> doc = Document({"text": LayerDesc(layer_type="characters")})
-        >>> doc["text"] = "This is a document."
-        >>> doc["text"].text
-        ['This is a document.']
+            >>> doc = Document({"text": LayerDesc(layer_type="characters")})
+            >>> doc["text"] = "This is a document."
+            >>> doc["text"].text
+            ['This is a document.']
         """
         return [self._text]
 
@@ -481,11 +468,10 @@ class CharacterLayer(Layer):
         Return the indexes of the annotations of this layer.
 
         Examples:
-        ---------
-        >>> doc = Document({"text": LayerDesc(layer_type="characters")})
-        >>> doc["text"] = "This"
-        >>> doc["text"].indexes("text")
-        [(0, 1), (1, 2), (2, 3), (3, 4)]
+            >>> doc = Document({"text": LayerDesc(layer_type="characters")})
+            >>> doc["text"] = "This"
+            >>> doc["text"].indexes("text")
+            [(0, 1), (1, 2), (2, 3), (3, 4)]
         """
         if layer != self._name:
             raise Exception("Indexing on layer that is not a sublayer.")
@@ -513,13 +499,12 @@ class SeqLayer(Layer):
         Return the data values of the layer.
 
         Examples:
-        ---------
-        >>> d = Document({"text": LayerDesc(layer_type="characters"),
-        ... "is_num": LayerDesc(layer_type="seq", base="text")})
-        >>> d["text"] = "A0B"
-        >>> d["is_num"] = [0, 1, 0]
-        >>> d["is_num"].data
-        [0, 1, 0]
+            >>> d = Document({"text": LayerDesc(layer_type="characters"),
+            ... "is_num": LayerDesc(layer_type="seq", base="text")})
+            >>> d["text"] = "A0B"
+            >>> d["is_num"] = [0, 1, 0]
+            >>> d["is_num"].data
+            [0, 1, 0]
         """
         return self.seq
 
@@ -533,13 +518,12 @@ class SeqLayer(Layer):
         Return the underlying text grouped by the annotations of this layer.
 
         Examples:
-        ---------
-        >>> doc = Document({"text": LayerDesc(layer_type="characters"),
-        ... "is_num": LayerDesc(layer_type="seq", base="text")},
-        ... text="A0B")
-        >>> doc["is_num"] = [0,1,0]
-        >>> doc["is_num"].text
-        ['A', '0', 'B']
+            >>> doc = Document({"text": LayerDesc(layer_type="characters"),
+            ... "is_num": LayerDesc(layer_type="seq", base="text")},
+            ... text="A0B")
+            >>> doc["is_num"] = [0,1,0]
+            >>> doc["is_num"].text
+            ['A', '0', 'B']
         """
         return list(self._doc.text_for_layer(self._name))
 
@@ -548,13 +532,12 @@ class SeqLayer(Layer):
         Return the indexes of the annotations of this layer.
 
         Examples:
-        ---------
-        >>> doc = Document({"text": LayerDesc(layer_type="characters"),
-        ... "is_num": LayerDesc(layer_type="seq", base="text")},
-        ... text="AOB")
-        >>> doc["is_num"] = [0,1,0]
-        >>> doc["is_num"].indexes("text")
-        [(0, 1), (1, 2), (2, 3)]
+            >>> doc = Document({"text": LayerDesc(layer_type="characters"),
+            ... "is_num": LayerDesc(layer_type="seq", base="text")},
+            ... text="AOB")
+            >>> doc["is_num"] = [0,1,0]
+            >>> doc["is_num"].indexes("text")
+            [(0, 1), (1, 2), (2, 3)]
         """
         if layer == self._name:
             return [(i, i+1) for i in range(len(self.seq))]
@@ -583,14 +566,13 @@ class StandoffLayer(Layer):
         Return the underlying text grouped by the annotations of this layer.
 
         Examples:
-        ---------
-        >>> doc = Document({"text": LayerDesc(layer_type="characters"),
-        ... "words": LayerDesc(layer_type="span", base="text", data="string")}, 
-        ... text="This is an example.")
-        >>> doc["words"] = [[0,4,"A"], [5,7,"B"], [8,10,"C"], 
-        ... [11,18,"D"]]
-        >>> doc["words"].text
-        ['This', 'is', 'an', 'example']
+            >>> doc = Document({"text": LayerDesc(layer_type="characters"),
+            ... "words": LayerDesc(layer_type="span", base="text", data="string")}, 
+            ... text="This is an example.")
+            >>> doc["words"] = [[0,4,"A"], [5,7,"B"], [8,10,"C"], 
+            ... [11,18,"D"]]
+            >>> doc["words"].text
+            ['This', 'is', 'an', 'example']
         """
         return list(self._doc.text_for_layer(self._name))
 
@@ -615,14 +597,13 @@ class SpanLayer(StandoffLayer):
         Return the data values of the layer.
 
         Examples:
-        ---------
-        >>> doc = Document({"text": LayerDesc(layer_type="characters"),
-        ... "words": LayerDesc(layer_type="span", base="text", data="string")},
-        ... text="This is an example.")
-        >>> doc["words"] = [[0,4,"A"], [5,7,"B"], [8,10,"C"], 
-        ... [11,18,"D"]]
-        >>> doc["words"].data
-        ['A', 'B', 'C', 'D']
+            >>> doc = Document({"text": LayerDesc(layer_type="characters"),
+            ... "words": LayerDesc(layer_type="span", base="text", data="string")},
+            ... text="This is an example.")
+            >>> doc["words"] = [[0,4,"A"], [5,7,"B"], [8,10,"C"], 
+            ... [11,18,"D"]]
+            >>> doc["words"].data
+            ['A', 'B', 'C', 'D']
         """
         if self._meta.data is None:
             return [None] * len(self._data)
@@ -637,16 +618,15 @@ class SpanLayer(StandoffLayer):
         Return the indexes of the annotations of this layer.
 
         Examples:
-        ---------
-        >>> doc = Document({"text": LayerDesc(layer_type="characters"),
-        ... "words": LayerDesc(layer_type="span", base="text", data="string")},
-        ... text="This is an example.")
-        >>> doc["words"] = [[0,4,"A"], [5,7,"B"], [8,10,"C"], 
-        ... [11,18,"D"]]
-        >>> doc["words"].indexes("words")
-        [(0, 1), (1, 2), (2, 3), (3, 4)]
-        >>> doc["words"].indexes("text")
-        [(0, 4), (5, 7), (8, 10), (11, 18)]
+            >>> doc = Document({"text": LayerDesc(layer_type="characters"),
+            ... "words": LayerDesc(layer_type="span", base="text", data="string")},
+            ... text="This is an example.")
+            >>> doc["words"] = [[0,4,"A"], [5,7,"B"], [8,10,"C"], 
+            ... [11,18,"D"]]
+            >>> doc["words"].indexes("words")
+            [(0, 1), (1, 2), (2, 3), (3, 4)]
+            >>> doc["words"].indexes("text")
+            [(0, 4), (5, 7), (8, 10), (11, 18)]
         """
         if layer == self._name:
             return list(zip(range(len(self._data)), range(1, len(self._data) + 1)))
@@ -681,13 +661,12 @@ class DivLayer(StandoffLayer):
         Return the data values of the layer.
 
         Examples:
-        ---------
-        >>> doc = Document({"text": LayerDesc(layer_type="characters"),
-        ... "sentences": LayerDesc(layer_type="div", base="text")},
-        ... text="This is an example. This is another example.")
-        >>> doc["sentences"] = [0, 19]
-        >>> doc["sentences"].data
-        [None, None]
+            >>> doc = Document({"text": LayerDesc(layer_type="characters"),
+            ... "sentences": LayerDesc(layer_type="div", base="text")},
+            ... text="This is an example. This is another example.")
+            >>> doc["sentences"] = [0, 19]
+            >>> doc["sentences"].data
+            [None, None]
         """
         if self._meta.data is None:
             return [None] * len(self._data)
@@ -701,15 +680,14 @@ class DivLayer(StandoffLayer):
         Return the indexes of the annotations of this layer.
 
         Examples:
-        ---------
-        >>> doc = Document({"text": LayerDesc(layer_type="characters"),
-        ... "sentences": LayerDesc(layer_type="div", base="text")},
-        ... text="This is an example. This is another example.")
-        >>> doc["sentences"] = [0, 19]
-        >>> doc["sentences"].indexes("sentences")
-        [(0, 1), (1, 2)]
-        >>> doc["sentences"].indexes("text")
-        [(0, 19), (19, 44)]
+            >>> doc = Document({"text": LayerDesc(layer_type="characters"),
+            ... "sentences": LayerDesc(layer_type="div", base="text")},
+            ... text="This is an example. This is another example.")
+            >>> doc["sentences"] = [0, 19]
+            >>> doc["sentences"].indexes("sentences")
+            [(0, 1), (1, 2)]
+            >>> doc["sentences"].indexes("text")
+            [(0, 19), (19, 44)]
         """
         if layer == self._name:
             return list(zip(range(len(self._data)), range(1, len(self._data) + 1)))
@@ -747,13 +725,12 @@ class ElementLayer(StandoffLayer):
         Return the data values of the layer.
 
         Examples:
-        ---------
-        >>> doc = Document({"text": LayerDesc(layer_type="characters"),
-        ... "alts": LayerDesc(layer_type="element", base="text", data="string" )},
-        ... text="Tá sé seo mar shampla.")
-        >>> doc["alts"] = [[1, 'á'], [4, 'é']]
-        >>> doc["alts"].data
-        ['á', 'é']
+            >>> doc = Document({"text": LayerDesc(layer_type="characters"),
+            ... "alts": LayerDesc(layer_type="element", base="text", data="string" )},
+            ... text="Tá sé seo mar shampla.")
+            >>> doc["alts"] = [[1, 'á'], [4, 'é']]
+            >>> doc["alts"].data
+            ['á', 'é']
         """
         if self._meta.data is None:
             return [None] * len(self._data)
@@ -768,15 +745,14 @@ class ElementLayer(StandoffLayer):
         Return the indexes of the annotations of this layer.
 
         Examples:
-        ---------
-        >>> doc = Document({"text": LayerDesc(layer_type="characters"),
-        ... "alts": LayerDesc(layer_type="element", base="text", data="string" )},
-        ... text="Tá sé seo mar shampla.")
-        >>> doc["alts"] = [[1, "́a"], [4, "́e"]]
-        >>> doc["alts"].indexes("alts")
-        [(0, 1), (1, 2)]
-        >>> doc["alts"].indexes("text")
-        [(1, 2), (4, 5)]
+            >>> doc = Document({"text": LayerDesc(layer_type="characters"),
+            ... "alts": LayerDesc(layer_type="element", base="text", data="string" )},
+            ... text="Tá sé seo mar shampla.")
+            >>> doc["alts"] = [[1, "́a"], [4, "́e"]]
+            >>> doc["alts"].indexes("alts")
+            [(0, 1), (1, 2)]
+            >>> doc["alts"].indexes("text")
+            [(1, 2), (4, 5)]
         """
         if layer == self._name:
             return list(zip(range(len(self._data)), range(1, len(self._data) + 1)))

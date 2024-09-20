@@ -24,10 +24,10 @@ from urllib.request import urlopen
 class Corpus:
     """Corpus class for storing and processing text data.
         
-        Examples:
-            >>> corpus = Corpus()
-            >>> corpus.add_layer_meta("text")
-            >>> doc = corpus.add_doc("This is a document.")
+    Examples:
+        >>> corpus = Corpus()
+        >>> corpus.add_layer_meta("text")
+        >>> doc = corpus.add_doc("This is a document.")
 
     """
     def __init__(self, db=None, new=False, db_corpus=None):
