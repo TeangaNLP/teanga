@@ -31,7 +31,6 @@ nav:
     - reference.transforms: reference/reference-transforms.md
     - reference-utils: reference/reference-utils.md
   - Tutorials:
-    - A: tutorials/tutorials.md 
     - Getting Started: tutorials/getting-started.md
   - explanation.md
 
