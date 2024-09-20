@@ -25,6 +25,11 @@ nav:
   - Code Reference: 
     - teanga.corpus: reference/reference-corpus.md
     - teanga.document: reference/reference-document.md
+    - teanga.groups: reference/reference-groups.md
+    - reference.rdf: reference/reference-rdf.md  
+    - reference.service: reference/reference-service.md 
+    - reference.transforms: reference/reference-transforms.md
+    - reference-utils: reference/reference-utils.md
   - Tutorials:
     - A: tutorials/tutorials.md 
     - Getting Started: tutorials/getting-started.md
@@ -32,8 +37,5 @@ nav:
 
 plugins:
   - search
-  - gen-files:
-      scripts:
-        - mkdocs-docs/scripts/gen_pages.py  # or any other name or path
   - mkdocstrings:
      default_handler: python
