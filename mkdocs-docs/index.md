@@ -35,19 +35,13 @@ poetry install
 pip install .
 ``` 
 
-## Features:
-
-- 🚀 **Blazing Fast**: Optimized for performance, designed for speed.
-- 🧠 **Easy to Learn**: Intuitive, minimalistic syntax that reduces learning curve.
-- ⏱️ **Rapid Development**: Write less code, achieve more.
-
 ---
 
 ## Why Choose Teanga2?
 
-- **High Performance**: Achieve lightning-fast responses with built-in optimizations.
-- **Fast to Code**: Focus on building features, not boilerplate.
-- **Easy to Use**: Clean and simple API design makes learning a breeze.
+- **Seamless NLP integration**: Pre-built support for a wide range of NLP tasks like tokenization.
+- **Extensible**: Focus on building features, not boilerplate.
+- **Intuitive** Clean and simple API design makes learning a breeze.
 
 ---
 
@@ -55,10 +49,10 @@ pip install .
 
 | **Feature**            | **Details**                              |
 |------------------------|------------------------------------------|
-| Test Coverage          | 99%                                      |
-| Package Version        | v1.2.0                                   |
-| Supported Python Versions | 3.7, 3.8, 3.9, 3.10                      |
-| License                | MIT                                      |
+| Test Coverage          | N/A                                      |
+| Package Version        | N/A                                      |
+| Supported Python Versions | N/A                                   |
+| License                | N/A                                      |
 | Documentation          | Fully documented with examples           |
 
 ---

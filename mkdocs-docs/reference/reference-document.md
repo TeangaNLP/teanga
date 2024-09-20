@@ -1,4 +1,3 @@
 # Teanga Document Module 
 
-::: teanga.document.Document
-
+::: teanga.document
