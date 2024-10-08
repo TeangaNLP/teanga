@@ -12,20 +12,20 @@ class Document:
     """Document class for storing and processing text data.
 
     """
-    def __init__(self, meta:dict[str,Union[LayerDesc,dict]], 
+    def __init__(self, meta:dict[str,Union[LayerDesc,dict]],
                  corpus=None, id=None, **kwargs):
         self._meta = meta
         self.layers = {}
         self.id = id
         self.corpus = None
-        self.add_layers({key: value 
-                         for key, value in kwargs.items() 
+        self.add_layers({key: value
+                         for key, value in kwargs.items()
                          if not key.startswith("_")})
         self.corpus = corpus
 
     def copy(self):
         """Return a copy of the document."""
-        return Document(self._meta, self.corpus, self.id, 
+        return Document(self._meta, self.corpus, self.id,
                         **{key: value for key, value in self.layers.items()})
 
     @deprecated(reason="Use __setitem__ instead, e.g., doc['text'] = \
@@ -35,32 +35,32 @@ class Document:
 
     def __setitem__(self, name:str, value : Union[str,list,'Layer']) -> 'Layer':
         """Add or set a layer to the document.
-        
+
         Parameters:
             name: str
                 Name of the layer.
             value: str
-                Value of the layer, a single string or 
-                a list of values that are suitable for the 
+                Value of the layer, a single string or
+                a list of values that are suitable for the
                 Teanga layer type or a Layer object.
 
         Examples:
-            >>> from teanga import Corpus
-            >>> corpus = Corpus()
-            >>> corpus.add_layer_meta("text")
-            >>> corpus.add_layer_meta("words", layer_type="span", base="text")
-            >>> corpus.add_layer_meta("pos", layer_type="seq", base="words", data="string")
-            >>> doc = corpus.add_doc("This is a document.")
-            >>> doc["words"] = [(0,4), (5,7), (8,9), (10,18), (18,19)]
-            >>> doc["pos"] = ["DT", "VBZ", "DT", "NN", "."]
-            >>> doc
-            Document('Kjco', {'text': CharacterLayer('This is a document.'), \
-    'words': SpanLayer([[0, 4], [5, 7], [8, 9], [10, 18], [18, 19]]), \
-    'pos': SeqLayer(['DT', 'VBZ', 'DT', 'NN', '.'])})
-            >>> corpus.doc_by_id("Kjco")
-            Document('Kjco', {'text': CharacterLayer('This is a document.'), \
-    'words': SpanLayer([[0, 4], [5, 7], [8, 9], [10, 18], [18, 19]]), \
-    'pos': SeqLayer(['DT', 'VBZ', 'DT', 'NN', '.'])})
+        >>> from teanga import Corpus
+        >>> corpus = Corpus()
+        >>> corpus.add_layer_meta("text")
+        >>> corpus.add_layer_meta("words", layer_type="span", base="text")
+        >>> corpus.add_layer_meta("pos", layer_type="seq", base="words", data="string")
+        >>> doc = corpus.add_doc("This is a document.")
+        >>> doc["words"] = [(0,4), (5,7), (8,9), (10,18), (18,19)]
+        >>> doc["pos"] = ["DT", "VBZ", "DT", "NN", "."]
+        >>> doc
+        Document('Kjco', {'text': CharacterLayer('This is a document.'), \
+'words': SpanLayer([[0, 4], [5, 7], [8, 9], [10, 18], [18, 19]]), \
+'pos': SeqLayer(['DT', 'VBZ', 'DT', 'NN', '.'])})
+        >>> corpus.doc_by_id("Kjco")
+        Document('Kjco', {'text': CharacterLayer('This is a document.'), \
+'words': SpanLayer([[0, 4], [5, 7], [8, 9], [10, 18], [18, 19]]), \
+'pos': SeqLayer(['DT', 'VBZ', 'DT', 'NN', '.'])})
 
         """
         if name not in self._meta:
@@ -79,7 +79,7 @@ class Document:
         elif self._meta[name].layer_type == "seq":
             if not isinstance(value, list):
                 raise Exception("Value of layer " + name + " must be a list.")
-            value = [validate_value(v, 0) for v in value] 
+            value = [validate_value(v, 0) for v in value]
             if self._meta[name].base in self.layers:
                 base_layer_len = len(self.layers[self._meta[name].base])
             elif self._meta[self._meta[name].base].default is not None:
@@ -94,26 +94,26 @@ class Document:
         elif self._meta[name].layer_type == "span":
             if not isinstance(value, list):
                 raise Exception("Value of layer " + name + " must be a list.")
-            value = [validate_value(v, 2) for v in value] 
+            value = [validate_value(v, 2) for v in value]
             self.layers[name] = SpanLayer(name, self, value)
         elif self._meta[name].layer_type == "div":
             if not isinstance(value, list):
                 raise Exception("Value of layer " + name + " must be a list.")
-            value = [validate_value(v, 1) for v in value] 
+            value = [validate_value(v, 1) for v in value]
             self.layers[name] = DivLayer(name, self, value)
         elif self._meta[name].layer_type == "element":
             if not isinstance(value, list):
                 raise Exception("Value of layer " + name + " must be a list.")
-            value = [validate_value(v, 1) for v in value] 
+            value = [validate_value(v, 1) for v in value]
             self.layers[name] = ElementLayer(name, self, value)
         else:
-            raise Exception("Unknown layer type " + self._meta[name].layer_type + 
+            raise Exception("Unknown layer type " + self._meta[name].layer_type +
             " for layer " + name + ".")
         if self.corpus and self.id:
             data_fields = {name: layer.raw
                            for (name,layer) in self.layers.items()}
             self.corpus.update_doc(self.id, data_fields)
-                     
+
         return self.layers[name]
 
     def __getattr__(self, name:str) -> 'Layer':
@@ -161,8 +161,8 @@ class Document:
                     self[name] = data
                     added.add(name)
                     to_add.remove(name)
-                elif (self._meta[name].base is not None 
-                      and self._meta[name].base not in layers 
+                elif (self._meta[name].base is not None
+                      and self._meta[name].base not in layers
                       and self._meta[name].base not in added):
                     raise Exception("Cannot add layer " + name + " because sublayer " +
                     self._meta[name].base + " does not exist.")
@@ -200,26 +200,26 @@ class Document:
         Parameters:
             layer_name: str
                 The name of the layer.
-        
+
         Returns:
             A generator that yields the text for the layer.
 
         Examples:
-            >>> from teanga import Corpus
-            >>> corpus = Corpus()
-            >>> corpus.add_layer_meta("text")
-            >>> corpus.add_layer_meta("words", layer_type="span", base="text")
-            >>> corpus.add_layer_meta("pos", layer_type="seq", base="words")
-            >>> doc = corpus.add_doc("This is a document.")
-            >>> doc.words = [[0,4], [5,7], [8,9], [10,18], [18,19]]
-            >>> doc.pos = ["DT", "VBZ", "DT", "NN", "."]
-            >>> list(doc.text_for_layer("text"))
-            ['T', 'h', 'i', 's', ' ', 'i', 's', ' ', 'a', ' ', 'd', 'o', \
-    'c', 'u', 'm', 'e', 'n', 't', '.']
-            >>> list(doc.text_for_layer("words"))
-            ['This', 'is', 'a', 'document', '.']
-            >>> list(doc.text_for_layer("pos"))
-            ['This', 'is', 'a', 'document', '.']
+        >>> from teanga import Corpus
+        >>> corpus = Corpus()
+        >>> corpus.add_layer_meta("text")
+        >>> corpus.add_layer_meta("words", layer_type="span", base="text")
+        >>> corpus.add_layer_meta("pos", layer_type="seq", base="words")
+        >>> doc = corpus.add_doc("This is a document.")
+        >>> doc.words = [[0,4], [5,7], [8,9], [10,18], [18,19]]
+        >>> doc.pos = ["DT", "VBZ", "DT", "NN", "."]
+        >>> list(doc.text_for_layer("text"))
+        ['T', 'h', 'i', 's', ' ', 'i', 's', ' ', 'a', ' ', 'd', 'o', \
+'c', 'u', 'm', 'e', 'n', 't', '.']
+        >>> list(doc.text_for_layer("words"))
+        ['This', 'is', 'a', 'document', '.']
+        >>> list(doc.text_for_layer("pos"))
+        ['This', 'is', 'a', 'document', '.']
         """
         if layer_name not in self._meta:
             raise Exception("Layer with name " + layer_name + " does not exist.")
@@ -251,17 +251,17 @@ class Document:
 def validate_value(value, index_length):
     """Validate a single value in a layer and normalise it if necessary.
 
-    Values must be 0-2 integer indexes followed by a string, an integer or an 
+    Values must be 0-2 integer indexes followed by a string, an integer or an
     integer and then a string. If this results in a list of 1 element that list
     should be dropped."""
     if isinstance(value, tuple):
         value = list(value)
-    if not isinstance(value, list): 
+    if not isinstance(value, list):
         if index_length >= 2:
             raise Exception("Bad value: " + repr(value))
         if index_length == 1 and not isinstance(value, numbers.Integral):
             raise Exception("Bad value: " + repr(value))
-        if (index_length == 0 and not isinstance(value, str) and 
+        if (index_length == 0 and not isinstance(value, str) and
             not isinstance(value, numbers.Integral)):
             raise Exception("Bad value: " + repr(value))
         return value
@@ -279,12 +279,12 @@ def validate_value(value, index_length):
             return value
         elif len(value) == index_length + 1:
             import sys
-            if (not isinstance(value[index_length], str) 
+            if (not isinstance(value[index_length], str)
                     and not isinstance(value[index_length], numbers.Integral)):
                 raise Exception("Bad value: " + repr(value))
             return value
         elif len(value) == index_length + 2:
-            if (not isinstance(value[index_length], numbers.Integral) 
+            if (not isinstance(value[index_length], numbers.Integral)
                     or not isinstance(value[index_length + 1], str)):
                 raise Exception("Bad value: " + repr(value))
             return value
@@ -327,7 +327,7 @@ def _key_match(data, text, key, match) -> bool:
 
 class Layer(ABC):
     """A layer of annotation"""
-    
+
     def __init__(self, name:str, doc:Document):
         self._name = name
         self._meta = doc.meta[name]
@@ -350,7 +350,7 @@ class Layer(ABC):
 
     def text_data(self) -> Generator[None,None,
                                      tuple[str,Union[str,int,Tuple[int,str]]]]:
-        """Return a list of pairs of the underlying text grouped by the 
+        """Return a list of pairs of the underlying text grouped by the
         annotations of this layer and the data values of the layer."""
         return zip(self.text, self.data)
 
@@ -361,7 +361,7 @@ class Layer(ABC):
 
     def indexes_data(self, layer:str) -> Generator[None,None,
             tuple[Tuple[int,int],Union[str,int,Tuple[int,str]]]]:
-        """Return a list of pairs of the data values of the layer and 
+        """Return a list of pairs of the data values of the layer and
         the indexes of the annotations of this layer.
 
         Examples:
@@ -389,7 +389,7 @@ class Layer(ABC):
 
         Parameters:
             value: Union[str,list,dict]
-                The value to match as described in the `view` method of 
+                The value to match as described in the `view` method of
                 the `Corpus` class.
         """
         if isinstance(value, str):
@@ -428,7 +428,7 @@ class Layer(ABC):
 
 class CharacterLayer(Layer):
     """A layer of characters"""
-    
+
     def __init__(self, name:str, doc: Document, text:str):
         super().__init__(name, doc)
         self._text = text
@@ -567,9 +567,9 @@ class StandoffLayer(Layer):
 
         Examples:
             >>> doc = Document({"text": LayerDesc(layer_type="characters"),
-            ... "words": LayerDesc(layer_type="span", base="text", data="string")}, 
+            ... "words": LayerDesc(layer_type="span", base="text", data="string")},
             ... text="This is an example.")
-            >>> doc["words"] = [[0,4,"A"], [5,7,"B"], [8,10,"C"], 
+            >>> doc["words"] = [[0,4,"A"], [5,7,"B"], [8,10,"C"],
             ... [11,18,"D"]]
             >>> doc["words"].text
             ['This', 'is', 'an', 'example']
@@ -585,7 +585,7 @@ class SpanLayer(StandoffLayer):
     def __init__(self, name:str, doc: Document, spans:list):
         super().__init__(name, doc)
         self._data = spans
-        for span in self._data: 
+        for span in self._data:
             if not isinstance(span[0], numbers.Integral):
                 raise Exception("Bad span data: " + repr(span))
             if not isinstance(span[1], numbers.Integral):
@@ -600,7 +600,7 @@ class SpanLayer(StandoffLayer):
             >>> doc = Document({"text": LayerDesc(layer_type="characters"),
             ... "words": LayerDesc(layer_type="span", base="text", data="string")},
             ... text="This is an example.")
-            >>> doc["words"] = [[0,4,"A"], [5,7,"B"], [8,10,"C"], 
+            >>> doc["words"] = [[0,4,"A"], [5,7,"B"], [8,10,"C"],
             ... [11,18,"D"]]
             >>> doc["words"].data
             ['A', 'B', 'C', 'D']
@@ -621,7 +621,7 @@ class SpanLayer(StandoffLayer):
             >>> doc = Document({"text": LayerDesc(layer_type="characters"),
             ... "words": LayerDesc(layer_type="span", base="text", data="string")},
             ... text="This is an example.")
-            >>> doc["words"] = [[0,4,"A"], [5,7,"B"], [8,10,"C"], 
+            >>> doc["words"] = [[0,4,"A"], [5,7,"B"], [8,10,"C"],
             ... [11,18,"D"]]
             >>> doc["words"].indexes("words")
             [(0, 1), (1, 2), (2, 3), (3, 4)]
@@ -650,7 +650,7 @@ class DivLayer(StandoffLayer):
     def __init__(self, name:str, doc:Document, spans:list):
         super().__init__(name, doc)
         self._data = spans
-        for span in self._data: 
+        for span in self._data:
             if (not isinstance(span, numbers.Integral) and
                 not isinstance(span[0], numbers.Integral)):
                 raise Exception("Bad span data: " + repr(span))
@@ -692,13 +692,13 @@ class DivLayer(StandoffLayer):
         if layer == self._name:
             return list(zip(range(len(self._data)), range(1, len(self._data) + 1)))
         elif layer == self._meta.base:
-            return list(pairwise(chain((s for s in self._data), 
+            return list(pairwise(chain((s for s in self._data),
                                   [len(self._doc.layers[self._meta.base])])))
         else:
             subindexes = list(self._doc.layers[self._meta.base].indexes(layer))
             return list(pairwise(
                 chain(
-                    (subindexes[s][0] for s in self._data), 
+                    (subindexes[s][0] for s in self._data),
                     [len(self._doc.layers[layer])])))
 
     def __repr__(self):
@@ -715,7 +715,7 @@ class ElementLayer(StandoffLayer):
     def __init__(self, name:str, doc: Document, spans:list):
         super().__init__(name, doc)
         self._data = spans
-        for span in self._data: 
+        for span in self._data:
             if not isinstance(span[0], numbers.Integral):
                 raise Exception("Bad span data: " + repr(span))
 
@@ -766,6 +766,6 @@ class ElementLayer(StandoffLayer):
         return "ElementLayer(" + repr(self._data) + ")"
 
     def transform(self, transform_func):# -> Self:
-        return ElementLayer(self._name, self._doc, 
+        return ElementLayer(self._name, self._doc,
                             [transform_func(x) for x in self._data])
 
