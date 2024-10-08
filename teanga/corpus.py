@@ -28,7 +28,6 @@ class Corpus:
         >>> corpus = Corpus()
         >>> corpus.add_layer_meta("text")
         >>> doc = corpus.add_doc("This is a document.")
-
     """
     def __init__(self, db=None, new=False, db_corpus=None):
         if db_corpus:
@@ -268,11 +267,10 @@ class Corpus:
         """Return the meta data of the corpus.
 
         Examples:
-        >>> corpus = Corpus()
-        >>> corpus.add_layer_meta("text")
-        >>> corpus.meta
-        {'text': LayerDesc(layer_type='characters', base=None, data=None, \
-link_types=None, target=None, default=None, meta={})}
+            >>> corpus = Corpus()
+            >>> corpus.add_layer_meta("text")
+            >>> corpus.meta
+            {'text': LayerDesc(layer_type='characters', base=None, data=None, link_types=None, target=None, default=None, meta={})}
         """
         if self.corpus:
             return {
@@ -318,7 +316,6 @@ link_types=None, target=None, default=None, meta={})}
             Counter({'This': 1, 'is': 1, 'a': 1, 'document': 1})
             >>> corpus.text_freq("words", lambda x: "i" in x)
             Counter({'This': 1, 'is': 1})
-
         """
         if condition is None:
             return Counter(word
@@ -371,7 +368,6 @@ link_types=None, target=None, default=None, meta={})}
             Counter({'NOUN': 1, 'VERB': 1})
             >>> corpus.val_freq("pos", lambda x: x[0] == "A")
             Counter({'ADJ': 2, 'ADV': 1})
-
         """
         if condition is None:
             return Counter(val
@@ -568,11 +564,11 @@ link_types=None, target=None, default=None, meta={})}
         Write the corpus to a yaml string.
 
         Examples:
-        >>> corpus = Corpus()
-        >>> corpus.add_layer_meta("text")
-        >>> doc = corpus.add_doc("This is a document.")
-        >>> corpus.to_yaml_str()
-        '_meta:\\n    text:\\n        type: characters\\n\
+            >>> corpus = Corpus()
+            >>> corpus.add_layer_meta("text")
+            >>> doc = corpus.add_doc("This is a document.")
+            >>> corpus.to_yaml_str()
+            '_meta:\\n    text:\\n        type: characters\\n\
 Kjco:\\n    text: This is a document.\\n'
         """
         if self.corpus:
