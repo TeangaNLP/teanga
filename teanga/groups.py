@@ -77,7 +77,7 @@ class GroupedCorpus:
             >>> group = corpus.by("author")
             >>> group.text_freq("words")
             {'John': Counter({'This': 1, 'is': 1, 'a': 1, 'document': 1}), \
-    'Mary': Counter({'This': 1, 'is': 1, 'another': 1, 'document': 1})}
+'Mary': Counter({'This': 1, 'is': 1, 'another': 1, 'document': 1})}
         """
         if condition is None:
             return {id: Counter(word
@@ -135,7 +135,7 @@ class GroupedCorpus:
             >>> group = corpus.by_doc()
             >>> group.val_freq("pos")
             {'9wpe': Counter({'ADJ': 2, 'NOUN': 1, 'VERB': 1, 'ADV': 1}), \
-    '9d3t': Counter({'ADJ': 2, 'ADV': 1, 'VERB': 1, 'NOUN': 1})}
+'9d3t': Counter({'ADJ': 2, 'ADV': 1, 'VERB': 1, 'NOUN': 1})}
         """
         if condition is None:
             return {id: Counter(val

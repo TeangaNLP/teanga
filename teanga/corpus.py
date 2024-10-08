@@ -145,7 +145,6 @@ class Corpus:
             >>> corpus.add_layer_meta("en", layer_type="characters")
             >>> corpus.add_layer_meta("nl", layer_type="characters")
             >>> doc = corpus.add_doc(en="This is a document.", nl="Dit is een document.")
-
         """
         char_layers = [name for (name, layer) in self.meta.items()
                        if layer.layer_type == "characters"]
@@ -222,7 +221,6 @@ class Corpus:
             >>> doc = corpus.add_doc("This is a document.")
             >>> list(corpus.docs)
             [('Kjco', Document('Kjco', {'text': CharacterLayer('This is a document.')}))]
-
         """
         if self.corpus:
             for doc_id in self.corpus.order:
@@ -251,7 +249,6 @@ class Corpus:
             ...   corpus = Corpus("tmp",new=True)
             ...   corpus.add_layer_meta("text")
             ...   doc = corpus.add_doc("This is a document.")
-
         """
         if self.corpus:
             return Document(self.meta, id=doc_id, corpus=self.corpus,
@@ -852,12 +849,12 @@ def read_yaml_str(yaml_str, db_file:str=None) -> Corpus:
             database.
 
     Examples:
-    >>> yaml_str = '''_meta:
-    ...   text:
-    ...     type: characters
-    ... Kjco:
-    ...   text: This is a document.'''
-    >>> corpus = read_yaml_str(yaml_str)
+        >>> yaml_str = '''_meta:
+        ...   text:
+        ...     type: characters
+        ... Kjco:
+        ...   text: This is a document.'''
+        >>> corpus = read_yaml_str(yaml_str)
     """
     if db_file:
         if not TEANGA_DB:

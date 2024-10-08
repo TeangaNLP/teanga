@@ -45,20 +45,20 @@ class Document:
                 Teanga layer type or a Layer object.
 
         Examples:
-        >>> from teanga import Corpus
-        >>> corpus = Corpus()
-        >>> corpus.add_layer_meta("text")
-        >>> corpus.add_layer_meta("words", layer_type="span", base="text")
-        >>> corpus.add_layer_meta("pos", layer_type="seq", base="words", data="string")
-        >>> doc = corpus.add_doc("This is a document.")
-        >>> doc["words"] = [(0,4), (5,7), (8,9), (10,18), (18,19)]
-        >>> doc["pos"] = ["DT", "VBZ", "DT", "NN", "."]
-        >>> doc
-        Document('Kjco', {'text': CharacterLayer('This is a document.'), \
+            >>> from teanga import Corpus
+            >>> corpus = Corpus()
+            >>> corpus.add_layer_meta("text")
+            >>> corpus.add_layer_meta("words", layer_type="span", base="text")
+            >>> corpus.add_layer_meta("pos", layer_type="seq", base="words", data="string")
+            >>> doc = corpus.add_doc("This is a document.")
+            >>> doc["words"] = [(0,4), (5,7), (8,9), (10,18), (18,19)]
+            >>> doc["pos"] = ["DT", "VBZ", "DT", "NN", "."]
+            >>> doc
+            Document('Kjco', {'text': CharacterLayer('This is a document.'), \
 'words': SpanLayer([[0, 4], [5, 7], [8, 9], [10, 18], [18, 19]]), \
 'pos': SeqLayer(['DT', 'VBZ', 'DT', 'NN', '.'])})
-        >>> corpus.doc_by_id("Kjco")
-        Document('Kjco', {'text': CharacterLayer('This is a document.'), \
+            >>> corpus.doc_by_id("Kjco")
+            Document('Kjco', {'text': CharacterLayer('This is a document.'), \
 'words': SpanLayer([[0, 4], [5, 7], [8, 9], [10, 18], [18, 19]]), \
 'pos': SeqLayer(['DT', 'VBZ', 'DT', 'NN', '.'])})
 
@@ -205,21 +205,21 @@ class Document:
             A generator that yields the text for the layer.
 
         Examples:
-        >>> from teanga import Corpus
-        >>> corpus = Corpus()
-        >>> corpus.add_layer_meta("text")
-        >>> corpus.add_layer_meta("words", layer_type="span", base="text")
-        >>> corpus.add_layer_meta("pos", layer_type="seq", base="words")
-        >>> doc = corpus.add_doc("This is a document.")
-        >>> doc.words = [[0,4], [5,7], [8,9], [10,18], [18,19]]
-        >>> doc.pos = ["DT", "VBZ", "DT", "NN", "."]
-        >>> list(doc.text_for_layer("text"))
-        ['T', 'h', 'i', 's', ' ', 'i', 's', ' ', 'a', ' ', 'd', 'o', \
+            >>> from teanga import Corpus
+            >>> corpus = Corpus()
+            >>> corpus.add_layer_meta("text")
+            >>> corpus.add_layer_meta("words", layer_type="span", base="text")
+            >>> corpus.add_layer_meta("pos", layer_type="seq", base="words")
+            >>> doc = corpus.add_doc("This is a document.")
+            >>> doc.words = [[0,4], [5,7], [8,9], [10,18], [18,19]]
+            >>> doc.pos = ["DT", "VBZ", "DT", "NN", "."]
+            >>> list(doc.text_for_layer("text"))
+            ['T', 'h', 'i', 's', ' ', 'i', 's', ' ', 'a', ' ', 'd', 'o', \
 'c', 'u', 'm', 'e', 'n', 't', '.']
-        >>> list(doc.text_for_layer("words"))
-        ['This', 'is', 'a', 'document', '.']
-        >>> list(doc.text_for_layer("pos"))
-        ['This', 'is', 'a', 'document', '.']
+            >>> list(doc.text_for_layer("words"))
+            ['This', 'is', 'a', 'document', '.']
+            >>> list(doc.text_for_layer("pos"))
+            ['This', 'is', 'a', 'document', '.']
         """
         if layer_name not in self._meta:
             raise Exception("Layer with name " + layer_name + " does not exist.")
