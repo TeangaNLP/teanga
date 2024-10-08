@@ -1,7 +1,7 @@
 from collections import namedtuple
 
 LayerDesc = namedtuple("LayerDesc",
-                       ["layer_type", "base", "data", 
+                       ["layer_type", "base", "data",
                         "link_types", "target", "default", "meta"],
                        defaults=[None, None, None, None, None, None, {}])
 
@@ -15,13 +15,13 @@ def _layer_desc_from_kwargs(kwargs):
         if key.startswith("_"):
             kwargs2["meta"][key[1:]] = kwargs[key]
             del kwargs2[key]
-        elif key not in ["layer_type", "base", "data", "link_types", 
+        elif key not in ["layer_type", "base", "data", "link_types",
                          "target", "default", "meta"]:
             raise Exception("Invalid key in Teanga meta description: " + key)
     return LayerDesc(**kwargs2)
 
 def _from_layer_desc(layer_desc):
-    d = { 
+    d = {
          name: data for name,data in layer_desc._asdict().items()
          if data is not None and name != "meta"
     }
@@ -30,5 +30,3 @@ def _from_layer_desc(layer_desc):
     d["type"] = d["layer_type"]
     del d["layer_type"]
     return d
-            
-
