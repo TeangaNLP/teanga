@@ -644,12 +644,11 @@ Kjco:\\n    text: This is a document.\\n'
         Write the corpus to a JSON string.
 
         Examples:
-        >>> corpus = Corpus()
-        >>> corpus.add_layer_meta("text")
-        >>> doc = corpus.add_doc("This is a document.")
-        >>> corpus.to_json_str()
-        '{"_meta": {"text": {"type": "characters"}}, "_order": ["Kjco"], \
-"Kjco": {"text": "This is a document."}}'
+            >>> corpus = Corpus()
+            >>> corpus.add_layer_meta("text")
+            >>> doc = corpus.add_doc("This is a document.")
+            >>> corpus.to_json_str()
+            '{"_meta": {"text": {"type": "characters"}}, "_order": ["Kjco"], "Kjco": {"text": "This is a document."}}'
          """
         if self.corpus:
             return teangadb.write_corpus_to_json_string(self.corpus)
