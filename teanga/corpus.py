@@ -857,8 +857,12 @@ def read_yaml_str(yaml_str, db_file:str=None) -> Corpus:
             database.
 
     Examples:
-    >>> corpus = read_yaml_str("_meta:\\n  text:\\n    type: characters\\n\
-    Kjco:\\n   text: This is a document.\\n")
+    >>> yaml_str = '''_meta:
+    ...   text:
+    ...     type: characters
+    ... Kjco:
+    ...   text: This is a document.'''
+    >>> corpus = read_yaml_str(yaml_str)
     """
     if db_file:
         if not TEANGA_DB:
