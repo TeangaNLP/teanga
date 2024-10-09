@@ -24,8 +24,6 @@ class SpaCy(Service):
     converted to the Teanga format and added to the document.
 
     Example:
-    --------
-
     >>> from teanga import Document, Corpus
     >>> corpus = Corpus()
     >>> corpus.add_layer_meta("text")
@@ -67,7 +65,7 @@ class SpaCy(Service):
 
         result = {
                 "tokens": {"type": "span", "base": "text" },
-                "pos": {"type": "seq", "base": "tokens", "data": 
+                "pos": {"type": "seq", "base": "tokens", "data":
                         ["ADJ","ADP","PUNCT","ADV","AUX","SYM","INTJ",
                          "CCONJ","X","NOUN","DET","PROPN","NUM","VERB",
                          "PART","PRON","SCONJ", "SPACE", "EOL"]},

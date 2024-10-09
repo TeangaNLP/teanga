@@ -16,6 +16,11 @@ regex = "^2024.5.15"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.2"
+mkdocs = "^1.6.0"
+mkdocstrings = {extras = ["python"], version = "^0.25.1"}
+mkdocs-material = "^9.5.29"
+mkdocs-gen-files = "^0.5.0"
+flake8 = "^7.1.1"
 
 
 [tool.poetry.group.spacy.dependencies]
