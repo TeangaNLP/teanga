@@ -40,12 +40,10 @@ jobs:
       - name: Setup Poetry
         uses: abatilo/actions-poetry@v2
 
-      - name: Setup Extra Dependencies
+      - name: Install and Build MkDocs site
         run: |
           poetry install --with dev
-
-      - name: Build MkDocs site
-        run: mkdocs build -d mkdocs-docs/_build
+          poetry run python -m mkdocs build -d mkdocs-docs/_build
 
       - name: Setup Pages
         uses: actions/configure-pages@v3
