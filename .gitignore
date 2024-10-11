@@ -164,5 +164,5 @@ poetry.lock
 Cargo.lock
 tmp
 mkdocs-docs/.vim
-mkdocs-docs/overrides
 .vim
+mkdocs-docs/scripts
