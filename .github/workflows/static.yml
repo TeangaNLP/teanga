@@ -35,12 +35,14 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.8'  # Adjust the version as needed
+          python-version: '3.10'  # Adjust the version as needed
 
-      - name: Install MkDocs
-        run: |
-          python -m pip install --upgrade pip
-          pip install mkdocs
+      - name: Setup Poetry
+        uses: abatilo/actions-poetry@v2
+
+    - name: Setup Extra Dependencies
+      run: |
+        poetry install --with dev
 
       - name: Build MkDocs site
         run: mkdocs build -d mkdocs-docs/_build
