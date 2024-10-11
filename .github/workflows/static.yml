@@ -40,9 +40,9 @@ jobs:
       - name: Setup Poetry
         uses: abatilo/actions-poetry@v2
 
-    - name: Setup Extra Dependencies
-      run: |
-        poetry install --with dev
+      - name: Setup Extra Dependencies
+        run: |
+          poetry install --with dev
 
       - name: Build MkDocs site
         run: mkdocs build -d mkdocs-docs/_build
@@ -59,4 +59,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v2
-
