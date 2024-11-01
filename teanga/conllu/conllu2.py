@@ -1,4 +1,12 @@
 import teanga
+import sys
+import typing
+import logging
+from collections import OrderedDict
+
+import conllu
+import yaml
+
 
 def read_conllu_str(s : str, db: str=None) -> teanga.Corpus:
     """Read a CoNLL-U string and return a Teanga Corpus object.
@@ -12,7 +20,7 @@ def read_conllu_str(s : str, db: str=None) -> teanga.Corpus:
     """
     corpus = teanga.Corpus(db)
 
-    ### Do all the CoNLL stuff
+    
 
     return corpus
 
@@ -31,3 +39,6 @@ def read_conllu_file(file : str, db: str=None) -> teanga.Corpus:
     ### Do all the CoNLL stuff
 
     return corpus
+    
+  	#
+	#
