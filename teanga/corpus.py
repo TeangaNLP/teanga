@@ -598,7 +598,11 @@ Kjco:\\n    text: This is a document.\\n'
                 writer.write("        default: " +
                              self._dump_yaml_json(meta.default))
         for id, doc in self._docs:
-            writer.write(id + ":\n")
+            try:
+                id = int(id)
+                writer.write("\"" + str(id) + "\":\n")
+            except:
+                writer.write(id + ":\n")
             for layer_id in sorted(doc.layers):
                 writer.write("    ")
                 if isinstance(doc[layer_id].raw, str):
