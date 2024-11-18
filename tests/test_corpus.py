@@ -162,3 +162,13 @@ def test_issue_14():
     doc.words = [[0,4], [5,7], [8,10], [11,17]]
     doc.upos = [["DET"], ["VERB"], ["DET"], ["NOUN"]]
     assert(doc.upos.data == ["DET", "VERB", "DET", "NOUN"])
+
+def test_long_text_yaml_serialize():
+    corpus = teanga.Corpus()
+    corpus.add_layer_meta("text", layer_type="characters")
+    doc = corpus.add_doc(text="YAML see History and name) is a human-readable data serialization language. It is commonly used for configuration files and in applications where data is being stored or transmitted. YAML targets many of the same communications applications as Extensible Markup Language (XML) but has a minimal syntax that intentionally differs from Standard Generalized Markup Language (SGML). It uses Python-style indentation to indicate nesting and does not require quotes around most string values (it also supports JSON style and mixed in the same file).")
+    yaml_str = corpus.to_yaml_str()
+    print(yaml_str)
+    corpus2 = teanga.read_yaml_str(yaml_str)
+    
+
