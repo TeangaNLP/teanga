@@ -750,6 +750,10 @@ def _yaml_str(s):
     s = yaml.safe_dump(s)
     if s.endswith("\n...\n"):
         s = s[:-4]
+    if not s.startswith("'"):
+        s = s.replace("\n", "\n    ")
+        if s.endswith("\n    "):
+            s = s[:-4]
     return s
 
 def _corpus_hook(dct : dict) -> Corpus:
