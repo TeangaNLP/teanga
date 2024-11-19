@@ -20,6 +20,7 @@ from itertools import chain
 from typing import Iterator, Union, Callable
 from collections import Counter, defaultdict
 from urllib.request import urlopen
+import re
 
 class Corpus:
     """Corpus class for storing and processing text data.
@@ -598,10 +599,9 @@ Kjco:\\n    text: This is a document.\\n'
                 writer.write("        default: " +
                              self._dump_yaml_json(meta.default))
         for id, doc in self._docs:
-            try:
-                id = int(id)
-                writer.write("\"" + str(id) + "\":\n")
-            except:
+            if re.match(r"^[0-9]+$", id):
+                writer.write("\"" + id + "\":\n")
+            else:
                 writer.write(id + ":\n")
             for layer_id in sorted(doc.layers):
                 writer.write("    ")
