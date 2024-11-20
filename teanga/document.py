@@ -634,7 +634,7 @@ class SpanLayer(StandoffLayer):
             return [(s[0], s[1]) for s in self._data]
         else:
             subindexes = list(self._doc.layers[self._meta.base].indexes(layer))
-            return [(subindexes[s[0]], subindexes[s[1]]) for s in self._data]
+            return [(subindexes[s[0]][0], subindexes[s[1]-1][1]) for s in self._data]
 
     def __repr__(self):
         return "SpanLayer(" + repr(self._data) + ")"
