@@ -72,6 +72,13 @@ class Document:
             return value
         if self._meta[name].layer_type == "characters":
             self.layers[name] = CharacterLayer(name, self, str(value))
+        elif self._meta[name].base is None:
+            raise Exception("Layer " + name + 
+                            " has no base layer and is not of type characters.")
+        elif (self._meta[name].base not in self.layers and
+              self._meta[name].base not in self._meta):
+            raise Exception("Cannot add layer " + name + " because sublayer " +
+            self._meta[name].base + " not declared in meta")
         elif (self._meta[name].base not in self.layers and
                 self._meta[self._meta[name].base].default is None):
             raise Exception("Cannot add layer " + name + " because sublayer " +
@@ -107,8 +114,11 @@ class Document:
             value = [validate_value(v, 1) for v in value]
             self.layers[name] = ElementLayer(name, self, value)
         else:
-            raise Exception("Unknown layer type " + self._meta[name].layer_type +
-            " for layer " + name + ".")
+            if self._meta[name].layer_type is None:
+                raise Exception("Missing type for layer " + name + ".")
+            else:
+                raise Exception("Unknown layer type " + self._meta[name].layer_type + 
+                " for layer " + name + ".")
         if self.corpus and self.id:
             data_fields = {name: layer.raw
                            for (name,layer) in self.layers.items()}
