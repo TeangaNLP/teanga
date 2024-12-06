@@ -9,12 +9,10 @@ def teanga_corpus_to_rdf(graph, corpus, url: str):
     Convert a Teanga Corpus to RDF using the Teanga Namespace. The corpus
     is added to the current graph
 
-    Parameters
-    ----------
-
-    graph : rdflib.Graph
-    url : str
-        The URL of the Teanga Corpus
+    Parameters:
+        graph : rdflib.Graph
+        url : str
+            The URL of the Teanga Corpus
     """
     teanga = rdflib.Namespace("http://teanga.io/teanga#")
     graph.add((rdflib.URIRef(url), RDF.type, teanga.Corpus))
@@ -134,15 +132,13 @@ def teanga_corpus_to_nif(graph, corpus, url :str) -> None:
     Convert a Teanga Corpus to RDF using the NIF Namespace. The corpus
     is added to the current graph
 
-    Parameters
-    ----------
-
-    graph : rdflib.Graph
-        A graph to add the corpus to (normally an empty graph)
-    corpus : teanga.Corpus
-        The corpus to convert
-    url : str
-        The URL of the Teanga Corpus
+    Parameters:
+        graph : rdflib.Graph
+            A graph to add the corpus to (normally an empty graph)
+        corpus : teanga.Corpus
+            The corpus to convert
+        url : str
+            The URL of the Teanga Corpus
     """
     nif = rdflib.Namespace("http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#")
     teanga = rdflib.Namespace("http://teanga.io/teanga#")
@@ -216,13 +212,11 @@ def teanga_corpus_to_nif(graph, corpus, url :str) -> None:
 def teanga_corpus_to_webanno(corpus : teanga.Corpus, url : str) -> list[dict]:
     """Convert a Teanga Corpus to a list of WebAnno JSON objects
 
-    Parameters
-    ----------
-
-    corpus : teanga.Corpus
-        The corpus to convert
-    url : str
-        The URL of the document
+    Parameters:
+        corpus : teanga.Corpus
+            The corpus to convert
+        url : str
+            The URL of the document
     """
     webannos = []
     teanga_ns = "http://teanga.io/teanga#"
