@@ -669,8 +669,8 @@ Kjco:\\n    text: This is a document.\\n'
         for doc_id, doc in self._docs:
             dct[doc_id] = {layer_id: doc[layer_id].raw
                            for layer_id in doc.layers}
-            dct[doc_id] = {"_" + key: value
-                           for key, value in doc.metadata.items()}
+            dct[doc_id].update({"_" + key: value
+                                for key, value in doc.metadata.items()})
         json.dump(dct, writer)
 
     def apply(self, service : Service):
