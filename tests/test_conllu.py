@@ -110,8 +110,9 @@ TEANGA_2 = """_meta:
   upos: ["SCONJ", "ADJ", "ADP", "DET", "ADJ", "NOUN", "AUX", "ADJ", "ADP"]
   xpos: ["IN", "JJ", "IN", "DT", "JJ", "NN", "VBZ", "JJ", "IN"]
   feats: ["", "Degree=Pos", "", "Definite=Def|PronType=Art", "Degree=Pos", "Number=Sing", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin", "Degree=Pos", ""]
-  dep: [[9, "mark"], [9, "nsubj"], [7, "case"], [7, "det"], [7, "amod"], [3, "nmod"], [9, "cop"], [20, "advcl"], [13, "case"]]"""
-
+  dep: [[9, "mark"], [9, "nsubj"], [7, "case"], [7, "det"], [7, "amod"], [3, "nmod"], [9, "cop"], [20, "advcl"], [13, "case"]]
+  "_newdoc id": n01001
+  _sent_id: n01001011"""
 
 
 def test_conllu_1():

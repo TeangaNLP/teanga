@@ -21,6 +21,9 @@ class Document:
         self.add_layers({key: value
                          for key, value in kwargs.items()
                          if not key.startswith("_")})
+        self._metadata = {key[1:]: value 
+                         for key, value in kwargs.items()
+                         if key.startswith("_")}
         self.corpus = corpus
 
     def copy(self):
@@ -125,7 +128,7 @@ class Document:
 
     def __setattr__(self, name:str, value) -> None:
         """Set the value of a layer."""
-        if name != "layers" and name != "_meta" and name != "corpus" and name != "id":
+        if name != "layers" and name != "_meta" and name != "corpus" and name != "id" and name != "_metadata":
             self.__setitem__(name, value)
         else:
             super().__setattr__(name, value)
@@ -194,6 +197,11 @@ class Document:
     def meta(self):
         return self._meta
 
+    @property
+    def metadata(self):
+        """Get the dictionary of meta layers."""
+        return self._metadata
+
     def text_for_layer(self, layer_name:str) -> Generator[None,None,str]:
         """Return the text for a layer.
 
@@ -254,6 +262,10 @@ class Document:
         if self.id != other.id:
             return False
         if self.layers != other.layers:
+            return False
+        if self._metadata != other._metadata:
+            print(self._metadata)
+            print(other._metadata)
             return False
         return True
 

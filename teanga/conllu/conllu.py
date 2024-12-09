@@ -67,7 +67,10 @@ def read_conllu(obj : TextIO, corpus : teanga.Corpus):
         else:
             text = " ".join([token['form'] for token in sentence])
         doc = corpus.add_doc(text)
-        # TODO: Support extra metadata layers
+        for key, value in sentence.metadata.items():
+            if key == "text":
+                continue
+            doc.metadata[key] = value
         doc.tokens = find_spans([token['form'] for token in sentence], text)
         doc.lemma = [token['lemma'] for token in sentence]
         if all(token['upos'] is not None for token in sentence):
