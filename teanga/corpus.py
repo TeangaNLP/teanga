@@ -673,15 +673,15 @@ Kjco:\\n    text: This is a document.\\n'
     def to_tcf(self, path:str):
         """Write the corpus to a TCF file.
 
-        Parameters:
-        -----------
-
-        path: str
-            The path to the TCF file.
+        Args:
+            path: str
+                The path to the TCF file.
         """
         if self.corpus:
             teangadb.write_corpus_to_tcf(self.corpus, path)
         else:
+            if not TEANGA_DB:
+                teanga_db_fail()
             tmpfile = tempfile.mkstemp()[1]
             self.to_json(tmpfile)
             tmppath = tempfile.mkdtemp()
@@ -916,14 +916,12 @@ def from_url(url:str, db_file:str=None) -> Corpus:
 def read_tcf(file:str, db_file:str=None) -> Corpus:
     """Read a corpus from a TCF file. Requires TeangaDB module.
 
-    Parameters:
-    -----------
-
-    file: str
-        The path to the TCF file.
-    db_file: str
-        The path to the database file, if the corpus should be stored in a
-        database.
+    Args:
+        file: str
+            The path to the TCF file.
+        db_file: str
+            The path to the database file, if the corpus should be stored in a
+            database.
     """
     if not TEANGA_DB:
         teanga_db_fail()
