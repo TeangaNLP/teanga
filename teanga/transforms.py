@@ -10,10 +10,9 @@ class TransformedCorpus:
         """Create a new TransformedCorpus.
 
         Args:
-        -----
-        corpus: The corpus to transform.
-        transform: A dictionary mapping layer names to functions 
-        that transform the layer.
+            corpus: The corpus to transform.
+            transform: A dictionary mapping layer names to functions 
+            that transform the layer.
         """
         self.corpus = corpus
         self._transform = transform
@@ -58,13 +57,10 @@ class TransformedCorpus:
         """Transform a document using the transformation functions.
 
         Args:
-        -----
-
-        doc: The document to transform.
+            doc: The document to transform.
 
         Returns:
-        --------
-        A new document with the transformed layers.
+            A new document with the transformed layers.
         """
         new_doc = doc.copy()
         for layer_name, transform in self._transform.items():
@@ -126,21 +122,19 @@ class TransformedCorpus:
         """Transform a layer in the corpus.
 
         Parameters:
-        -----------
-        layer: str
-            The name of the layer to transform.
-        transform: Callable[[str], str]
-            The transformation function.
+            layer: str
+                The name of the layer to transform.
+            transform: Callable[[str], str]
+                The transformation function.
 
         Examples:
-        ---------
-        >>> from teanga import Corpus
-        >>> corpus = Corpus()
-        >>> corpus.add_layer_meta("text")
-        >>> doc = corpus.add_doc("This is a document.")
-        >>> corpus = corpus.upper().transform("text", lambda x: x[:10])
-        >>> list(corpus.docs)
-        [('Kjco', Document('Kjco', {'text': CharacterLayer('THIS IS A ')}))]
+            >>> from teanga import Corpus
+            >>> corpus = Corpus()
+            >>> corpus.add_layer_meta("text")
+            >>> doc = corpus.add_doc("This is a document.")
+            >>> corpus = corpus.upper().transform("text", lambda x: x[:10])
+            >>> list(corpus.docs)
+            [('Kjco', Document('Kjco', {'text': CharacterLayer('THIS IS A ')}))]
         """
         new_transform = self._transform.copy()
         if layer in self._transform:
