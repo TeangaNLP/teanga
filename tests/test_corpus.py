@@ -185,4 +185,4 @@ def test_tcf():
     # create a temporary TCF file
     temp_file = tempfile.NamedTemporaryFile(delete=True)
     corpus.to_tcf(temp_file.name)
-    corpus = read_tcf(temp_file.name)
+    corpus = teanga.read_tcf(temp_file.name)
