@@ -2,12 +2,13 @@ from conllu import parse_incr
 from typing import TextIO
 from io import StringIO
 import teanga
+from teanga.utils import find_spans
 
 def conllu_corpus(db : str = None) -> teanga.Corpus:
     """Create a new empty Teanga Corpus object with metadata fields as
     specified in the CoNLL-U format.
     """
-    corpus = teanga.Corpus()
+    corpus = teanga.Corpus(db=db)
     corpus.add_layer_meta('text', 'characters')
     corpus.add_layer_meta('tokens', 'span', base='text')
     corpus.add_layer_meta('lemma', 'seq', base='tokens', data='string')
@@ -93,17 +94,3 @@ def map_feats(d: dict):
     else:
         return "|".join(f"{k}={v}" for k, v in d.items())
 
-def find_spans(tokens, text):
-    i = 0
-    tk_idx = 0
-    spans = []
-    while i < len(text) and tk_idx < len(text):
-        if text[i:].startswith(tokens[tk_idx]):
-            spans.append([i, i+len(tokens[tk_idx])])
-            i += len(tokens[tk_idx])
-            tk_idx += 1
-        else:
-            i += 1
-    if tk_idx < len(tokens):
-        raise ValueError("Tokenization mismatch")
-    return spans
