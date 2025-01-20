@@ -259,8 +259,8 @@ class Corpus:
         """Get a document by its id.
 
         Args:
-            key: str
-                The id of the document.
+            key: Union[str, int, slice]
+                The id of the document. Strings use document identifiers, while integers use the order of the documents in the corpus.
 
         Examples:
             >>> corpus = text_corpus()
