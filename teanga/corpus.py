@@ -255,6 +255,38 @@ class Corpus:
             else:
                 raise Exception("Document with id " + doc_id + " not found.")
 
+    def __getitem__(self, key:str) -> Document:
+        """Get a document by its id.
+
+        Args:
+            key: str
+                The id of the document.
+
+        Examples:
+            >>> corpus = text_corpus()
+            >>> doc = corpus.add_doc("This is a document.")
+            >>> corpus["Kjco"]
+            Document('Kjco', {'text': CharacterLayer('This is a document.')})
+            >>> corpus[0]
+            Document('Kjco', {'text': CharacterLayer('This is a document.')})
+            >>> corpus[:1]
+            [Document('Kjco', {'text': CharacterLayer('This is a document.')})]
+        """
+        if isinstance(key, int):
+            if self.corpus:
+                return self.doc_by_id[self.corpus.order[key]]
+            else:
+                return self.doc_by_id(list(self.doc_ids)[key])
+        elif isinstance(key, slice):
+            if self.corpus:
+                return [self.doc_by_id(doc_id) for doc_id in self.corpus.order[key]]
+            else:
+                return [self.doc_by_id(doc_id) for doc_id in list(self.doc_ids)[key]]
+        elif isinstance(key, str):
+            return self.doc_by_id(key)
+        else:
+            raise Exception("Invalid key type.")
+
     @property
     def meta(self) -> dict[str, LayerDesc]:
         """Return the meta data of the corpus.
