@@ -2,6 +2,7 @@ import yaml
 from typing import Any, Iterator, List, Tuple
 from teanga.utils import teanga_id_for_doc
 from teanga.layer_desc import _layer_desc_from_kwargs
+import re
 
 class CorpusStream:
     """A stream of documents from a YAML file.
