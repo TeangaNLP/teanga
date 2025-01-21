@@ -4,7 +4,7 @@ from .utils import teanga_id_for_doc
 from .layer_desc import LayerDesc, _layer_desc_from_kwargs, _from_layer_desc
 from .groups import GroupedCorpus
 from .transforms import TransformedCorpus
-from .stream import CorpusStream
+from .stream import CorpusStream, CorpusWriter
 
 try:
     import teanga_pyo3.teanga as teangadb
@@ -765,6 +765,25 @@ Kjco:\\n    text: This is a document.\\n'
             [('Kjco', Document('Kjco', {'text': CharacterLayer('This is a ')}))]
         """
         return TransformedCorpus(self, {layer: transform})
+
+    def writer(self, buf) -> CorpusWriter:
+        """Create a writer object that can serialize documents in 
+        a streaming fashion.
+
+        Args:
+            buf: str
+                The buffer to write to.
+
+        Examples:
+            >>> import io
+            >>> corpus = text_corpus()
+            >>> doc = corpus.add_doc("This is a document.")
+            >>> string = io.StringIO()
+            >>> with corpus.writer(string) as writer:
+            ...     for doc in corpus.docs:
+            ...         writer.write(doc)
+        """
+        return CorpusWriter(buf, self.meta)
 
 def _yaml_str(s):
     """

@@ -148,4 +148,74 @@ def read_obj2(stream) -> Iterator[Tuple[str, Any]]:
             value = read_any(stream)
             yield key, value
 
+class CorpusWriter:
+    def __init__(self, buf, meta, order=None):
+        self.buf = buf
+        self.buf.write("_meta:\n")
+        for name in sorted(meta.keys()):
+            _meta = meta[name]
+            self.buf.write("    " + name + ":\n")
+            self.buf.write("        type: " + _meta.layer_type + "\n")
+            if _meta.base:
+                self.buf.write("        base: " + _yaml_str(_meta.base))
+            if _meta.data:
+                self.buf.write("        data: " +
+                             _dump_yaml_json(_meta.data))
+            if _meta.link_types:
+                self.buf.write("        link_types: " +
+                             _dump_yaml_json(_meta.link_types))
+            if _meta.target:
+                self.buf.write("        target: " +
+                             _dump_yaml_json(_meta.target))
+            if _meta.default:
+                self.buf.write("        default: " +
+                             _dump_yaml_json(_meta.default))
+        if order:
+            self.buf.write("_order: " + self._dump_yaml_json(order) + "\n")
+
+    def write(self, doc : 'teanga.Document'):
+        id = doc.id
+        if re.match(r"^[0-9]+$", id):
+            self.buf.write("\"" + id + "\":\n")
+        else:
+            self.buf.write(id + ":\n")
+        for layer_id in sorted(doc.layers):
+            self.buf.write("    ")
+            if isinstance(doc[layer_id].raw, str):
+                self.buf.write(layer_id)
+                self.buf.write(": ")
+                self.buf.write(_yaml_str(doc[layer_id].raw))
+            else:
+                self.buf.write(layer_id + ": ")
+                self.buf.write(json.dumps(doc[layer_id].raw) + "\n")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.buf.close()
+
+
+def _dump_yaml_json(self, obj):
+    """
+    """
+    if obj is None:
+        return "null"
+    elif isinstance(obj, str):
+        return _yaml_str(obj)
+    else:
+        return json.dumps(obj) + "\n"
+
+def _yaml_str(s):
+    """
+    """
+    s = yaml.safe_dump(s)
+    if s.endswith("\n...\n"):
+        s = s[:-4]
+    if not s.startswith("'"):
+        s = s.replace("\n", "\n    ")
+        if s.endswith("\n    "):
+            s = s[:-4]
+    return s
+
 
