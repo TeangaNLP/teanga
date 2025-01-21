@@ -4,6 +4,7 @@ from .utils import teanga_id_for_doc
 from .layer_desc import LayerDesc, _layer_desc_from_kwargs, _from_layer_desc
 from .groups import GroupedCorpus
 from .transforms import TransformedCorpus
+from .stream import CorpusStream
 
 try:
     import teanga_pyo3.teanga as teangadb
@@ -145,6 +146,14 @@ class Corpus:
             >>> corpus = parallel_corpus(["en", "nl"])
             >>> doc = corpus.add_doc(en="This is a document.", nl="Dit is een document.")
         """
+        if len(args) == 1 and isinstance(args[0], Document):
+            doc = args[0]
+            if self.corpus:
+                self.corpus.add_doc({layer_id: doc[layer_id].raw
+                                     for layer_id in doc.layers})
+            else:
+                self._docs[doc.id] = doc
+            return doc
         char_layers = [name for (name, layer) in self.meta.items()
                        if layer.layer_type == "characters"]
         if len(char_layers) == 0:
@@ -880,6 +889,29 @@ def read_yaml_str(yaml_str, db_file:str=None) -> Corpus:
             yaml_str, db_file))
     else:
         return _corpus_hook(yaml.load(yaml_str, Loader=yaml.FullLoader))
+    
+def parse(path_or_buf:str) -> CorpusStream:
+    """Parse a corpus incrementally from a file or buffer. Note that you will need
+    to load this into a Corpus object directly
+
+    Args:
+        path_or_buf: str
+            The path to the file or a buffer.
+
+    Examples:
+        >>> import io
+        >>> yaml_str = '''_meta:
+        ...   text:
+        ...     type: characters
+        ... Kjco:
+        ...   text: This is a document.'''
+        >>> stream = parse(io.StringIO(yaml_str))
+        >>> corpus = Corpus()
+        >>> corpus._meta = stream.meta
+        >>> for doc in stream:
+        ...     _ = corpus.add_doc(doc)
+    """
+    return CorpusStream(path_or_buf)
 
 def from_url(url:str, db_file:str=None) -> Corpus:
     """Read a corpus from a URL.
