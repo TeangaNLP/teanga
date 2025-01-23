@@ -4,6 +4,7 @@ from teanga.utils import teanga_id_for_doc
 from teanga.layer_desc import _layer_desc_from_kwargs
 import teanga
 import re
+import json
 
 class CorpusStream:
     """A stream of documents from a YAML file.
