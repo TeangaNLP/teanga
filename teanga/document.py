@@ -233,7 +233,7 @@ class Document:
             return (self.layers[text_layer].text[0][start:end]
                     for start, end in indexes)
 
-    def view(self, *args, start:int=0, end:int=None, root_layer:str=None):
+    def view(self, *args, start: int = 0, end: int = None, root_layer: str = None):
         """Return a view of the document. A view is a grouping of the basic
           text data according to the annotations in the document
 
