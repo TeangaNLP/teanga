@@ -21,6 +21,9 @@ class Document:
         self.add_layers({key: value
                          for key, value in kwargs.items()
                          if not key.startswith("_")})
+        self._metadata = {key[1:]: value 
+                         for key, value in kwargs.items()
+                         if key.startswith("_")}
         self.corpus = corpus
 
     def copy(self):
@@ -134,7 +137,7 @@ class Document:
 
     def __setattr__(self, name:str, value) -> None:
         """Set the value of a layer."""
-        if name != "layers" and name != "_meta" and name != "corpus" and name != "id":
+        if name != "layers" and name != "_meta" and name != "corpus" and name != "id" and name != "_metadata":
             self.__setitem__(name, value)
         else:
             super().__setattr__(name, value)
@@ -203,6 +206,11 @@ class Document:
     def meta(self):
         return self._meta
 
+    @property
+    def metadata(self):
+        """Get the dictionary of meta layers."""
+        return self._metadata
+
     def text_for_layer(self, layer_name:str) -> Generator[None,None,str]:
         """Return the text for a layer.
 
@@ -242,6 +250,74 @@ class Document:
             return (self.layers[text_layer].text[0][start:end]
                     for start, end in indexes)
 
+    def view(self, *args, start: int = 0, end: int = None, root_layer: str = None):
+        """Return a view of the document. A view is a grouping of the basic
+          text data according to the annotations in the document
+
+        Parameters:
+        -----------
+
+        args: list
+            The layers to view the text data by.
+        start: int
+            The start index of the view.
+        end: int
+            The end index of the view.
+        root_layer: str
+            The root layer of the view (this should not normally be specified).
+
+        Returns:
+        --------
+
+        The text data grouped by the annotations in the document.
+
+        Examples:
+        ---------
+
+        >>> from teanga import Corpus
+        >>> corpus = Corpus()
+        >>> corpus.add_layer_meta("text")
+        >>> corpus.add_layer_meta("words", layer_type="span", base="text")
+        >>> corpus.add_layer_meta("sentences", layer_type="div", base="text")
+        >>> doc = corpus.add_doc("This is a sentence. This is another sentence.")
+        >>> doc.words = [[0,4], [5,7], [8,9], [10,18], [18,19], [20,24], \
+[25,27], [28,35], [36,44], [44,45]]
+        >>> doc.sentences = [0, 20]
+        >>> doc.view("words")
+        ['This', 'is', 'a', 'sentence', '.', 'This', 'is', 'another', 'sentence', '.']
+        >>> doc.view("sentences")
+        ['This is a sentence. ', 'This is another sentence.']
+        >>> doc.view("words", "sentences")
+        [['This', 'is', 'a', 'sentence', '.'], ['This', 'is', 'another', \
+'sentence', '.']]
+          """
+        if root_layer is None:
+            for layer in args:
+                rl = self.layers[layer].root_layer()
+                if root_layer is not None and rl != root_layer:
+                    raise Exception("view was called with layers that have " +
+                    "different root layers")
+                root_layer = rl
+        if root_layer is None:
+            for layer in self.layers:
+                if self._meta[layer].base is None:
+                    if root_layer is not None:
+                        raise Exception("view was called without specifying any" +
+                        "layers or root layer but there are multiple root " +
+                        "layers in the document")
+                    root_layer = layer
+                    break
+        if end is None:
+            end = len(self.layers["text"])
+        if len(args) == 0:
+            return self.text_for_layer(root_layer)[start:end]
+        else:
+            indexes = self.layers[args[-1]].indexes(root_layer)
+            indexes = [(s, e) for s,e in indexes
+                       if s >= start and e <= end]
+            return [self.view(*args[:-1], start=s, end=e, root_layer=root_layer)
+                    for s, e in indexes]
+
     def to_json(self) -> str:
         """Return the JSON representation of the document."""
         return {layer_id: self.layers[layer_id].raw
@@ -256,6 +332,20 @@ class Document:
 
     def __repr__(self):
         return "Document(" + repr(self.id) + ", " + repr(self.layers) + ")"
+
+    def __eq__(self, other):
+        if not isinstance(other, Document):
+            return False
+        if self.id != other.id:
+            return False
+        if self.layers != other.layers:
+            return False
+        if self._metadata != other._metadata:
+            print(self._metadata)
+            print(other._metadata)
+            return False
+        return True
+
 
 def validate_value(value, index_length):
     """Validate a single value in a layer and normalise it if necessary.
@@ -492,6 +582,13 @@ class CharacterLayer(Layer):
     def __len__(self):
         return len(self._text)
 
+    def __eq__(self, other):
+        if not isinstance(other, CharacterLayer):
+            return False
+        if self._text != other._text:
+            return False
+        return True
+
     def transform(self, transform_func):# -> Self:
         return CharacterLayer(self._name, self._doc, transform_func(self._text))
 
@@ -559,6 +656,13 @@ class SeqLayer(Layer):
     def __len__(self):
         return len(self.seq)
 
+    def __eq__(self, other):
+        if not isinstance(other, SeqLayer):
+            return False
+        if self.seq != other.seq:
+            return False
+        return True
+
     def transform(self, transform_func):# -> Self:
         return SeqLayer(self._name, self._doc, [transform_func(x) for x in self.seq])
 
@@ -587,6 +691,13 @@ class StandoffLayer(Layer):
 
     def __len__(self):
         return len(self._data)
+
+    def __eq__(self, other):
+        if not isinstance(other, StandoffLayer):
+            return False
+        if self._data != other._data:
+            return False
+        return True
 
 class SpanLayer(StandoffLayer):
     """A layer that defines spans of the sublayer which are annotated.
@@ -651,6 +762,12 @@ class SpanLayer(StandoffLayer):
     def transform(self, transform_func):# -> Self:
         return SpanLayer(self._name, self._doc, [transform_func(x) for x in self._data])
 
+def _1st_idx(d):
+    if isinstance(d, numbers.Integral):
+        return d
+    else:
+        return d[0]
+ 
 class DivLayer(StandoffLayer):
     """A layer where the sublayer is divided into non-overlapping parts.
     As such these layers have only a start index for each annotation, and that
@@ -766,10 +883,10 @@ class ElementLayer(StandoffLayer):
         if layer == self._name:
             return list(zip(range(len(self._data)), range(1, len(self._data) + 1)))
         elif layer == self._meta.base:
-            return [(s[0], s[0] + 1) for s in self._data]
+            return [(_1st_idx(s), _1st_idx(s) + 1) for s in self._data]
         else:
             subindexes = list(self._doc.layers[self._meta.base].indexes(layer))
-            return [subindexes[s[0]] for s in self._data]
+            return [subindexes[_1st_idx(s)] for s in self._data]
 
     def __repr__(self):
         return "ElementLayer(" + repr(self._data) + ")"

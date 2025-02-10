@@ -19,7 +19,7 @@ import gzip
 import tempfile
 from io import StringIO
 from itertools import chain
-from typing import Iterator, Union, Callable, Iterable  
+from typing import Iterator, Union, Callable, Iterable, Tuple, List, Optional
 from collections import Counter, defaultdict
 from urllib.request import urlopen
 import re
@@ -322,6 +322,31 @@ class Corpus:
             self.corpus.meta = meta
         else:
             self._meta = meta
+
+    def view(self, *args):
+        """Create a view on the corpus.
+
+        Parameters:
+        -----------
+            args: str
+                The names of the layers to view.
+
+        Examples:
+        ---------
+
+        >>> corpus = Corpus()
+        >>> corpus.add_layer_meta("text")
+        >>> corpus.add_layer_meta("words", layer_type="span", base="text")
+        >>> corpus.add_layer_meta("sentences", layer_type="div", base="words")
+        >>> doc = corpus.add_doc("This is a sentence. This is another sentence.")
+        >>> doc.words = [(0, 4), (5, 7), (8, 9), (10, 18), (20, 24), (25, 27),
+        ...               (28, 35), (36, 44)]
+        >>> doc.sentences = [0, 4]
+        >>> doc.view("words", "sentences")
+        [['This', 'is', 'a', 'sentence'], ['This', 'is', 'another', 'sentence']]
+        """
+        for doc_id, doc in self.docs:
+            yield doc.view(*args)
 
     def text_freq(self, layer:str,
                   condition : Union[str,
@@ -646,6 +671,8 @@ Kjco:\\n    text: This is a document.\\n'
                 else:
                     writer.write(layer_id + ": ")
                     writer.write(json.dumps(doc[layer_id].raw) + "\n")
+            for key, value in doc.metadata.items():
+                writer.write("    _" + key + ": " + _yaml_str(value))
 
     def _dump_yaml_json(self, obj):
         """
@@ -701,6 +728,8 @@ Kjco:\\n    text: This is a document.\\n'
         for doc_id, doc in self._docs.items():
             dct[doc_id] = {layer_id: doc[layer_id].raw
                            for layer_id in doc.layers}
+            dct[doc_id].update({"_" + key: value
+                                for key, value in doc.metadata.items()})
         json.dump(dct, writer)
 
     def to_tcf(self, path:str):
@@ -817,6 +846,18 @@ Kjco:\\n    text: This is a document.\\n'
         """
         return CorpusWriter(buf, self.meta)
 
+    def __eq__(self, other):
+        """
+        Compare two Teanga Corpora for equality
+        """
+        if not isinstance(other, Corpus):
+            return False
+        if self.doc_ids != other.doc_ids:
+            return False
+        return all(self.doc_by_id(doc_id) == other.doc_by_id(doc_id)
+                   for doc_id in self.doc_ids)
+
+
 def _yaml_str(s):
     """
     """
@@ -847,8 +888,10 @@ def _corpus_hook(dct : dict) -> Corpus:
                 doc = Document(c.meta, id=doc_id, **value)
                 text_fields = {
                         field: value for field, value in value.items()
-                        if isinstance(value, str)
+                        if isinstance(value, str) and not field.startswith("_")
                 }
+                if not text_fields:
+                    raise Exception("No text field found in document " + doc_id)
                 tid = teanga_id_for_doc(c.doc_ids, **text_fields)
                 if tid != doc_id:
                     raise Exception("Invalid document id: " + doc_id +
@@ -1003,7 +1046,8 @@ def text_corpus(db_file:str = None) -> Corpus:
     corpus.add_layer_meta("tokens", layer_type="span", base="text")
     return corpus
 
-def parallel_corpus(languages : list[str], db_file:str = None) -> Corpus:
+def parallel_corpus(languages : list[str], db_file:str = None,
+                    alignments : Optional[List[Tuple[str, str]]] = None) -> Corpus:
     """
     Create a corpus with a character layer and token layer for each language
 
@@ -1013,17 +1057,30 @@ def parallel_corpus(languages : list[str], db_file:str = None) -> Corpus:
         db_file: str
             The path to the database file, if the corpus should be stored in a
             database.
+        alignments:
+            A list of pairs of language to add an alignment field for.
 
     Returns:
         A corpus with a character layer and token layer for each language
 
     Examples:
-        >>> corpus = parallel_corpus(["en", "nl"])
+        >>> corpus = parallel_corpus(["en","de","nl"], 
+        ...   alignments=[("en","de"),("en","nl")])
+        >>> doc = corpus.add_doc(en="hello, world", de="Hallo, Welt!")
+        >>> doc.en_tokens = [(0,5), (7,12)]
+        >>> doc.de_tokens = [(0,5), (7,11)]
+        >>> doc.en_de_alignments = [(0,0),(1,1)]
     """
     corpus = Corpus(db=db_file)
     for lang in languages:
         corpus.add_layer_meta(lang, layer_type="characters")
         corpus.add_layer_meta(lang + "_tokens", layer_type="span", base=lang)
+    if alignments:
+        for src, trg in alignments:
+            corpus.add_layer_meta(src + "_" + trg + "_alignments",
+                                  layer_type="element", base=src + "_tokens",
+                                  target=trg + "_tokens",
+                                  data="link")
     return corpus
 
 def read_tcf(file:str, db_file:str=None) -> Corpus:
