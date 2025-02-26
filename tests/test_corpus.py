@@ -198,3 +198,10 @@ def test_tcf():
     temp_file = tempfile.NamedTemporaryFile(delete=True)
     corpus.to_tcf(temp_file.name)
     corpus = teanga.read_tcf(temp_file.name)
+
+def test_teanga_id_2():
+    corpus = teanga.Corpus()
+    corpus.add_layer_meta("text", layer_type="characters")
+    corpus.add_layer_meta("fileid", layer_type="characters")
+    doc = corpus.add_doc(text="This is a document.", fileid="doc1")
+    assert doc.id == "fexV"

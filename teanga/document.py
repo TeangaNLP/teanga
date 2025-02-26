@@ -16,14 +16,15 @@ class Document:
                  corpus=None, id=None, **kwargs):
         self._meta = meta
         self.layers = {}
-        self.id = id
         self.corpus = None
+        self.id = None
         self.add_layers({key: value
                          for key, value in kwargs.items()
                          if not key.startswith("_")})
         self._metadata = {key[1:]: value 
                          for key, value in kwargs.items()
                          if key.startswith("_")}
+        self.id = id
         self.corpus = corpus
 
     def copy(self):
@@ -78,6 +79,8 @@ class Document:
         if self._meta[name].layer_type not in ["characters", "seq", "span", "div", "element"]:
             raise Exception("Invalid layer type " + self._meta[name].layer_type)
         if self._meta[name].layer_type == "characters":
+            if self.id:
+                raise Exception("Cannot add character layer to existing document.")
             self.layers[name] = CharacterLayer(name, self, str(value))
         elif self._meta[name].base is None:
             raise Exception("Non-character layer " + name + " must have a base.")
