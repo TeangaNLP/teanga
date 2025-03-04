@@ -843,6 +843,8 @@ class ElementLayer(StandoffLayer):
 
     def __init__(self, name:str, doc: Document, spans:list):
         super().__init__(name, doc)
+        if len(spans) > 0 and any(isinstance(s,numbers.Integral) for s in spans):
+            spans = [(s,) for s in spans]
         self._data = spans
         for span in self._data:
             if not isinstance(span[0], numbers.Integral):
