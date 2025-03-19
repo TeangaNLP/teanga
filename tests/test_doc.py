@@ -21,4 +21,8 @@ def test_indexes1():
         print(doc.ner.indexes("text"))
         assert doc.ner.text == ["John Doe", "New York"]
 
-
+def test_add_metadata():
+    corpus = teanga.text_corpus()
+    doc = corpus.add_doc("test")
+    doc._author = "me"
+    print(doc._author)
