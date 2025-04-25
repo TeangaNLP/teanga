@@ -759,16 +759,16 @@ Kjco:\\n    text: This is a document.\\n'
         Examples:
             >>> corpus = Corpus()
             >>> corpus.add_layer_meta("text")
-            >>> corpus.add_layer_meta("first_char")
+            >>> corpus.add_layer_meta("first_char", layer_type="element", base="text")
             >>> doc = corpus.add_doc(text="This is a document.")
             >>> from teanga.service import Service
             >>> class FirstCharService(Service):
             ...     def requires(self):
             ...         return {"text": { "type": "characters"}}
             ...     def produces(self):
-            ...         return {"first_char": {"type": "characters"}}
+            ...         return {"first_char": {"type": "element", "base": "text"}}
             ...     def execute(self, input):
-            ...         input["first_char"] = input["text"][0]
+            ...         input["first_char"] = [0]
             ...         return input
             >>> corpus.apply(FirstCharService())
         """
