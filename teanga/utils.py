@@ -57,5 +57,16 @@ def find_spans(tokens, text):
         else:
             i += 1
     if tk_idx < len(tokens):
-        raise ValueError("Tokenization mismatch")
+        raise TokenizationMismatch(tokens, text)
     return spans
+
+class TokenizationMismatch(Exception):
+    """Exception raised for tokenization mismatches.
+
+    Attributes:
+        message -- explanation of the error
+    """
+
+    def __init__(self, tokens, text):
+        self.message = f"Tokens do not match text: {tokens} != {text}"
+        super().__init__(self.message)

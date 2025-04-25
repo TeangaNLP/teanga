@@ -72,23 +72,30 @@ def read_conllu(obj : TextIO, corpus : teanga.Corpus):
             if key == "text":
                 continue
             doc.metadata[key] = value
-        doc.tokens = find_spans([token['form'] for token in sentence], text)
-        doc.lemma = [token['lemma'] for token in sentence]
-        if all(token['upos'] is not None for token in sentence):
-            doc.upos = [token['upos'] for token in sentence]
-        if all(token['xpos'] is not None for token in sentence):
-            doc.xpos = [token['xpos'] for token in sentence]
-        if any(token['feats'] is not None for token in sentence):
-            doc.feats = [map_feats(token['feats']) for token in sentence]
-        if (all(token['head'] is not None for token in sentence) and
-            all(token['deprel'] is not None for token in sentence)):
-            doc.dep = [[token['head'], token['deprel']] for token in sentence]
-        if all(token['misc'] is not None for token in sentence):
-            doc.misc = [token['misc'] for token in sentence]
+        try:
+            doc.tokens = find_spans([token['form'] for token in sentence], text)
+            doc.lemma = [token['lemma'] for token in sentence]
+            if all(token['upos'] is not None for token in sentence):
+                doc.upos = [token['upos'] for token in sentence]
+            if all(token['xpos'] is not None for token in sentence):
+                doc.xpos = [token['xpos'] for token in sentence]
+            if any(token['feats'] is not None for token in sentence):
+                doc.feats = [map_feats(token['feats']) for token in sentence]
+            if (all(token['head'] is not None for token in sentence) and
+                all(token['deprel'] is not None for token in sentence)):
+                doc.dep = [[token['head'], token['deprel']] for token in sentence]
+            if all(token['misc'] is not None for token in sentence):
+                doc.misc = [map_feats(token['misc']) for token in sentence]
+        except teanga.utils.TokenizationMismatch as e:
+            print(f"Error: {e}")
+            print(f"Skipping sentence.")
+            continue
 
     return corpus
 
 def map_feats(d: dict):
+    if isinstance(d, str):
+        return d
     if d is None:
         return ""
     else:
