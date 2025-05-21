@@ -4,13 +4,20 @@ from io import StringIO
 import teanga
 from teanga.utils import find_spans
 
-def conllu_corpus(db : str = None) -> teanga.Corpus:
+def conllu_corpus(db : str = None, include_form = False) -> teanga.Corpus:
     """Create a new empty Teanga Corpus object with metadata fields as
     specified in the CoNLL-U format.
+    Args:
+    db: str
+        The DB location to use of the Teanga corpus
+    include_form: bool
+        Also include a form layer
     """
     corpus = teanga.Corpus(db=db)
     corpus.add_layer_meta('text', 'characters')
     corpus.add_layer_meta('tokens', 'span', base='text')
+    if include_form:
+        corpus.add_layer_meta('form', 'seq', base='tokens', data='string')
     corpus.add_layer_meta('lemma', 'seq', base='tokens', data='string')
     corpus.add_layer_meta('upos', 'seq', base='tokens', data=["ADJ", "ADP", "ADV", "AUX", "CCONJ", "DET", "INTJ", "NOUN", "NUM", "PART", "PRON", "PROPN", "PUNCT", "SCONJ", "VERB", "X" ])
     corpus.add_layer_meta('xpos', 'seq', base='tokens', data='string')
@@ -20,7 +27,7 @@ def conllu_corpus(db : str = None) -> teanga.Corpus:
 
     return corpus
 
-def read_conllu_str(s : str, db: str=None) -> teanga.Corpus:
+def read_conllu_str(s : str, db: str=None, include_form: bool=False) -> teanga.Corpus:
     """Read a CoNLL-U string and return a Teanga Corpus object.
     
     Args:
@@ -29,15 +36,17 @@ def read_conllu_str(s : str, db: str=None) -> teanga.Corpus:
         The CoNLL-U string to read.
     db: str
         The DB location to use of the Teanga corpus
+    include_form: bool
+        Also include a form layer
     """
-    corpus = conllu_corpus(db)
+    corpus = conllu_corpus(db, include_form)
 
     read_conllu(StringIO(s), corpus)
 
     return corpus
 
 
-def read_conllu_file(file : str, db: str=None) -> teanga.Corpus:
+def read_conllu_file(file : str, db: str=None, include_form : bool=False) -> teanga.Corpus:
     """Read a CoNLL-U file and return a Teanga Corpus object.
     
     Args:
@@ -46,8 +55,10 @@ def read_conllu_file(file : str, db: str=None) -> teanga.Corpus:
         The CoNLL-U filename to read.
     db: str
         The DB location to use of the Teanga corpus
+    include_form: bool
+        Also include a form layer
     """
-    corpus = conllu_corpus(db)
+    corpus = conllu_corpus(db, include_form)
 
     read_conllu(open(file), corpus)
 
@@ -66,14 +77,17 @@ def read_conllu(obj : TextIO, corpus : teanga.Corpus):
         if "text" in sentence.metadata:
             text = sentence.metadata["text"]
         else:
-            text = " ".join([token['form'] for token in sentence])
+            text = " ".join(get_forms(sentence))
         doc = corpus.add_doc(text)
         for key, value in sentence.metadata.items():
             if key == "text":
                 continue
             doc.metadata[key] = value
         try:
-            doc.tokens = find_spans([token['form'] for token in sentence], text)
+            doc.tokens = dupe_spans(find_spans(get_forms(sentence), text), sentence)
+            if "form" in corpus.meta:
+                print([token['form'] for token in sentence])
+                doc.form = [token['form'] for token in sentence]
             doc.lemma = [token['lemma'] for token in sentence]
             if all(token['upos'] is not None for token in sentence):
                 doc.upos = [token['upos'] for token in sentence]
@@ -92,6 +106,54 @@ def read_conllu(obj : TextIO, corpus : teanga.Corpus):
             continue
 
     return corpus
+
+def get_forms(sentence):
+    """Get the forms of all tokens in a sentence."""
+    forms = []
+    sent_iter = iter(sentence)
+    while True:
+        try:
+            token = next(sent_iter)
+        except StopIteration:
+            break
+        forms.append(token['form'])
+        if isinstance(token["id"], tuple):
+            start = int(token["id"][0])
+            end = int(token["id"][2])
+            diff = end - start
+            for i in range(diff + 1):
+                try:
+                    token = next(sent_iter)
+                except StopIteration:
+                    break
+
+    return forms
+
+def dupe_spans(spans, sentence):
+    """Duplicate the spans in a sentence, e.g., if the text is 'della' and
+    there are three tokens with ids, `[1-2, 1, 2]`, then the span for token
+    1 will be duplicated 3 times"""
+    new_spans = []
+    sent_iter = iter(sentence)
+    span_iter = iter(spans)
+    while True:
+        try:
+            token = next(sent_iter)
+            span = next(span_iter)
+        except StopIteration:
+            break
+        new_spans.append(span)
+        if isinstance(token["id"], tuple):
+            start = int(token["id"][0])
+            end = int(token["id"][2])
+            diff = end - start
+            for i in range(diff + 1):
+                try:
+                    token = next(sent_iter)
+                    new_spans.append(span)
+                except StopIteration:
+                    break
+    return new_spans
 
 def map_feats(d: dict):
     if isinstance(d, str):

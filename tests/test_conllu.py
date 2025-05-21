@@ -144,4 +144,15 @@ def test_issue_53():
 
     corpus = read_conllu_str(conllu)
 
+CONLLU_3 = """# newdoc id = n01001
+1-2	della	_	_	_	_	_	_	_	_
+1	di	di	ADP	IN	_	7	case	_	_
+2	la	il	DET	DT	Definite=Def|Gender=Fem|Number=Sing|PronType=Art	7	det	_	_"""
 
+def test_issue_57():
+    corpus = read_conllu_str(CONLLU_3, include_form=True)
+    doc = next(corpus.docs)
+    assert doc.text.raw == "della"
+    assert doc.form.data == ["della", "di", "la"]
+    assert doc.tokens.indexes("text") == [(0, 5), (0, 5), (0, 5)]
+    assert doc.upos.data == ["_", "ADP", "DET"]
