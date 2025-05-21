@@ -106,7 +106,7 @@ def read_conllu(obj : TextIO, corpus : teanga.Corpus):
 
     return corpus
 
-def get_forms(sentence):
+def get_forms(sentence : list) -> list:
     """Get the forms of all tokens in a sentence."""
     forms = []
     sent_iter = iter(sentence)
@@ -128,7 +128,7 @@ def get_forms(sentence):
 
     return forms
 
-def dupe_spans(spans, sentence):
+def dupe_spans(spans : list, sentence : list) -> list:
     """Duplicate the spans in a sentence, e.g., if the text is 'della' and
     there are three tokens with ids, `[1-2, 1, 2]`, then the span for token
     1 will be duplicated 3 times"""
