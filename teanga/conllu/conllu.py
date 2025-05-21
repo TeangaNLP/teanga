@@ -86,7 +86,6 @@ def read_conllu(obj : TextIO, corpus : teanga.Corpus):
         try:
             doc.tokens = dupe_spans(find_spans(get_forms(sentence), text), sentence)
             if "form" in corpus.meta:
-                print([token['form'] for token in sentence])
                 doc.form = [token['form'] for token in sentence]
             doc.lemma = [token['lemma'] for token in sentence]
             if all(token['upos'] is not None for token in sentence):
