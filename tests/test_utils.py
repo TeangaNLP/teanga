@@ -1,4 +1,4 @@
-from teanga.utils import find_spans
+from teanga.utils import find_spans, TokenizationMismatch
 
 def test_find_spans():
     tokens = ["Hello", "world", "!"]
@@ -11,5 +11,5 @@ def test_find_spans():
         text = "Hello world"
         spans = find_spans(tokens, text)
         assert False
-    except ValueError:
+    except TokenizationMismatch:
         pass

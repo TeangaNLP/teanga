@@ -131,3 +131,17 @@ def test_conllu_2():
             print("layer=",layer)
             assert teanga_corpus.doc_by_id(doc)[layer] == conllu_corpus.doc_by_id(doc)[layer]
     assert teanga_corpus == conllu_corpus
+
+def test_issue_53():
+    conllu = """# sent_id = Gos041.s156
+# speaker_id = Cm-gost-07196
+# sound_url = https://nl.ijs.si/project/gos20/Gos041/Gos041.s156.mp3
+# text = jaz vidim rešitev v
+1\tjaz\tjaz\tPRON\tPp1-sn\tCase=Nom|Number=Sing|Person=1|PronType=Prs\t2\tnsubj\t_\tpronunciation=jz|Gos2.1_token_id=Gos041.tok2639
+2\tvidim\tvideti\tVERB\tVmbr1s\tMood=Ind|Number=Sing|Person=1|Tense=Pres|VerbForm=Fin\t0\troot\t_\tpronunciation=vidm|Gos2.1_token_id=Gos041.tok2640
+3\trešitev\trešitev\tNOUN\tNcfsa\tCase=Acc|Gender=Fem|Number=Sing\t2\tobj\t_\tpronunciation=rešitev|Gos2.1_token_id=Gos041.tok2641
+4\tv\tv\tADP\tSa\tCase=Acc\t2\torphan\t_\tpronunciation=v|Gos2.1_token_id=Gos041.tok2642"""
+
+    corpus = read_conllu_str(conllu)
+
+
