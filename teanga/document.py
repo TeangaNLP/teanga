@@ -68,6 +68,9 @@ class Document:
 'pos': SeqLayer(['DT', 'VBZ', 'DT', 'NN', '.'])})
 
         """
+        if name.startswith("_"):
+            self._metadata[name[1:]] = value
+            return
         if name not in self._meta:
             raise Exception("Layer with name " + name + " does not exist.")
         if value is None and self._meta[name].default is not None:
@@ -139,6 +142,11 @@ class Document:
 
     def __getattr__(self, name:str) -> 'Layer':
         """Return the layer with the given name."""
+        if name.startswith("_"):
+            if name[1:] in self._metadata:
+                return self._metadata[name[1:]]
+            else:
+                raise AttributeError("No such metadata: " + name)
         if name in self.layers:
             return self.layers[name]
         else:
