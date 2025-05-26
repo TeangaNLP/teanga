@@ -215,9 +215,10 @@ class Corpus:
             The identifier of the new document.
         """
         if self.corpus:
-            self.corpus.update_doc(old_id,
+            new_doc_id = self.corpus.update_doc(old_id,
                                    {name: layer.raw
                                     for (name, layer) in doc.layers.items()})
+            return new_doc_id
         else:
             if old_id in self._docs:
                 del self._docs[old_id]
