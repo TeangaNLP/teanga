@@ -13,11 +13,12 @@ class Document:
 
     """
     def __init__(self, meta:dict[str,Union[LayerDesc,dict]],
-                 corpus=None, id=None, **kwargs):
+                 corpus=None, id=None, corpus_ref=None, **kwargs):
         self._meta = meta
         self.layers = {}
         self.corpus = None
         self.id = None
+        self._corpus_ref = corpus_ref
         self.add_layers({key: value
                          for key, value in kwargs.items()
                          if not key.startswith("_")})
@@ -82,9 +83,14 @@ class Document:
         if self._meta[name].layer_type not in ["characters", "seq", "span", "div", "element"]:
             raise Exception("Invalid layer type " + self._meta[name].layer_type)
         if self._meta[name].layer_type == "characters":
-            if self.id:
+            if self.id and not self._corpus_ref:
                 raise Exception("Cannot add character layer to existing document.")
-            self.layers[name] = CharacterLayer(name, self, str(value))
+            elif self.id and self._corpus_ref:
+                old_id = self.id
+                self.layers[name] = CharacterLayer(name, self, str(value))
+                self.id = self._corpus_ref.update_doc(old_id, self)
+            else:
+                self.layers[name] = CharacterLayer(name, self, str(value))
         elif self._meta[name].base is None:
             raise Exception("Non-character layer " + name + " must have a base.")
         elif (self._meta[name].base not in self._meta):
@@ -148,7 +154,7 @@ class Document:
 
     def __setattr__(self, name:str, value) -> None:
         """Set the value of a layer."""
-        if name != "layers" and name != "_meta" and name != "corpus" and name != "id" and name != "_metadata":
+        if name != "layers" and name != "_meta" and name != "corpus" and name != "id" and name != "_metadata" and name != "_corpus_ref":
             self.__setitem__(name, value)
         else:
             super().__setattr__(name, value)
@@ -212,6 +218,12 @@ class Document:
     @deprecated(reason="Access layers using __getitem__ instead, e.g., doc['text']")
     def get_layer(self, name:str):
         return self[name]
+
+    def character_layers(self) -> dict[str, str]:
+        """Get the character layers for this document (used to calculate the ID)"""
+        return {layer: self.layers[layer].raw
+                for layer in self.layers
+                if self._meta[layer].layer_type == "characters"}
 
     @property
     def meta(self):

@@ -26,3 +26,10 @@ def test_add_metadata():
     doc = corpus.add_doc("test")
     doc._author = "me"
     print(doc._author)
+
+def test_update_character_layer():
+    corpus = teanga.text_corpus()
+    doc = corpus.add_doc(text="This is a document.")
+    assert doc.id == "Kjco"
+    doc.text = "New text"
+    assert doc.id == "/C+4"

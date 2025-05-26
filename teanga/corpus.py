@@ -163,7 +163,7 @@ class Corpus:
             if len(args) == 1:
                 doc_id = teanga_id_for_doc(self.doc_ids,
                         **{char_layers[0]: args[0]})
-                doc = Document(self.meta, id=doc_id, **{char_layers[0]: args[0]})
+                doc = Document(self.meta, id=doc_id, corpus_ref=self, **{char_layers[0]: args[0]})
                 if self.corpus:
                     self.corpus.add_doc({ char_layers[0]: args[0] })
                     doc.corpus = self.corpus
@@ -173,7 +173,7 @@ class Corpus:
             elif len(kwargs) == 1 and list(kwargs.keys())[0] == char_layers[0]:
                 doc_id = teanga_id_for_doc(self.doc_ids,
                                            **kwargs)
-                doc = Document(self.meta, id=doc_id, **kwargs)
+                doc = Document(self.meta, id=doc_id, corpus_ref=self, **kwargs)
                 if self.corpus:
                     self.corpus.add_doc(**kwargs)
                     doc.corpus = self.corpus
@@ -191,7 +191,7 @@ class Corpus:
             if set(kwargs.keys()).issubset(set(char_layers)):
                 doc_id = teanga_id_for_doc(self.doc_ids,
                                            **kwargs)
-                doc = Document(self.meta, id=doc_id, **kwargs)
+                doc = Document(self.meta, id=doc_id, corpus_ref=self, **kwargs)
                 if self.corpus:
                     self.corpus.add_doc(kwargs)
                     doc.corpus = self.corpus
@@ -201,6 +201,31 @@ class Corpus:
             else:
                 raise Exception("Invalid arguments, please specify the text " +
                                 "or use correct layer names.")
+    def update_doc(self, old_id : str, doc: Document) -> str:
+        """Replace a particular document indicated by an identifier
+        with a new document object.
+
+        Args:
+            old_id: str
+                The identifier of the document to replace.
+            doc: Document
+                The new document object.
+
+        Returns:
+            The identifier of the new document.
+        """
+        if self.corpus:
+            new_doc_id = self.corpus.update_doc(old_id,
+                                   {name: layer.raw
+                                    for (name, layer) in doc.layers.items()})
+            return new_doc_id
+        else:
+            if old_id in self._docs:
+                del self._docs[old_id]
+            doc_id = teanga_id_for_doc(self.doc_ids,
+                                       **doc.character_layers())
+            self._docs[doc_id] = doc
+            return doc_id
 
     @property
     def doc_ids(self) -> Iterable[str]:
@@ -231,7 +256,8 @@ class Corpus:
         if self.corpus:
             for doc_id in self.corpus.order:
                 yield Document(self.meta, id=doc_id, corpus=self.corpus,
-                                        **self.corpus.get_doc_by_id(doc_id))
+                               corpus_ref=self,
+                               **self.corpus.get_doc_by_id(doc_id))
         else:
             for doc in self._docs.items():
                 yield doc[1]
@@ -257,6 +283,7 @@ class Corpus:
         """
         if self.corpus:
             return Document(self.meta, id=doc_id, corpus=self.corpus,
+                            corpus_ref=self,
                             **self.corpus.get_doc_by_id(doc_id))
         else:
             if doc_id in self._docs:
@@ -881,11 +908,11 @@ def _corpus_hook(dct : dict) -> Corpus:
               if not key.startswith("_")}
     if "_order" in dct:
         for doc_id in dct["_order"]:
-            c._docs[doc_id] = Document(c.meta, id=doc_id, **dct[doc_id])
+            c._docs[doc_id] = Document(c.meta, id=doc_id, corpus_ref=c, **dct[doc_id])
     else:
         for doc_id, value in dct.items():
             if not doc_id.startswith("_"):
-                doc = Document(c.meta, id=doc_id, **value)
+                doc = Document(c.meta, id=doc_id, corpus_ref=c, **value)
                 text_fields = {
                         field: value for field, value in value.items()
                         if isinstance(value, str) and not field.startswith("_")
