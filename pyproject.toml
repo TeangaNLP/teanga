@@ -7,7 +7,7 @@ readme = "README.md"
 license = "LICENSE"
 
 [tool.poetry.dependencies]
-python = "^3.8.1"
+python = "^3.9.0"
 pyyaml = "^6.0.1"
 requests = "^2.31.0"
 rdflib = "^7.0.0"
@@ -18,7 +18,7 @@ conllu = "^6.0.0"
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.2"
 mkdocs = "^1.6.0"
-mkdocstrings = {extras = ["python"], version = "^0.29.1"}
+mkdocstrings = {extras = ["python"], version = "^0.26.2"}
 mkdocs-material = "^9.5.29"
 mkdocs-gen-files = "^0.5.0"
 flake8 = "^7.1.1"
