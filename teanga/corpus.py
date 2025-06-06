@@ -685,7 +685,7 @@ Kjco:\\n    text: This is a document.\\n'
                 writer.write("        default: " +
                              self._dump_yaml_json(meta.default))
         for id, doc in self._docs.items():
-            if re.match(r"^[0-9]+$", id):
+            if re.match(r"^[0-9\+\-]+$", id):
                 writer.write("\"" + id + "\":\n")
             else:
                 writer.write(id + ":\n")
