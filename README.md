@@ -1,6 +1,6 @@
 # Teanga Core and DB
 
-[Documentation](https://teanganlp.github.io/teanga2/index.html)
+[Documentation](https://teanganlp.github.io/teanga/index.html)
 
 Teanga is a database and system designed for NLP with pretrained language
 models.
