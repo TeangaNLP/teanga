@@ -235,7 +235,14 @@ er_setting", "I-meal_type", "I-movie_type", "I-personal_info", "I-place_name", "
     locale: ta-IN
     slots: ["B-music_genre", "O", "O"]
     text: "\u0B9F\u0BC6\u0B95\u0BCD\u0BA9\u0BCB \u0B87\u0B9A\u0BC8\u0BAF\u0BC8 \u0BB5\u0BBE\u0B9A\u0BBF\u0B95\u0BCD\u0B95\u0BB5\u0BC1\u0BAE\u0BCD"
-    tokens: [[0, 6], [7, 12], [13, 24]]"""
+    tokens: [[0, 6], [7, 12], [13, 24]]
+"0x8e":
+    annot_utt: "\u062C\u0647\u0632 \u0627\u0644\u0642\u0627\u0626\u0645\u0629"
+    locale: ar-SA
+    slots: ["O", "O"]
+    text: "\u062C\u0647\u0632 \u0627\u0644\u0642\u0627\u0626\u0645\u0629"
+    tokens: [[0, 3], [4, 11]]"""
     corpus = teanga.read_yaml_str(example)
     string = corpus.to_yaml_str()
+    print(string)
     corpus2 = teanga.read_yaml_str(string)
