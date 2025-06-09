@@ -632,9 +632,11 @@ class Corpus:
                 else:
                     raise Exception("Invalid value type: " + str(type(value)))
             subset_corpus._docs = {
-                doc_id: Document(data=self._docs[doc_id].data, corpus_ref=subset_corpus)
+                doc_id: self._docs[doc_id].copy()
                 for doc_id in val_ids if doc_id in self._docs
             }
+            for doc in subset_corpus._docs.values():
+                doc._corpus_ref = subset_corpus
             return subset_corpus
 
 
