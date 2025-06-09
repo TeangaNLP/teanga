@@ -317,7 +317,8 @@ class Corpus:
             if self.corpus:
                 return [self.doc_by_id(doc_id) for doc_id in self.corpus.order[key]]
             else:
-                return [self.doc_by_id(doc_id) for doc_id in list(self.doc_ids)[key]]
+                doc_ids = list(self.doc_ids)
+                return [self.doc_by_id(doc_id) for doc_id in doc_ids[key]]
         elif isinstance(key, str):
             return self.doc_by_id(key)
         else:
@@ -605,6 +606,38 @@ class Corpus:
             else:
                 q2[key] = {"$eq": value}
         return q2
+
+    def subset(self, values: Union[Iterable[str], Iterable[int]]) -> 'Corpus':
+        """Create a new corpus that is a subset of the current corpus.
+
+        Args:
+            values: Union[iterable[str], iterable[int]]
+                The document ids or indices to include in the subset.
+
+        Returns:
+            A new Corpus object that contains only the documents specified by
+        """
+        if self.corpus:
+            raise Exception("TODO: Not Implemented yet for Teanga DB.")
+        else:
+            subset_corpus = Corpus()
+            subset_corpus._meta = self.meta
+            val_ids = []
+            doc_ids = list(self.doc_ids)
+            for value in values:
+                if isinstance(value, str):
+                    val_ids.append(value)
+                elif isinstance(value, int):
+                    val_ids.append(doc_ids[value])
+                else:
+                    raise Exception("Invalid value type: " + str(type(value)))
+            subset_corpus._docs = {
+                doc_id: self._docs[doc_id].copy()
+                for doc_id in val_ids if doc_id in self._docs
+            }
+            for doc in subset_corpus._docs.values():
+                doc._corpus_ref = subset_corpus
+            return subset_corpus
 
 
     def _doc_matches(self, doc, key, value):
