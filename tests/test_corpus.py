@@ -205,3 +205,20 @@ def test_teanga_id_2():
     corpus.add_layer_meta("fileid", layer_type="characters")
     doc = corpus.add_doc(text="This is a document.", fileid="doc1")
     assert doc.id == "fexV"
+
+def test_subset():
+    corpus = teanga.Corpus()
+    corpus.add_layer_meta("text", layer_type="characters")
+    doc1 = corpus.add_doc(text="This is a document.")
+    doc2 = corpus.add_doc(text="This is another document.")
+    subset = corpus.subset([doc1.id])
+    assert len(list(subset.docs)) == 1
+    assert subset[0].text.raw == "This is a document."
+    assert subset[0].id == doc1.id
+    subset = corpus.subset([0])
+    assert len(list(subset.docs)) == 1
+    assert subset[0].text.raw == "This is a document."
+    subset = corpus.subset(range(1,2))
+    assert len(list(subset.docs)) == 1
+    assert subset[0].text.raw == "This is another document."
+
