@@ -608,7 +608,7 @@ class Corpus:
         return q2
 
     def subset(self, values: Union[Iterable[str], Iterable[int]]) -> 'Corpus':
-        """Create a new coprus that is a subset of the current corpus.
+        """Create a new corpus that is a subset of the current corpus.
 
         Args:
             values: Union[iterable[str], iterable[int]]
