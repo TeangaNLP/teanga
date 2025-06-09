@@ -222,3 +222,42 @@ def test_subset():
     assert len(list(subset.docs)) == 1
     assert subset[0].text.raw == "This is another document."
 
+def test_int_ids():
+    example = """_meta:
+    annot_utt:
+        type: characters
+    locale:
+        type: characters
+    slots:
+        type: seq
+        base: tokens
+        data: ["B-date", "B-audiobook_name", "B-change_amount", "B-business_type", "B-music_genre", "B-radio_name", "B-color_type", "B-alarm_type", "B-game_type", "B-transport_descriptor", "B-weather_descriptor", "B-artist_name", "
+B-transport_name", "B-event_name", "B-media_type", "B-cooking_type", "B-order_type", "B-list_name", "B-podcast_name", "B-time_zone", "B-business_name", "B-currency_name", "B-device_type", "B-audiobook_author", "B-transport_type", "
+B-drink_type", "B-podcast_descriptor", "B-music_album", "B-timeofday", "B-music_descriptor", "B-coffee_type", "B-email_folder", "B-person", "B-movie_name", "B-email_address", "B-definition_word", "B-app_name", "B-transport_agency",
+ "B-relation", "B-news_topic", "B-song_name", "B-game_name", "B-joke_type", "B-playlist_name", "B-house_place", "B-time", "B-sport_type", "B-food_type", "B-general_frequency", "B-ingredient", "B-player_setting", "B-meal_type", "B-m
+ovie_type", "B-personal_info", "B-place_name", "I-date", "I-audiobook_name", "I-change_amount", "I-business_type", "I-music_genre", "I-radio_name", "I-color_type", "I-alarm_type", "I-game_type", "I-transport_descriptor", "I-weather
+_descriptor", "I-artist_name", "I-transport_name", "I-event_name", "I-media_type", "I-cooking_type", "I-order_type", "I-list_name", "I-podcast_name", "I-time_zone", "I-business_name", "I-currency_name", "I-device_type", "I-audioboo
+k_author", "I-transport_type", "I-drink_type", "I-podcast_descriptor", "I-music_album", "I-timeofday", "I-music_descriptor", "I-coffee_type", "I-email_folder", "I-person", "I-movie_name", "I-email_address", "I-definition_word", "I-
+app_name", "I-transport_agency", "I-relation", "I-news_topic", "I-song_name", "I-game_name", "I-joke_type", "I-playlist_name", "I-house_place", "I-time", "I-sport_type", "I-food_type", "I-general_frequency", "I-ingredient", "I-play
+er_setting", "I-meal_type", "I-movie_type", "I-personal_info", "I-place_name", "O"]
+    text:
+        type: characters
+    tokens:
+        type: span
+        base: text
+"+011":
+    annot_utt: "[music_genre : \u0B9F\u0BC6\u0B95\u0BCD\u0BA9\u0BCB] \u0B87\u0B9A\u0BC8\u0BAF\u0BC8 \u0BB5\u0BBE\u0B9A\u0BBF\u0B95\u0BCD\u0B95\u0BB5\u0BC1\u0BAE\u0BCD"
+    locale: ta-IN
+    slots: ["B-music_genre", "O", "O"]
+    text: "\u0B9F\u0BC6\u0B95\u0BCD\u0BA9\u0BCB \u0B87\u0B9A\u0BC8\u0BAF\u0BC8 \u0BB5\u0BBE\u0B9A\u0BBF\u0B95\u0BCD\u0B95\u0BB5\u0BC1\u0BAE\u0BCD"
+    tokens: [[0, 6], [7, 12], [13, 24]]
+"0x8e":
+    annot_utt: "\u062C\u0647\u0632 \u0627\u0644\u0642\u0627\u0626\u0645\u0629"
+    locale: ar-SA
+    slots: ["O", "O"]
+    text: "\u062C\u0647\u0632 \u0627\u0644\u0642\u0627\u0626\u0645\u0629"
+    tokens: [[0, 3], [4, 11]]"""
+    corpus = teanga.read_yaml_str(example)
+    string = corpus.to_yaml_str()
+    print(string)
+    corpus2 = teanga.read_yaml_str(string)
