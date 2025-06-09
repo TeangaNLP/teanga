@@ -685,7 +685,7 @@ Kjco:\\n    text: This is a document.\\n'
                 writer.write("        default: " +
                              self._dump_yaml_json(meta.default))
         for id, doc in self._docs.items():
-            if re.match(r"^[-+]?(0b[0-1_]+|0o[0-7_]+|0x[0-9a-fA-F_]+|[0-9][0-9_]*)$", id):
+            if re.match(r"^[-+]?(0b[0-1_]+|0o[0-7_]+|0x[0-9a-fA-F_]+|[0-9][0-9_]*)$", id) or id == "true" or id == "True" or id == "TRUE" or id == "false" or id == "False" or id == "FALSE":
                 writer.write("\"" + id + "\":\n")
             else:
                 writer.write(id + ":\n")
@@ -913,7 +913,7 @@ def _corpus_hook(dct : dict) -> Corpus:
         for doc_id, value in dct.items():
             if isinstance(doc_id, int):
                 raise Exception(f"Document IDs must be escaped if they can be interpreted as integers."
-                + f"Found: {doc_id}, may occur in document as Ox{doc_id:02x} or Oo{doc_id:02o} or {doc_id:04}")
+                + f"Found: {doc_id}, may occur in document as Ox{doc_id:02x} or Oo{doc_id:02o} or +{doc_id:03}")
             if not doc_id.startswith("_"):
                 doc = Document(c.meta, id=doc_id, corpus_ref=c, **value)
                 text_fields = {
