@@ -204,7 +204,7 @@ class Document:
                 The name of the layer.
         """
         if not isinstance(name, str):
-            raise TypeError("Layer name must be a string, not " + str(type(name)))
+            raise TypeError(f"Layer name must be a string, not {type(name).__name__}")
         if name not in self._meta:
             raise Exception("Layer with name " + name + " does not exist.")
         return self.layers[name]
