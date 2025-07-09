@@ -261,3 +261,7 @@ er_setting", "I-meal_type", "I-movie_type", "I-personal_info", "I-place_name", "
     string = corpus.to_yaml_str()
     print(string)
     corpus2 = teanga.read_yaml_str(string)
+
+# Removed due to speed issues in downloading remote resource
+#def test_download():
+#    corpus = teanga.download("qc")
