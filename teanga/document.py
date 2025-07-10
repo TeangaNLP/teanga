@@ -381,6 +381,7 @@ class Document:
             s += "<td>" + layer_name + "</td>"
             s += "<td>" + self._meta[layer_name].layer_type + "</td>"
             s += "<td>" + clip_string(str(self[layer_name].raw)) + "</td>"
+            s += "</tr>"
         s += "</table>"
         if self._metadata:
             s += "<h3>Metadata</h3>"
