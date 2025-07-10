@@ -101,6 +101,7 @@ class SpaCy(Service):
         sentences = []
 
         offset = 0
+        token_offset = 0
         for block in self.nlp.pipe(blocks, disable=self.exclude):
             if not block.text.strip():
                 offset += len(block.text)
@@ -115,12 +116,13 @@ class SpaCy(Service):
             if "morph" not in self.exclude:
                 morph.extend(str(w.morph) for w in block)
             if "dep" not in self.exclude:
-                dep.extend((w.head.i, w.dep_) for w in block)
+                dep.extend((token_offset + w.head.i, w.dep_) for w in block)
             if "entity" not in self.exclude:
-                entity.extend((e.start, e.end, e.label_) for e in block.ents)
+                entity.extend((token_offset + e.start, token_offset + e.end, e.label_) for e in block.ents)
             if "sentences" not in self.exclude:
-                sentences.extend(s.start for s in block.sents)
+                sentences.extend(token_offset + s.start for s in block.sents)
             offset += len(block.text)
+            token_offset += len(block)
 
         doc.tokens = tokens
         if "pos" not in self.exclude:
