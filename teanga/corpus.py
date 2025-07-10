@@ -1092,6 +1092,29 @@ def from_url(url:str, db_file:str=None) -> Corpus:
         else:
             return _corpus_hook(yaml.load(urlopen(url), Loader=yaml.FullLoader))
 
+DOWNLOAD_URLS = [
+        "https://teanga.io/corpora/",
+        ]
+
+def download(name:str, db_file:str=None) -> Corpus:
+    """Load a corpus by name from a remote server.
+
+    Args:
+        name: str
+            The name of the corpus to download.
+        db_file: str
+            The path to the database file, if the corpus should be stored in a
+            database.
+    """
+    for url in DOWNLOAD_URLS:
+        try:
+            corpus = from_url(url + name + ".yaml.gz", db_file)
+            if corpus:
+                return corpus
+        except:
+            pass
+    raise Exception(f"Corpus {name} not found in {DOWNLOAD_URLS}")
+
 def text_corpus(db_file:str = None) -> Corpus:
     """
     Create a corpus with a `text` and `tokens` layer
