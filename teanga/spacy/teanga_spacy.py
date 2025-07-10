@@ -90,7 +90,7 @@ class SpaCy(Service):
             raise Exception("SpaCY model not loaded. "
             + "Please call setup() on the service.")
         # SpaCY has problem with some long strings so we split by 2 or more newlines
-        blocks = re.split(r"(\n{2,})", doc.text.raw)
+        blocks = re.split(r"(\r?\n{2,})", doc.text.raw)
         tokens = []
         pos = []
         tag = []
