@@ -917,6 +917,26 @@ Kjco:\\n    text: This is a document.\\n'
         return all(self.doc_by_id(doc_id) == other.doc_by_id(doc_id)
                    for doc_id in self.doc_ids)
 
+    def __str__(self):
+        """Return a string representation of the corpus."""
+        return f"Corpus with {len(self.doc_ids)} documents and {len(self.meta)} layers."
+
+    def _repr_html_(self):
+        """Return a HTML representation of the corpus."""
+        s = f"<h1>Corpus with {len(self.doc_ids)} documents</h1>"
+        s += f"<h2>Layers</h2>"
+        s += f"<table>"
+        s += "<tr><th>Name</th><th>Type</th><th>Base</th><th>Data</th><th>Link types</th><th>Target</th><th>Default</th></tr>"
+        for key, value in self.meta.items():
+            s += f"<tr><td>{key}</td><td>{value.layer_type}</td>"
+            s += f"<td>{value.base}</td>"
+            s += f"<td>{value.data}</td>"
+            s += f"<td>{value.link_types}</td>"
+            s += f"<td>{value.target}</td>"
+            s += f"<td>{value.default}</td></tr>"
+        s += "</table>"
+        return s
+
 
 def _yaml_str(s):
     """

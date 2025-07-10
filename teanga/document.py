@@ -370,7 +370,36 @@ class Document:
             print(other._metadata)
             return False
         return True
+    
+    def _repr_html_(self):
+        """Return an HTML representation of the document."""
+        s = "<h2>Document " + repr(self.id) + "</h2>"
+        s += "<table>"
+        s += "<tr><th>Layer</th><th>Type</th><th>Data</th></tr>"
+        for layer_name, layer in self.layers.items():
+            s += "<tr>"
+            s += "<td>" + layer_name + "</td>"
+            s += "<td>" + self._meta[layer_name].layer_type + "</td>"
+            s += "<td>" + clip_string(str(self[layer_name].raw)) + "</td>"
+        s += "</table>"
+        if self._metadata:
+            s += "<h3>Metadata</h3>"
+            s += "<table>"
+            s += "<tr><th>Key</th><th>Value</th></tr>"
+            for key, value in self._metadata.items():
+                s += "<tr>"
+                s += "<td>" + key + "</td>"
+                s += "<td>" + repr(value) + "</td>"
+                s += "</tr>"
+            s += "</table>"
+        return s
 
+def clip_string(s):
+    """Reduce a string to maximum of 100 characters."""
+    if len(s) > 100:
+        return s[:90] + "... " + s[-7:]
+    else:
+        return s
 
 def validate_value(value, index_length):
     """Validate a single value in a layer and normalise it if necessary.
