@@ -133,7 +133,7 @@ class TransformedCorpus:
             >>> doc = corpus.add_doc("This is a document.")
             >>> corpus = corpus.upper().transform("text", lambda x: x[:10])
             >>> list(corpus.docs)
-            [Document('Kjco', {'text': CharacterLayer('THIS IS A ')})]
+            [Document('Kjco', {'text': 'THIS IS A '})]
         """
         new_transform = self._transform.copy()
         if layer in self._transform:

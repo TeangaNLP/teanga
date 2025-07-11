@@ -33,3 +33,34 @@ def test_update_character_layer():
     assert doc.id == "Kjco"
     doc.text = "New text"
     assert doc.id == "/C+4"
+
+def test_str_character_layer_duality():
+    corpus = teanga.text_corpus()
+    doc = corpus.add_doc(text="This is a document.")
+    # Character layers are equal to strings
+    assert doc.text == "This is a document."
+    # Can be set as strings
+    doc.text = "Changed text"
+    # Have length as strings
+    assert len(doc.text) == 12
+    # Can be indexed like strings
+    assert doc.text[0] == "C"
+    # Can be sliced like strings
+    assert doc.text[0:5] == "Chang"
+    # But are not strings
+    assert type(doc.text) == teanga.document.CharacterLayer
+
+def test_list_other_layer_duality():
+    corpus = teanga.text_corpus()
+    doc = corpus.add_doc(text="This is a document.")
+    # Other layers can be set as lists
+    doc.tokens = [[0, 4], [5, 7], [8, 9], [10, 19]]
+    # Are equal to lists
+    assert doc.tokens == [[0, 4], [5, 7], [8, 9], [10, 19]]
+    # Can be indexed like lists
+    assert doc.tokens[0] == [0, 4]
+    # Have length like lists
+    assert len(doc.tokens) == 4
+    # But are not lists
+    assert type(doc.tokens) == teanga.document.SpanLayer
+    
