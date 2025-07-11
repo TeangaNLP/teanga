@@ -586,12 +586,6 @@ class DataLayer(Layer):
                 self.raw == other.raw)
 
 class CharacterLayer(str, Layer):
-    """A layer of characters"""
-    def root_layer(self) -> str:
-        """Return the name of the root layer of the character layer."""
-        # A character layer is always its own root
-        return name
-
     @property
     def data(self):
         """
