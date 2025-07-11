@@ -21,7 +21,7 @@ class CorpusStream:
         ...   text: This is a document.'''
         >>> stream = CorpusStream(io.StringIO(yaml_str))
         >>> next(stream)
-        Document('Kjco', {'text': CharacterLayer('This is a document.')})
+        Document('Kjco', {'text': 'This is a document.'})
     """
     def __init__(self, buf):
         self.stream = read_obj(yaml.parse(buf))

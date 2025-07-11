@@ -251,7 +251,7 @@ class Corpus:
             >>> corpus = text_corpus()
             >>> doc = corpus.add_doc("This is a document.")
             >>> list(corpus.docs)
-            [Document('Kjco', {'text': CharacterLayer('This is a document.')})]
+            [Document('Kjco', {'text': 'This is a document.'})]
         """
         if self.corpus:
             for doc_id in self.corpus.order:
@@ -274,7 +274,7 @@ class Corpus:
             >>> corpus = text_corpus()
             >>> doc = corpus.add_doc("This is a document.")
             >>> corpus.doc_by_id("Kjco")
-            Document('Kjco', {'text': CharacterLayer('This is a document.')})
+            Document('Kjco', {'text': 'This is a document.'})
 
             >>> if TEANGA_DB:
             ...   corpus = Corpus("tmp",new=True)
@@ -302,11 +302,11 @@ class Corpus:
             >>> corpus = text_corpus()
             >>> doc = corpus.add_doc("This is a document.")
             >>> corpus["Kjco"]
-            Document('Kjco', {'text': CharacterLayer('This is a document.')})
+            Document('Kjco', {'text': 'This is a document.'})
             >>> corpus[0]
-            Document('Kjco', {'text': CharacterLayer('This is a document.')})
+            Document('Kjco', {'text': 'This is a document.'})
             >>> corpus[:1]
-            [Document('Kjco', {'text': CharacterLayer('This is a document.')})]
+            [Document('Kjco', {'text': 'This is a document.'})]
         """
         if isinstance(key, int):
             if self.corpus:
@@ -846,7 +846,7 @@ Kjco:\\n    text: This is a document.\\n'
             >>> doc = corpus.add_doc("This is a document.")
             >>> corpus = corpus.lower()
             >>> list(corpus.docs)
-            [Document('Kjco', {'text': CharacterLayer('this is a document.')})]
+            [Document('Kjco', {'text': 'this is a document.'})]
         """
         text_layers = [layer for layer in self.meta
                        if self.meta[layer].layer_type == "characters"]
@@ -861,7 +861,7 @@ Kjco:\\n    text: This is a document.\\n'
             >>> doc = corpus.add_doc("This is a document.")
             >>> corpus = corpus.upper()
             >>> list(corpus.docs)
-            [Document('Kjco', {'text': CharacterLayer('THIS IS A DOCUMENT.')})]
+            [Document('Kjco', {'text': 'THIS IS A DOCUMENT.'})]
         """
         text_layers = [layer for layer in self.meta
                        if self.meta[layer].layer_type == "characters"]
@@ -883,7 +883,7 @@ Kjco:\\n    text: This is a document.\\n'
             >>> doc = corpus.add_doc("This is a document.")
             >>> corpus = corpus.transform("text", lambda x: x[:10])
             >>> list(corpus.docs)
-            [Document('Kjco', {'text': CharacterLayer('This is a ')})]
+            [Document('Kjco', {'text': 'This is a '})]
         """
         return TransformedCorpus(self, {layer: transform})
 
@@ -921,7 +921,7 @@ Kjco:\\n    text: This is a document.\\n'
 def _yaml_str(s):
     """
     """
-    s = yaml.safe_dump(s)
+    s = yaml.safe_dump(str(s))
     if s.endswith("\n...\n"):
         s = s[:-4]
     if not s.startswith("'"):

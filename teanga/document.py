@@ -59,11 +59,11 @@ class Document:
             >>> doc["words"] = [(0,4), (5,7), (8,9), (10,18), (18,19)]
             >>> doc["pos"] = ["DT", "VBZ", "DT", "NN", "."]
             >>> doc
-            Document('Kjco', {'text': CharacterLayer('This is a document.'), \
+            Document('Kjco', {'text': 'This is a document.', \
 'words': SpanLayer([[0, 4], [5, 7], [8, 9], [10, 18], [18, 19]]), \
 'pos': SeqLayer(['DT', 'VBZ', 'DT', 'NN', '.'])})
             >>> corpus.doc_by_id("Kjco")
-            Document('Kjco', {'text': CharacterLayer('This is a document.'), \
+            Document('Kjco', {'text': 'This is a document.', \
 'words': SpanLayer([[0, 4], [5, 7], [8, 9], [10, 18], [18, 19]]), \
 'pos': SeqLayer(['DT', 'VBZ', 'DT', 'NN', '.'])})
 
@@ -87,10 +87,10 @@ class Document:
                 raise Exception("Cannot add character layer to existing document.")
             elif self.id and self._corpus_ref:
                 old_id = self.id
-                self.layers[name] = CharacterLayer(name, self, str(value))
+                self.layers[name] = CharacterLayer(str(value))
                 self.id = self._corpus_ref.update_doc(old_id, self)
             else:
-                self.layers[name] = CharacterLayer(name, self, str(value))
+                self.layers[name] = CharacterLayer(str(value))
         elif self._meta[name].base is None:
             raise Exception("Non-character layer " + name + " must have a base.")
         elif (self._meta[name].base not in self._meta):
@@ -318,7 +318,10 @@ class Document:
           """
         if root_layer is None:
             for layer in args:
-                rl = self.layers[layer].root_layer()
+                if self._meta[layer].layer_type == "characters":
+                    rl = layer
+                else:
+                    rl = self.layers[layer].root_layer()
                 if root_layer is not None and rl != root_layer:
                     raise Exception("view was called with layers that have " +
                     "different root layers")
@@ -366,8 +369,6 @@ class Document:
         if self.layers != other.layers:
             return False
         if self._metadata != other._metadata:
-            print(self._metadata)
-            print(other._metadata)
             return False
         return True
 
@@ -450,13 +451,12 @@ def _key_match(data, text, key, match) -> bool:
         raise Exception("Unknown key: " + key)
 
 class Layer(ABC):
-    """A layer of annotation"""
+    """Base class for all layers in a document.
 
-    def __init__(self, name:str, doc:Document):
-        self._name = name
-        self._meta = doc.meta[name]
-        self._doc = doc
-
+    This class defines the basic interface for all layers in a document.
+    It is not meant to be instantiated directly, but rather to be subclassed
+    by specific layer types such as CharacterLayer, SeqLayer, SpanLayer, etc.
+    """
     @abstractmethod
     def data(self) -> list[Union[str,int,Tuple[int,str]]]:
         """Return the data values of the layer."""
@@ -501,12 +501,33 @@ class Layer(ABC):
         """
         return zip(self.indexes(layer), self.data)
 
+    @abstractmethod
+    def transform(self, transform_func):# -> Self:
+        """Transform the layer using a transformation function."""
+        pass
+
+class DataLayer(Layer):
+    """Any non-character layer of annotation"""
+
+    def __init__(self, name:str, doc:Document):
+        self._name = name
+        self._meta = doc.meta[name]
+        self._doc = doc
+
     def root_layer(self) -> str:
-        """Return the name of the root layer of the layer."""
+        """Return the name of the root layer of the layer.
+
+        Returns:
+            str: The name of the root layer of this layer.
+        """
         if self._meta.base is None:
             return self._name
         else:
-            return self._doc.layers[self._meta.base].root_layer()
+            base_layer = self._doc.layers[self._meta.base]
+            if isinstance(base_layer, CharacterLayer):
+                return self._meta.base
+            else:
+                return self._doc.layers[self._meta.base].root_layer()
 
     def matches(self, value: Union[str,list,dict]) -> Iterator[int]:
         """Return the indexes of the annotations that match the given value.
@@ -536,26 +557,40 @@ class Layer(ABC):
         else:
             raise Exception("Bad value: " + repr(value))
 
-    @abstractmethod
     def __len__(self):
-        """Return the number of annotations in the layer."""
-        pass
+        return len(self._data)
 
     def __getitem__(self, key):
         """Return the annotation with the given index."""
         return self.raw[key]
 
-    @abstractmethod
-    def transform(self, transform_func):# -> Self:
-        """Transform the layer using a transformation function."""
-        pass
+    def __iter__(self):
+        """Return an iterator over the annotations of the layer."""
+        return iter(self.raw)
 
-class CharacterLayer(Layer):
+    def __contains__(self, item):
+        """Return whether the item is in the layer."""
+        return item in self.raw
+
+    def __repr__(self):
+        """Return a string representation of the layer."""
+        return f"{self.__class__.__name__}({self._name}, {self._doc.id}, {self.raw})"
+
+    def __eq__(self, other):
+        """Return whether the layer is equal to another layer."""
+        if isinstance(other, list):
+            return self.raw == other
+        elif not isinstance(other, DataLayer):
+            return False
+        return (self._name == other._name and
+                self.raw == other.raw)
+
+class CharacterLayer(str, Layer):
     """A layer of characters"""
-
-    def __init__(self, name:str, doc: Document, text:str):
-        super().__init__(name, doc)
-        self._text = text
+    def root_layer(self) -> str:
+        """Return the name of the root layer of the character layer."""
+        # A character layer is always its own root
+        return name
 
     @property
     def data(self):
@@ -568,11 +603,11 @@ class CharacterLayer(Layer):
             >>> doc["text"].data
             [None, None, None, None]
         """
-        return [None] * len(self._text)
+        return [None] * len(self)
 
     @property
     def raw(self):
-        return self._text
+        return str(self)
 
     @property
     def text(self):
@@ -585,7 +620,7 @@ class CharacterLayer(Layer):
             >>> doc["text"].text
             ['This is a document.']
         """
-        return [self._text]
+        return [str(self)]
 
     def indexes(self, layer:str):
         """
@@ -597,32 +632,44 @@ class CharacterLayer(Layer):
             >>> doc["text"].indexes("text")
             [(0, 1), (1, 2), (2, 3), (3, 4)]
         """
-        if layer != self._name:
-            raise Exception("Indexing on layer that is not a sublayer.")
-        return list(zip(range(len(self._text)), range(1, len(self._text) + 1)))
+        return list(zip(range(len(self)), range(1, len(self) + 1)))
 
-    def __repr__(self):
-        return "CharacterLayer(" + repr(self._text) + ")"
+    def matches(self, value: Union[str,list,dict]) -> Iterator[int]:
+        """Return the indexes of the annotations that match the given value.
 
-    def __len__(self):
-        return len(self._text)
-
-    def __eq__(self, other):
-        if not isinstance(other, CharacterLayer):
-            return False
-        if self._text != other._text:
-            return False
-        return True
+        Parameters:
+            value: Union[str,list,dict]
+                The value to match as described in the `view` method of
+                the `Corpus` class.
+        """
+        if isinstance(value, str):
+            if value == self:
+                return [0]
+            else:
+                return []
+        elif isinstance(value, list):
+            if any(v == self for v in value):
+                return [0]
+            else:
+                return []
+        elif isinstance(value, dict):
+            if any(k.startswith("$text") for k in value):
+                if all(_key_match(None, str(self), k, v) for k, v in value.items()):
+                    return [0]
+                else:
+                    return []
+        else:
+            raise Exception("Bad value: " + repr(value))
 
     def transform(self, transform_func):# -> Self:
-        return CharacterLayer(self._name, self._doc, transform_func(self._text))
+        return CharacterLayer(transform_func(str(self)))
 
-class SeqLayer(Layer):
+class SeqLayer(DataLayer):
     """A layer that is in one-to-one correspondence with its sublayer.
     Typical examples are POS tags, lemmas, etc."""
     def __init__(self, name:str, doc:Document, seq:list):
         super().__init__(name, doc)
-        self.seq = seq
+        self._data = seq
 
     @property
     def data(self):
@@ -637,11 +684,11 @@ class SeqLayer(Layer):
             >>> d["is_num"].data
             [0, 1, 0]
         """
-        return self.seq
+        return self._data
 
     @property
     def raw(self):
-        return self.seq
+        return self._data
 
     @property
     def text(self):
@@ -671,27 +718,17 @@ class SeqLayer(Layer):
             [(0, 1), (1, 2), (2, 3)]
         """
         if layer == self._name:
-            return [(i, i+1) for i in range(len(self.seq))]
+            return [(i, i+1) for i in range(len(self._data))]
         else:
             return self._doc.layers[self._meta.base].indexes(layer)
 
     def __repr__(self):
-        return "SeqLayer(" + repr(self.seq) + ")"
-
-    def __len__(self):
-        return len(self.seq)
-
-    def __eq__(self, other):
-        if not isinstance(other, SeqLayer):
-            return False
-        if self.seq != other.seq:
-            return False
-        return True
+        return "SeqLayer(" + repr(self._data) + ")"
 
     def transform(self, transform_func):# -> Self:
         return SeqLayer(self._name, self._doc, [transform_func(x) for x in self.seq])
 
-class StandoffLayer(Layer):
+class StandoffLayer(DataLayer):
     """Common superclass of span, div and element layers. Cannot be used
     directly"""
     @property
@@ -716,13 +753,6 @@ class StandoffLayer(Layer):
 
     def __len__(self):
         return len(self._data)
-
-    def __eq__(self, other):
-        if not isinstance(other, StandoffLayer):
-            return False
-        if self._data != other._data:
-            return False
-        return True
 
 class SpanLayer(StandoffLayer):
     """A layer that defines spans of the sublayer which are annotated.
