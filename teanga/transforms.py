@@ -1,12 +1,11 @@
-from typing import Callable, TYPE_CHECKING, Iterator
-if TYPE_CHECKING:
-    from corpus import Corpus
-    from service import Service
-    from document import Document
+from typing import Callable, Iterator
+from .corpus import Corpus, ImmutableCorpus
+from .service import Service
+from .document import Document
 
-class TransformedCorpus:
+class TransformedCorpus(ImmutableCorpus):
     """A corpus that lazily applies a transformation to its documents."""
-    def __init__(self, corpus : 'Corpus', transform : dict[str, Callable[[str], str]]):
+    def __init__(self, corpus : 'ImmutableCorpus', transform : dict[str, Callable[[str], str]]):
         """Create a new TransformedCorpus.
 
         Args:
