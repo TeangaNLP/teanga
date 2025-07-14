@@ -639,6 +639,104 @@ class Corpus:
                 doc._corpus_ref = subset_corpus
             return subset_corpus
 
+    def all(self, layer_name: str) -> Iterator:
+        """Get the combined value of a single layer in the order of the corpus.
+        This will return the characters for layers without data and the data for layers with data.
+
+        Args:
+            layer_name: str
+                The name of the layer to get the values from.
+
+        Returns:
+            An iterator over the values of the layer in the order of the corpus.
+
+        Examples:
+            >>> corpus = text_corpus()
+            >>> corpus.add_layer_meta("pos", layer_type="seq", base="tokens",
+            ...                        data=["NOUN", "VERB", "ADJ"])
+            >>> doc1 = corpus.add_doc("This is a document.")
+            >>> doc1.tokens = [(0, 4), (5, 7), (8, 9), (10, 18)]
+            >>> doc1.pos = ["ADJ", "VERB", "NOUN", "VERB"]
+            >>> doc2 = corpus.add_doc("This is another document.")
+            >>> doc2.tokens = [(0, 4), (5, 7), (8, 15), (16, 24)]
+            >>> doc2.pos = ["ADJ", "VERB", "NOUN", "VERB"]
+            >>> list(corpus.all("text"))
+            ['This is a document.', 'This is another document.']
+            >>> list(corpus.all("tokens"))
+            ['This', 'is', 'a', 'document', 'This', 'is', 'another', 'document']
+            >>> list(corpus.all("pos"))
+            ['ADJ', 'VERB', 'NOUN', 'VERB', 'ADJ', 'VERB', 'NOUN', 'VERB']
+        """
+        if layer_name not in self.meta:
+            raise Exception("Layer " + layer_name + " not found in corpus.")
+        if self.meta[layer_name].data is None:
+            return self.all_text(layer_name)
+        else:
+            return self.all_data(layer_name)
+
+    def all_text(self, layer_name: str) -> Iterator[str]:
+        """Get the combined text of a single layer in the order of the corpus.
+        This will return the characters for layers without data.
+
+        Args:
+            layer_name: str
+                The name of the layer to get the values from.
+
+        Returns:
+            An iterator over the text values of the layer in the order of the corpus.
+
+        Examples:
+            >>> corpus = text_corpus()
+            >>> corpus.add_layer_meta("pos", layer_type="seq", base="tokens",
+            ...                        data=["NOUN", "VERB", "ADJ"])
+            >>> doc1 = corpus.add_doc("This is a document.")
+            >>> doc1.tokens = [(0, 4), (5, 7), (8, 9), (10, 18)]
+            >>> doc1.pos = ["ADJ", "VERB", "NOUN", "VERB"]
+            >>> doc2 = corpus.add_doc("This is another document.")
+            >>> doc2.tokens = [(0, 4), (5, 7), (8, 15), (16, 24)]
+            >>> doc2.pos = ["ADJ", "VERB", "NOUN", "VERB"]
+            >>> list(corpus.all_text("tokens"))
+            ['This', 'is', 'a', 'document', 'This', 'is', 'another', 'document']
+            >>> list(corpus.all_text("pos"))
+            ['This', 'is', 'a', 'document', 'This', 'is', 'another', 'document']
+        """
+        if layer_name not in self.meta:
+            raise Exception("Layer " + layer_name + " not found in corpus.")
+        for doc in self.docs:
+            if layer_name in doc:
+                for text in doc[layer_name].text:
+                    yield text
+
+    def all_data(self, layer_name: str) -> Iterator:
+        """Get the combined data of a single layer in the order of the corpus.
+        This will return the data for layers with data.
+
+        Args:
+            layer_name: str
+                The name of the layer to get the values from.
+
+        Returns:
+            An iterator over the data values of the layer in the order of the corpus.
+
+        Examples:
+            >>> corpus = text_corpus()
+            >>> corpus.add_layer_meta("pos", layer_type="seq", base="tokens",
+            ...                        data=["NOUN", "VERB", "ADJ"])
+            >>> doc1 = corpus.add_doc("This is a document.")
+            >>> doc1.tokens = [(0, 4), (5, 7), (8, 9), (10, 18)]
+            >>> doc1.pos = ["ADJ", "VERB", "NOUN", "VERB"]
+            >>> doc2 = corpus.add_doc("This is another document.")
+            >>> doc2.tokens = [(0, 4), (5, 7), (8, 15), (16, 24)]
+            >>> doc2.pos = ["ADJ", "VERB", "NOUN", "VERB"]
+            >>> list(corpus.all_data("pos"))
+            ['ADJ', 'VERB', 'NOUN', 'VERB', 'ADJ', 'VERB', 'NOUN', 'VERB']
+        """
+        if layer_name not in self.meta:
+            raise Exception("Layer " + layer_name + " not found in corpus.")
+        for doc in self.docs:
+            if layer_name in doc:
+                for data in doc[layer_name].data:
+                    yield data
 
     def _doc_matches(self, doc, key, value):
         """
