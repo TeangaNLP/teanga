@@ -340,7 +340,7 @@ class ImmutableCorpus(ABC):
 
         Args:
             filter_func: Callable[Document, bool]
-                A function that takes a document id and returns True if the
+                A function that takes a Document object and returns True if the
                 document should be included in the filtered corpus.
 
         Returns:
