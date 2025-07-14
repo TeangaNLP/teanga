@@ -58,7 +58,7 @@ class FilterCorpus(ImmutableCorpus):
     def doc_by_id(self, doc_id: str) -> 'Document':
         """Return a document by its ID if it matches the filter."""
         if ((self._subset is None and not self._filter_func(self._corpus.doc_by_id(doc_id))) or
-            doc_id not in self._doc_ids):
+            doc_id not in self._subset):
             raise KeyError(f"Document ID {doc_id} does not match the filter.")
         return self._corpus.doc_by_id(doc_id)
     
