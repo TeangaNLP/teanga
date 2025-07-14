@@ -5,7 +5,7 @@ from .document import Document
 
 class SubsetCorpus(ImmutableCorpus):
     """A corpus that only contains certain documents 
-       according to a filter function.
+       based on a predefined list of document IDs.
     """
     def __init__(self, corpus : 'ImmutableCorpus', subset : list[str]):
         """Create a new SubsetCorpus.
