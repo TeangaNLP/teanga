@@ -273,7 +273,7 @@ class ImmutableCorpus(ABC):
                         grouping[value].append(doc.id)
         return GroupedCorpus(self, grouping)
 
-    def subset(self, values: Union[Iterable[str], Iterable[int]]) -> 'Corpus':
+    def subset(self, values: Union[Iterable[str], Iterable[int]]) -> 'ImmutableCorpus':
         """Create a new corpus that is a subset of the current corpus.
 
         Args:
@@ -307,7 +307,35 @@ class ImmutableCorpus(ABC):
         from .filter import SubsetCorpus
         return SubsetCorpus(self, val_ids)
 
-    def filter(self, filter_func: Callable[Document, bool]) -> 'Corpus':
+    def sample(self, k: int) -> 'ImmutableCorpus':
+        """Create a new corpus that is a random sample of the current corpus.
+
+        Args:
+            k: int
+                The number of documents to sample from the corpus.
+
+        Returns:
+            A new Corpus object that contains a random sample of k documents.
+
+        Examples:
+            >>> corpus = text_corpus()
+            >>> doc1 = corpus.add_doc("This is a document.")
+            >>> doc2 = corpus.add_doc("This is another document.")
+            >>> doc3 = corpus.add_doc("This is yet another document.")
+            >>> sampled_corpus = corpus.sample(2)
+            >>> len(list(sampled_corpus.doc_ids))
+            2
+        """
+        from .filter import SubsetCorpus
+        import random
+        doc_ids = list(self.doc_ids)
+        if k > len(doc_ids):
+            raise ValueError("Sample size k cannot be greater than the number of documents in the corpus.")
+        sampled_ids = random.sample(doc_ids, k)
+        return SubsetCorpus(self, sampled_ids)
+
+
+    def filter(self, filter_func: Callable[Document, bool]) -> 'ImmutableCorpus':
         """Create a new corpus that is a filtered version of the current corpus.
 
         Args:
