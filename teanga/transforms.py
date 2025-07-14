@@ -5,7 +5,7 @@ from .document import Document
 
 class TransformedCorpus(ImmutableCorpus):
     """A corpus that lazily applies a transformation to its documents."""
-    def __init__(self, corpus : 'Corpus', transform : dict[str, Callable[[str], str]]):
+    def __init__(self, corpus : 'ImmutableCorpus', transform : dict[str, Callable[[str], str]]):
         """Create a new TransformedCorpus.
 
         Args:
