@@ -668,7 +668,7 @@ class Corpus:
             ['ADJ', 'VERB', 'NOUN', 'VERB', 'ADJ', 'VERB', 'NOUN', 'VERB']
         """
         if layer_name not in self.meta:
-            raise Exception("Layer " + layer_name + " not found in corpus.")
+            raise KeyError("Layer " + layer_name + " not found in corpus.")
         if self.meta[layer_name].data is None:
             return self.all_text(layer_name)
         else:
