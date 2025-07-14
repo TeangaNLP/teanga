@@ -1,9 +1,11 @@
+from typing import TYPE_CHECKING
 from .document import Document
 from .service import Service
 from .utils import teanga_id_for_doc
 from .layer_desc import LayerDesc, _layer_desc_from_kwargs, _from_layer_desc
-from .groups import GroupedCorpus
-from .transforms import TransformedCorpus
+if TYPE_CHECKING:
+    from .groups import GroupedCorpus
+    from .transforms import TransformedCorpus
 from .stream import CorpusStream, CorpusWriter
 
 try:
@@ -20,11 +22,695 @@ import tempfile
 from io import StringIO
 from itertools import chain
 from typing import Iterator, Union, Callable, Iterable, Tuple, List, Optional
+from abc import ABC, abstractmethod
 from collections import Counter, defaultdict
 from urllib.request import urlopen
 import re
 
-class Corpus:
+
+class ImmutableCorpus(ABC):
+    """An abstract base class for immutable corpora.
+    This class provides a read-only interface to the corpus, allowing
+    access to documents and their metadata without modification.
+    """
+
+    @property
+    @abstractmethod
+    def doc_ids(self) -> Iterable[str]:
+        """Return the document ids of the corpus."""
+        pass
+
+    @abstractmethod
+    def doc_by_id(self, doc_id: str) -> Document:
+        """Get a document by its id.
+
+        Args:
+            doc_id: str
+                The id of the document.
+
+        Returns:
+            A Document object.
+        """
+        pass
+
+    @property
+    def docs(self) -> Iterator[Document]:
+        """Get all the documents in the corpus.
+
+        Returns:
+            An iterator over Document objects.
+        """
+        for doc_id in self.doc_ids:
+            yield self.doc_by_id(doc_id)
+
+    @property
+    @abstractmethod
+    def meta(self) -> dict[str, LayerDesc]:
+        """Return the metadata of the corpus.
+
+        Returns:
+            A dictionary with layer names as keys and LayerDesc objects as values.
+        """
+        pass
+
+
+    def __getitem__(self, key:str) -> Document:
+        """Get a document by its id.
+
+        Args:
+            key: Union[str, int, slice]
+                The id of the document. Strings use document identifiers, while integers use the order of the documents in the corpus.
+
+        Examples:
+            >>> corpus = text_corpus()
+            >>> doc = corpus.add_doc("This is a document.")
+            >>> corpus["Kjco"]
+            Document('Kjco', {'text': 'This is a document.'})
+            >>> corpus[0]
+            Document('Kjco', {'text': 'This is a document.'})
+            >>> corpus[:1]
+            [Document('Kjco', {'text': 'This is a document.'})]
+        """
+        if isinstance(key, int):
+            return self.doc_by_id(list(self.doc_ids)[key])
+        elif isinstance(key, slice):
+            doc_ids = list(self.doc_ids)
+            return [self.doc_by_id(doc_id) for doc_id in doc_ids[key]]
+        elif isinstance(key, str):
+            return self.doc_by_id(key)
+        else:
+            raise Exception("Invalid key type.")
+
+    def view(self, *args):
+        """Create a view on the corpus.
+
+        Parameters:
+        -----------
+            args: str
+                The names of the layers to view.
+
+        Examples:
+        ---------
+
+        >>> corpus = Corpus()
+        >>> corpus.add_layer_meta("text")
+        >>> corpus.add_layer_meta("words", layer_type="span", base="text")
+        >>> corpus.add_layer_meta("sentences", layer_type="div", base="words")
+        >>> doc = corpus.add_doc("This is a sentence. This is another sentence.")
+        >>> doc.words = [(0, 4), (5, 7), (8, 9), (10, 18), (20, 24), (25, 27),
+        ...               (28, 35), (36, 44)]
+        >>> doc.sentences = [0, 4]
+        >>> doc.view("words", "sentences")
+        [['This', 'is', 'a', 'sentence'], ['This', 'is', 'another', 'sentence']]
+        """
+        for doc_id, doc in self.docs:
+            yield doc.view(*args)
+
+    def text_freq(self, layer:str,
+                  condition : Union[str,
+            Callable[[str], bool], list] = None) -> dict[str, int]:
+        """Get the frequence of a text string in the corpus.
+
+        Args:
+            layer
+                The layer to get the frequency of (e.g. "text")
+            condition
+                A filter to match to. If a single string is given, the frequency
+                of this single word is returned. If a list of strings is given, the
+                frequency of each string is returned. If a function is given, all
+                strings are returned for which the function returns True.
+
+        Returns:
+            A dictionary with the frequency of each string.
+
+        Examples:
+            >>> corpus = text_corpus()
+            >>> doc = corpus.add_doc("This is a document.")
+            >>> doc.tokens = [(0, 4), (5, 7), (8, 9), (10, 18)]
+            >>> corpus.text_freq("tokens")
+            Counter({'This': 1, 'is': 1, 'a': 1, 'document': 1})
+            >>> corpus.text_freq("tokens", lambda x: "i" in x)
+            Counter({'This': 1, 'is': 1})
+        """
+        if condition is None:
+            return Counter(word
+                for doc in self.docs
+                for word in doc[layer].text)
+        elif isinstance(condition, str):
+            return Counter(word
+                for doc in self.docs
+                           for word in doc[layer].text
+                           if word == condition)
+        elif callable(condition):
+            return Counter(word
+                for doc in self.docs
+                for word in doc[layer].text
+                           if condition(word))
+        else:
+            return Counter(word
+                for doc in self.docs
+                for word in doc[layer].text
+                           if word in condition)
+
+    def val_freq(self, layer:str,
+                 condition = None) -> Counter:
+        """Get the frequency of a value in a layer.
+
+        Args:
+            layer
+                The layer to get the frequency of (e.g. "pos")
+            condition
+                The value to get the frequency of. If a single value is given, the
+                frequency of this single value is returned. If a list of values is
+                given, the frequency of each value is returned. If a function is
+                given, all values are returned for which the function returns True.
+
+        Returns:
+            A dictionary with the frequency of each value.
+
+        Examples:
+            >>> corpus = Corpus()
+            >>> corpus.add_layer_meta("text")
+            >>> corpus.add_layer_meta("words", layer_type="span", base="text")
+            >>> corpus.add_layer_meta("pos", layer_type="seq", base="words",
+            ...                        data=["NOUN", "VERB", "ADJ"])
+            >>> doc = corpus.add_doc("Colorless green ideas sleep furiously.")
+            >>> doc.words = [(0, 9), (10, 15), (16, 21), (22, 28), (29, 37)]
+            >>> doc.pos = ["ADJ", "ADJ", "NOUN", "VERB", "ADV"]
+            >>> corpus.val_freq("pos")
+            Counter({'ADJ': 2, 'NOUN': 1, 'VERB': 1, 'ADV': 1})
+            >>> corpus.val_freq("pos", ["NOUN", "VERB"])
+            Counter({'NOUN': 1, 'VERB': 1})
+            >>> corpus.val_freq("pos", lambda x: x[0] == "A")
+            Counter({'ADJ': 2, 'ADV': 1})
+        """
+        if condition is None:
+            return Counter(val
+                for doc in self.docs
+                for val in doc[layer].data)
+        elif isinstance(condition, str):
+            return Counter(val
+                for doc in self.docs
+                for val in doc[layer].data
+                           if val == condition)
+        elif callable(condition):
+            return Counter(val
+                for doc in self.docs
+                for val in doc[layer].data
+                           if condition(val))
+        else:
+            return Counter(val
+                for doc in self.docs
+                for val in doc[layer].data
+                           if val in condition)
+
+    def by_doc(self) -> 'GroupedCorpus':
+        """Group the corpus by document to enable analysis such as frequency
+        analysis on a per document basis.
+
+        Examples:
+            >>> corpus = text_corpus()
+            >>> doc1 = corpus.add_doc("This is a document")
+            >>> doc1.tokens = [(0, 4), (5, 7), (8, 9), (10, 18)]
+            >>> doc2 = corpus.add_doc("This is another document.")
+            >>> doc2.tokens = [(0, 4), (5, 7), (8, 15), (16, 24)]
+            >>> group = corpus.by_doc()
+            >>> group.text_freq("tokens")
+            {'HP5c': Counter({'This': 1, 'is': 1, 'a': 1, 'document': 1}), 'eDFn': Counter({'This': 1, 'is': 1, 'another': 1, 'document': 1})}
+        """
+        from .groups import GroupedCorpus
+        return GroupedCorpus(self,
+                             {doc_id: [doc_id] for doc_id in self.doc_ids})
+
+
+    def by(self, layer:str) -> 'GroupedCorpus':
+        """Group the corpus according to which documents have specific values
+        of a layer. Mostly used for metadata layers (e.g., "author", "genre")
+        
+        Args:
+            layer: str
+                The name of the layer to group by.
+        Returns:
+            A GroupedCorpus object that groups documents by the values in the specified layer.
+        Examples:
+            >>> corpus = text_corpus()
+            >>> corpus.add_layer_meta("author")
+            >>> doc1 = corpus.add_doc(text="This is a document", author="John")
+            >>> doc2 = corpus.add_doc(text="This is another document", author="Mary")
+            >>> group = corpus.by("author")
+            >>> group["John"][0].text
+            'This is a document'
+        """
+        from .groups import GroupedCorpus
+        grouping = defaultdict(list)
+        for doc in self.docs:
+            if layer in doc:
+                if self.meta[layer].data is None:
+                    for value in doc[layer].text:
+                        grouping[value].append(doc.id)
+                else:
+                    for value in doc[layer].data:
+                        grouping[value].append(doc.id)
+        return GroupedCorpus(self, grouping)
+
+    def subset(self, values: Union[Iterable[str], Iterable[int]]) -> 'Corpus':
+        """Create a new corpus that is a subset of the current corpus.
+
+        Args:
+            values: Union[iterable[str], iterable[int]]
+                The document ids or indices to include in the subset.
+
+        Returns:
+            A new Corpus object that contains only the documents specified by
+
+        Examples:
+            >>> corpus = text_corpus()
+            >>> doc1 = corpus.add_doc("This is a document.")
+            >>> doc2 = corpus.add_doc("This is another document.")
+            >>> doc3 = corpus.add_doc("This is yet another document.")
+            >>> subset = corpus.subset(["Kjco", "eDFn"])
+            >>> list(subset.doc_ids)
+            ['Kjco', 'eDFn']
+            >>> subset = corpus.subset(range(2))
+            >>> list(subset.doc_ids)
+            ['Kjco', 'eDFn']
+        """
+        val_ids = []
+        doc_ids = list(self.doc_ids)
+        for value in values:
+            if isinstance(value, str):
+                val_ids.append(value)
+            elif isinstance(value, int):
+                val_ids.append(doc_ids[value])
+            else:
+                raise Exception("Invalid value type: " + str(type(value)))
+        from .filter import SubsetCorpus
+        return SubsetCorpus(self, val_ids)
+
+    def filter(self, filter_func: Callable[Document, bool]) -> 'Corpus':
+        """Create a new corpus that is a filtered version of the current corpus.
+
+        Args:
+            filter_func: Callable[Document, bool]
+                A function that takes a document id and returns True if the
+                document should be included in the filtered corpus.
+
+        Returns:
+            A new Corpus object that contains only the documents that match the filter.
+
+        Examples:
+            >>> corpus = text_corpus()
+            >>> doc1 = corpus.add_doc("This is a document.")
+            >>> doc2 = corpus.add_doc("This is another document.")
+            >>> doc3 = corpus.add_doc("This is yet another document.")
+            >>> filter_func = lambda doc: "y" in doc.text
+            >>> filtered_corpus = corpus.filter(filter_func)
+            >>> list(filtered_corpus.doc_ids)
+            ['fpwP']
+        """
+        from .filter import FilterCorpus
+        return FilterCorpus(self, filter_func)
+
+
+    def search(self, query=None, **kwargs) -> Iterator[str]:
+        """Search for documents in the corpus.
+
+        Args:
+            kwargs, query:
+                The search criteria. The keys are the layer names and the values
+                can be either a string, a list of strings or a dictionary with values
+                describing the search criteria.
+
+                If the value is a string the search is interpreted as an exact
+                match. If the layer has no data this is applied to the text
+                otherwise it is applied to the data.
+
+                If the value is a list of strings, the search is interpreted as a
+                search for any of the strings in the list.
+
+                For dictionaries, the following keys are supported:
+                `$text`: The value on the base character layer equal this value.
+                `$text_ne`: The value on the base character layer must not equal this value.
+                `$eq`: The value must be equal to this value.
+                `$ne`: The value must not be equal to this value.
+                `$gt`: The value must be greater than this value.
+                `$lt`: The value must be less than this value.
+                `$gte`: The value must be greater than or equal to this value.
+                `$lte`: The value must be less than or equal to this value.
+                `$in`: The value must be in this list.
+                `$nin`: The value must not be in this list.
+                `$text_in`: The value on the base character layer must be in this list.
+                `$text_nin`: The value on the base character layer must not be in this list.
+                `$regex`: The value must match this regular expression.
+                `$text_regex`: The value on the base character layer must match
+                    this regular expression.
+                `$and`: All the conditions in this list must be true.
+                `$or`: At least one of the conditions in this list must be true.
+                `$not`: The condition in this list must not be true.
+                `$exists`: A particular layer must exist.
+
+        Returns:
+            An iterator over the document ids that match the search criteria.
+
+        Examples:
+            >>> corpus = Corpus()
+            >>> corpus.add_layer_meta("text")
+            >>> corpus.add_layer_meta("words", layer_type="span", base="text")
+            >>> corpus.add_layer_meta("pos", layer_type="seq", base="words",
+            ...                        data=["NOUN", "VERB", "ADJ"])
+            >>> corpus.add_layer_meta("lemma", layer_type="seq", base="words",
+            ...                        data="string")
+            >>> doc = corpus.add_doc("Colorless green ideas sleep furiously.")
+            >>> doc.words = [(0, 9), (10, 15), (16, 21), (22, 27), (28, 37)]
+            >>> doc.pos = ["ADJ", "ADJ", "NOUN", "VERB", "ADV"]
+            >>> doc.lemma = ["colorless", "green", "idea", "sleep", "furiously"]
+            >>> list(corpus.search(pos="NOUN"))
+            ['9wpe']
+            >>> list(corpus.search(pos=["NOUN", "VERB"]))
+            ['9wpe']
+            >>> list(corpus.search(pos={"$in": ["NOUN", "VERB"]}))
+            ['9wpe']
+            >>> list(corpus.search(pos={"$regex": "N.*"}))
+            ['9wpe']
+            >>> list(corpus.search(pos="VERB", lemma="sleep"))
+            ['9wpe']
+            >>> list(corpus.search(pos="VERB", words="idea"))
+            []
+            >>> list(corpus.search(pos="VERB", words="ideas"))
+            ['9wpe']
+            >>> list(corpus.search({"pos": "VERB", "lemma": "sleep"}))
+            ['9wpe']
+            >>> list(corpus.search({"$and": {"pos": "VERB", "lemma": "sleep"}}))
+            ['9wpe']
+        """
+        if kwargs and query:
+            raise Exception("Cannot specify both query and kwargs.")
+        if self.corpus:
+            if kwargs:
+                query = self.normalise_query(kwargs)
+            else:
+                query = self.normalise_query(query)
+            for result in self.corpus.search(query):
+                yield result
+        else:
+            if kwargs:
+                for doc in self.docs:
+                    if all(next(doc[layer].matches(value), None)
+                           for layer, value in kwargs.items()):
+                        yield doc.id
+            else:
+                for doc in self.docs:
+                    for key, value in query.items():
+                        if not self._doc_matches(doc, key, value):
+                            break
+                    else:
+                        yield doc.id
+
+    def normalise_query(self, query):
+        """Normalise a query by replacing all field values with either `$eq` or
+        `$text`
+        """
+        q2 = {}
+        for key, value in query.items():
+            if isinstance(value, list):
+                if all(isinstance(v, str) for v in value):
+                    if key in self.meta and self.meta[key].data is None:
+                        q2[key] = {"$text_in": value}
+                    else:
+                        q2[key] = {"$in": value}
+            elif isinstance(value, dict):
+                q2[key] = value
+            elif key in self.meta and self.meta[key].data is None:
+                q2[key] = {"$text": value}
+            else:
+                q2[key] = {"$eq": value}
+        return q2
+
+    def _doc_matches(self, doc, key, value):
+        """
+        """
+        if key == "$exists":
+            return value in doc.layers
+        elif key == "$and":
+            return all(self._doc_matches(doc, k, v) for k, v in value.items())
+        elif key == "$or":
+            return any(self._doc_matches(doc, k, v) for k, v in value.items())
+        elif key == "$not":
+            if isinstance(value, dict):
+                return all(self._doc_matches(doc, k, v) for k, v in value.items())
+            else:
+                raise Exception("Invalid $not query.")
+        elif key in self.meta:
+            return doc[key].matches(value)
+        else:
+            raise Exception("Invalid key: " + key)
+
+    def to_yaml(self, path_or_buf : str):
+        """Write the corpus to a yaml file.
+
+        Args:
+            path_or_buf: str
+                The path to the yaml file or a buffer.
+
+        """
+        if self.corpus:
+            teangadb.write_corpus_to_yaml_file(path_or_buf, self.corpus)
+        else:
+            if isinstance(path_or_buf, str):
+                with open(path_or_buf, "w") as f:
+                    self._to_pretty_yaml(f)
+            else:
+                self._to_pretty_yaml(path_or_buf)
+
+    def to_yaml_str(self) -> str:
+        """
+        Write the corpus to a yaml string.
+
+        Examples:
+            >>> corpus = Corpus()
+            >>> corpus.add_layer_meta("text")
+            >>> doc = corpus.add_doc("This is a document.")
+            >>> corpus.to_yaml_str()
+            '_meta:\\n    text:\\n        type: characters\\n\
+Kjco:\\n    text: This is a document.\\n'
+        """
+        if self.corpus:
+            return teangadb.write_corpus_to_yaml_string(self.corpus)
+        else:
+            s = StringIO()
+            self._to_pretty_yaml(s)
+            return s.getvalue()
+
+    def _to_pretty_yaml(self, writer):
+        """
+        """
+        writer.write("_meta:\n")
+        for name in sorted(self.meta.keys()):
+            meta = self.meta[name]
+            writer.write("    " + name + ":\n")
+            writer.write("        type: " + meta.layer_type + "\n")
+            if meta.base:
+                writer.write("        base: " + _yaml_str(meta.base))
+            if meta.data:
+                writer.write("        data: " +
+                             self._dump_yaml_json(meta.data))
+            if meta.link_types:
+                writer.write("        link_types: " +
+                             self._dump_yaml_json(meta.link_types))
+            if meta.target:
+                writer.write("        target: " +
+                             self._dump_yaml_json(meta.target))
+            if meta.default:
+                writer.write("        default: " +
+                             self._dump_yaml_json(meta.default))
+        for id in self.doc_ids:
+            doc = self.doc_by_id(id)
+            if re.match(r"^[-+]?(0b[0-1_]+|0o[0-7_]+|0x[0-9a-fA-F_]+|[0-9][0-9_]*)$", id) or id == "true" or id == "True" or id == "TRUE" or id == "false" or id == "False" or id == "FALSE":
+                writer.write("\"" + id + "\":\n")
+            else:
+                writer.write(id + ":\n")
+            for layer_id in sorted(doc.layers):
+                writer.write("    ")
+                if isinstance(doc[layer_id].raw, str):
+                    writer.write(layer_id)
+                    writer.write(": ")
+                    writer.write(_yaml_str(doc[layer_id].raw))
+                else:
+                    writer.write(layer_id + ": ")
+                    writer.write(json.dumps(doc[layer_id].raw) + "\n")
+            for key, value in doc.metadata.items():
+                writer.write("    _" + key + ": " + _yaml_str(value))
+
+    def _dump_yaml_json(self, obj):
+        """
+        """
+        if obj is None:
+            return "null"
+        elif isinstance(obj, str):
+            return _yaml_str(obj)
+        else:
+            return json.dumps(obj) + "\n"
+
+    def to_json(self, path_or_buf):
+        """Write the corpus to a JSON file.
+
+        Args:
+            path_or_buf: str
+                The path to the json file or a buffer.
+
+        """
+        if self.corpus:
+            teangadb.write_corpus_to_json_file(path_or_buf, self.corpus)
+        else:
+            if isinstance(path_or_buf, str):
+                with open(path_or_buf, "w") as f:
+                    self._to_json(f)
+            else:
+                self._to_json(path_or_buf)
+
+    def to_json_str(self) -> str:
+        """
+        Write the corpus to a JSON string.
+
+        Examples:
+            >>> corpus = Corpus()
+            >>> corpus.add_layer_meta("text")
+            >>> doc = corpus.add_doc("This is a document.")
+            >>> corpus.to_json_str()
+            '{"_meta": {"text": {"type": "characters"}}, "_order": ["Kjco"], "Kjco": {"text": "This is a document."}}'
+         """
+        if self.corpus:
+            return teangadb.write_corpus_to_json_string(self.corpus)
+        else:
+            s = StringIO()
+            self._to_json(s)
+            return s.getvalue()
+
+    def _to_json(self, writer):
+        dct = {}
+        dct["_meta"] = {name: _from_layer_desc(data)
+                        for name, data in self.meta.items()
+                        if not name.startswith("_")}
+        dct["_order"] = list(self.doc_ids)
+        for doc_id in self.doc_ids:
+            doc = self.doc_by_id(doc_id)
+            dct[doc_id] = {layer_id: doc[layer_id].raw
+                           for layer_id in doc.layers}
+            dct[doc_id].update({"_" + key: value
+                                for key, value in doc.metadata.items()})
+        json.dump(dct, writer)
+
+    def to_tcf(self, path:str):
+        """Write the corpus to a TCF file.
+
+        Args:
+            path: str
+                The path to the TCF file.
+        """
+        if self.corpus:
+            teangadb.write_corpus_to_tcf(self.corpus, path)
+        else:
+            if not TEANGA_DB:
+                teanga_db_fail()
+            tmpfile = tempfile.mkstemp()[1]
+            self.to_json(tmpfile)
+            tmppath = tempfile.mkdtemp()
+            corpus = teangadb.read_corpus_from_json_file(tmpfile, tmppath)
+            teangadb.write_corpus_to_tcf(corpus, path)
+
+    def lower(self) -> 'TransformedCorpus':
+        """Lowercase all the text in the corpus.
+
+        Examples:
+            >>> corpus = Corpus()
+            >>> corpus.add_layer_meta("text")
+            >>> doc = corpus.add_doc("This is a document.")
+            >>> corpus = corpus.lower()
+            >>> list(corpus.docs)
+            [Document('Kjco', {'text': 'this is a document.'})]
+        """
+        from .transforms import TransformedCorpus
+        text_layers = [layer for layer in self.meta
+                       if self.meta[layer].layer_type == "characters"]
+        return TransformedCorpus(self, {layer: lambda x: x.lower()
+                                        for layer in text_layers})
+
+    def upper(self) -> 'TransformedCorpus':
+        """Uppercase all the text in the corpus.
+
+        Examples:
+            >>> corpus = text_corpus()
+            >>> doc = corpus.add_doc("This is a document.")
+            >>> corpus = corpus.upper()
+            >>> list(corpus.docs)
+            [Document('Kjco', {'text': 'THIS IS A DOCUMENT.'})]
+        """
+        from .transforms import TransformedCorpus
+        text_layers = [layer for layer in self.meta
+                       if self.meta[layer].layer_type == "characters"]
+        return TransformedCorpus(self, {layer: lambda x: x.upper()
+                                        for layer in text_layers})
+
+    def transform(self, layer: str, transform:
+                  Callable[[str], str]) -> 'TransformedCorpus':
+        """Transform a layer in the corpus.
+
+        Args:
+            layer: str
+                The name of the layer to transform.
+            transform: Callable[[str], str]
+                The transformation function.
+
+        Examples:
+            >>> corpus = text_corpus()
+            >>> doc = corpus.add_doc("This is a document.")
+            >>> corpus = corpus.transform("text", lambda x: x[:10])
+            >>> list(corpus.docs)
+            [Document('Kjco', {'text': 'This is a '})]
+        """
+        from .transforms import TransformedCorpus
+        return TransformedCorpus(self, {layer: transform})
+
+    def writer(self, buf) -> CorpusWriter:
+        """Create a writer object that can serialize documents in 
+        a streaming fashion.
+
+        Args:
+            buf: str
+                The buffer to write to.
+
+        Examples:
+            >>> import io
+            >>> corpus = text_corpus()
+            >>> doc = corpus.add_doc("This is a document.")
+            >>> string = io.StringIO()
+            >>> with corpus.writer(string) as writer:
+            ...     for doc in corpus.docs:
+            ...         writer.write(doc)
+        """
+        return CorpusWriter(buf, self.meta)
+
+    def _repr_html_(self):
+        """Return a HTML representation of the corpus."""
+        s = f"<h1>Corpus with {len(self.doc_ids)} documents</h1>"
+        s += f"<h2>Layers</h2>"
+        s += f"<table>"
+        s += "<tr><th>Name</th><th>Type</th><th>Base</th><th>Data</th><th>Link types</th><th>Target</th><th>Default</th></tr>"
+        for key, value in self.meta.items():
+            s += f"<tr><td>{key}</td><td>{value.layer_type}</td>"
+            s += f"<td>{value.base}</td>"
+            s += f"<td>{value.data}</td>"
+            s += f"<td>{value.link_types}</td>"
+            s += f"<td>{value.target}</td>"
+            s += f"<td>{value.default}</td></tr>"
+        s += "</table>"
+        return s
+
+    def __str__(self):
+        """Return a string representation of the corpus."""
+        return f"Corpus with {len(self.doc_ids)} documents and {len(self.meta)} layers."
+
+class Corpus(ImmutableCorpus):
     """Corpus class for storing and processing text data.
 
     Examples:
@@ -216,7 +902,7 @@ class Corpus:
         """
         if self.corpus:
             new_doc_id = self.corpus.update_doc(old_id,
-                                   {name: layer.raw
+                             {name: layer.raw
                                     for (name, layer) in doc.layers.items()})
             return new_doc_id
         else:
@@ -324,6 +1010,7 @@ class Corpus:
         else:
             raise Exception("Invalid key type.")
 
+
     @property
     def meta(self) -> dict[str, LayerDesc]:
         """Return the meta data of the corpus.
@@ -351,465 +1038,6 @@ class Corpus:
         else:
             self._meta = meta
 
-    def view(self, *args):
-        """Create a view on the corpus.
-
-        Parameters:
-        -----------
-            args: str
-                The names of the layers to view.
-
-        Examples:
-        ---------
-
-        >>> corpus = Corpus()
-        >>> corpus.add_layer_meta("text")
-        >>> corpus.add_layer_meta("words", layer_type="span", base="text")
-        >>> corpus.add_layer_meta("sentences", layer_type="div", base="words")
-        >>> doc = corpus.add_doc("This is a sentence. This is another sentence.")
-        >>> doc.words = [(0, 4), (5, 7), (8, 9), (10, 18), (20, 24), (25, 27),
-        ...               (28, 35), (36, 44)]
-        >>> doc.sentences = [0, 4]
-        >>> doc.view("words", "sentences")
-        [['This', 'is', 'a', 'sentence'], ['This', 'is', 'another', 'sentence']]
-        """
-        for doc_id, doc in self.docs:
-            yield doc.view(*args)
-
-    def text_freq(self, layer:str,
-                  condition : Union[str,
-            Callable[[str], bool], list] = None) -> dict[str, int]:
-        """Get the frequence of a text string in the corpus.
-
-        Args:
-            layer
-                The layer to get the frequency of (e.g. "text")
-            condition
-                A filter to match to. If a single string is given, the frequency
-                of this single word is returned. If a list of strings is given, the
-                frequency of each string is returned. If a function is given, all
-                strings are returned for which the function returns True.
-
-        Returns:
-            A dictionary with the frequency of each string.
-
-        Examples:
-            >>> corpus = text_corpus()
-            >>> doc = corpus.add_doc("This is a document.")
-            >>> doc.tokens = [(0, 4), (5, 7), (8, 9), (10, 18)]
-            >>> corpus.text_freq("tokens")
-            Counter({'This': 1, 'is': 1, 'a': 1, 'document': 1})
-            >>> corpus.text_freq("tokens", lambda x: "i" in x)
-            Counter({'This': 1, 'is': 1})
-        """
-        if condition is None:
-            return Counter(word
-                for doc in self.docs
-                for word in doc[layer].text)
-        elif isinstance(condition, str):
-            return Counter(word
-                for doc in self.docs
-                           for word in doc[layer].text
-                           if word == condition)
-        elif callable(condition):
-            return Counter(word
-                for doc in self.docs
-                for word in doc[layer].text
-                           if condition(word))
-        else:
-            return Counter(word
-                for doc in self.docs
-                for word in doc[layer].text
-                           if word in condition)
-
-    def val_freq(self, layer:str,
-                 condition = None) -> Counter:
-        """Get the frequency of a value in a layer.
-
-        Args:
-            layer
-                The layer to get the frequency of (e.g. "pos")
-            condition
-                The value to get the frequency of. If a single value is given, the
-                frequency of this single value is returned. If a list of values is
-                given, the frequency of each value is returned. If a function is
-                given, all values are returned for which the function returns True.
-
-        Returns:
-            A dictionary with the frequency of each value.
-
-        Examples:
-            >>> corpus = Corpus()
-            >>> corpus.add_layer_meta("text")
-            >>> corpus.add_layer_meta("words", layer_type="span", base="text")
-            >>> corpus.add_layer_meta("pos", layer_type="seq", base="words",
-            ...                        data=["NOUN", "VERB", "ADJ"])
-            >>> doc = corpus.add_doc("Colorless green ideas sleep furiously.")
-            >>> doc.words = [(0, 9), (10, 15), (16, 21), (22, 28), (29, 37)]
-            >>> doc.pos = ["ADJ", "ADJ", "NOUN", "VERB", "ADV"]
-            >>> corpus.val_freq("pos")
-            Counter({'ADJ': 2, 'NOUN': 1, 'VERB': 1, 'ADV': 1})
-            >>> corpus.val_freq("pos", ["NOUN", "VERB"])
-            Counter({'NOUN': 1, 'VERB': 1})
-            >>> corpus.val_freq("pos", lambda x: x[0] == "A")
-            Counter({'ADJ': 2, 'ADV': 1})
-        """
-        if condition is None:
-            return Counter(val
-                for doc in self.docs
-                for val in doc[layer].data)
-        elif isinstance(condition, str):
-            return Counter(val
-                for doc in self.docs
-                for val in doc[layer].data
-                           if val == condition)
-        elif callable(condition):
-            return Counter(val
-                for doc in self.docs
-                for val in doc[layer].data
-                           if condition(val))
-        else:
-            return Counter(val
-                for doc in self.docs
-                for val in doc[layer].data
-                           if val in condition)
-
-    def by_doc(self) -> GroupedCorpus:
-        """Group the corpus by document to enable analysis such as frequency
-        analysis on a per document basis.
-        """
-        return GroupedCorpus(self,
-                             {doc_id: [doc_id] for doc_id in self.doc_ids})
-
-
-    def by(self, layer:str) -> GroupedCorpus:
-        """Group the corpus according to which documents have specific values
-        of a layer. Mostly used for metadata layers (e.g., "author", "genre")
-        """
-        grouping = defaultdict(list)
-        for doc in self.docs:
-            if layer in doc:
-                for value in doc[layer].data:
-                    grouping[value].append(doc.id)
-        return GroupedCorpus(self, grouping)
-
-    def search(self, query=None, **kwargs) -> Iterator[str]:
-        """Search for documents in the corpus.
-
-        Args:
-            kwargs, query:
-                The search criteria. The keys are the layer names and the values
-                can be either a string, a list of strings or a dictionary with values
-                describing the search criteria.
-
-                If the value is a string the search is interpreted as an exact
-                match. If the layer has no data this is applied to the text
-                otherwise it is applied to the data.
-
-                If the value is a list of strings, the search is interpreted as a
-                search for any of the strings in the list.
-
-                For dictionaries, the following keys are supported:
-                `$text`: The value on the base character layer equal this value.
-                `$text_ne`: The value on the base character layer must not equal this value.
-                `$eq`: The value must be equal to this value.
-                `$ne`: The value must not be equal to this value.
-                `$gt`: The value must be greater than this value.
-                `$lt`: The value must be less than this value.
-                `$gte`: The value must be greater than or equal to this value.
-                `$lte`: The value must be less than or equal to this value.
-                `$in`: The value must be in this list.
-                `$nin`: The value must not be in this list.
-                `$text_in`: The value on the base character layer must be in this list.
-                `$text_nin`: The value on the base character layer must not be in this list.
-                `$regex`: The value must match this regular expression.
-                `$text_regex`: The value on the base character layer must match
-                    this regular expression.
-                `$and`: All the conditions in this list must be true.
-                `$or`: At least one of the conditions in this list must be true.
-                `$not`: The condition in this list must not be true.
-                `$exists`: A particular layer must exist.
-
-        Returns:
-            An iterator over the document ids that match the search criteria.
-
-        Examples:
-            >>> corpus = Corpus()
-            >>> corpus.add_layer_meta("text")
-            >>> corpus.add_layer_meta("words", layer_type="span", base="text")
-            >>> corpus.add_layer_meta("pos", layer_type="seq", base="words",
-            ...                        data=["NOUN", "VERB", "ADJ"])
-            >>> corpus.add_layer_meta("lemma", layer_type="seq", base="words",
-            ...                        data="string")
-            >>> doc = corpus.add_doc("Colorless green ideas sleep furiously.")
-            >>> doc.words = [(0, 9), (10, 15), (16, 21), (22, 27), (28, 37)]
-            >>> doc.pos = ["ADJ", "ADJ", "NOUN", "VERB", "ADV"]
-            >>> doc.lemma = ["colorless", "green", "idea", "sleep", "furiously"]
-            >>> list(corpus.search(pos="NOUN"))
-            ['9wpe']
-            >>> list(corpus.search(pos=["NOUN", "VERB"]))
-            ['9wpe']
-            >>> list(corpus.search(pos={"$in": ["NOUN", "VERB"]}))
-            ['9wpe']
-            >>> list(corpus.search(pos={"$regex": "N.*"}))
-            ['9wpe']
-            >>> list(corpus.search(pos="VERB", lemma="sleep"))
-            ['9wpe']
-            >>> list(corpus.search(pos="VERB", words="idea"))
-            []
-            >>> list(corpus.search(pos="VERB", words="ideas"))
-            ['9wpe']
-            >>> list(corpus.search({"pos": "VERB", "lemma": "sleep"}))
-            ['9wpe']
-            >>> list(corpus.search({"$and": {"pos": "VERB", "lemma": "sleep"}}))
-            ['9wpe']
-        """
-        if kwargs and query:
-            raise Exception("Cannot specify both query and kwargs.")
-        if self.corpus:
-            if kwargs:
-                query = self.normalise_query(kwargs)
-            else:
-                query = self.normalise_query(query)
-            for result in self.corpus.search(query):
-                yield result
-        else:
-            if kwargs:
-                for doc in self.docs:
-                    if all(next(doc[layer].matches(value), None)
-                           for layer, value in kwargs.items()):
-                        yield doc.id
-            else:
-                for doc in self.docs:
-                    for key, value in query.items():
-                        if not self._doc_matches(doc, key, value):
-                            break
-                    else:
-                        yield doc.id
-
-    def normalise_query(self, query):
-        """Normalise a query by replacing all field values with either `$eq` or
-        `$text`
-        """
-        q2 = {}
-        for key, value in query.items():
-            if isinstance(value, list):
-                if all(isinstance(v, str) for v in value):
-                    if key in self.meta and self.meta[key].data is None:
-                        q2[key] = {"$text_in": value}
-                    else:
-                        q2[key] = {"$in": value}
-            elif isinstance(value, dict):
-                q2[key] = value
-            elif key in self.meta and self.meta[key].data is None:
-                q2[key] = {"$text": value}
-            else:
-                q2[key] = {"$eq": value}
-        return q2
-
-    def subset(self, values: Union[Iterable[str], Iterable[int]]) -> 'Corpus':
-        """Create a new corpus that is a subset of the current corpus.
-
-        Args:
-            values: Union[iterable[str], iterable[int]]
-                The document ids or indices to include in the subset.
-
-        Returns:
-            A new Corpus object that contains only the documents specified by
-        """
-        if self.corpus:
-            raise Exception("TODO: Not Implemented yet for Teanga DB.")
-        else:
-            subset_corpus = Corpus()
-            subset_corpus._meta = self.meta
-            val_ids = []
-            doc_ids = list(self.doc_ids)
-            for value in values:
-                if isinstance(value, str):
-                    val_ids.append(value)
-                elif isinstance(value, int):
-                    val_ids.append(doc_ids[value])
-                else:
-                    raise Exception("Invalid value type: " + str(type(value)))
-            subset_corpus._docs = {
-                doc_id: self._docs[doc_id].copy()
-                for doc_id in val_ids if doc_id in self._docs
-            }
-            for doc in subset_corpus._docs.values():
-                doc._corpus_ref = subset_corpus
-            return subset_corpus
-
-
-    def _doc_matches(self, doc, key, value):
-        """
-        """
-        if key == "$exists":
-            return value in doc.layers
-        elif key == "$and":
-            return all(self._doc_matches(doc, k, v) for k, v in value.items())
-        elif key == "$or":
-            return any(self._doc_matches(doc, k, v) for k, v in value.items())
-        elif key == "$not":
-            if isinstance(value, dict):
-                return all(self._doc_matches(doc, k, v) for k, v in value.items())
-            else:
-                raise Exception("Invalid $not query.")
-        elif key in self.meta:
-            return doc[key].matches(value)
-        else:
-            raise Exception("Invalid key: " + key)
-
-    def to_yaml(self, path_or_buf : str):
-        """Write the corpus to a yaml file.
-
-        Args:
-            path_or_buf: str
-                The path to the yaml file or a buffer.
-
-        """
-        if self.corpus:
-            teangadb.write_corpus_to_yaml_file(path_or_buf, self.corpus)
-        else:
-            if isinstance(path_or_buf, str):
-                with open(path_or_buf, "w") as f:
-                    self._to_pretty_yaml(f)
-            else:
-                self._to_pretty_yaml(path_or_buf)
-
-    def to_yaml_str(self) -> str:
-        """
-        Write the corpus to a yaml string.
-
-        Examples:
-            >>> corpus = Corpus()
-            >>> corpus.add_layer_meta("text")
-            >>> doc = corpus.add_doc("This is a document.")
-            >>> corpus.to_yaml_str()
-            '_meta:\\n    text:\\n        type: characters\\n\
-Kjco:\\n    text: This is a document.\\n'
-        """
-        if self.corpus:
-            return teangadb.write_corpus_to_yaml_string(self.corpus)
-        else:
-            s = StringIO()
-            self._to_pretty_yaml(s)
-            return s.getvalue()
-
-    def _to_pretty_yaml(self, writer):
-        """
-        """
-        writer.write("_meta:\n")
-        for name in sorted(self.meta.keys()):
-            meta = self.meta[name]
-            writer.write("    " + name + ":\n")
-            writer.write("        type: " + meta.layer_type + "\n")
-            if meta.base:
-                writer.write("        base: " + _yaml_str(meta.base))
-            if meta.data:
-                writer.write("        data: " +
-                             self._dump_yaml_json(meta.data))
-            if meta.link_types:
-                writer.write("        link_types: " +
-                             self._dump_yaml_json(meta.link_types))
-            if meta.target:
-                writer.write("        target: " +
-                             self._dump_yaml_json(meta.target))
-            if meta.default:
-                writer.write("        default: " +
-                             self._dump_yaml_json(meta.default))
-        for id, doc in self._docs.items():
-            if re.match(r"^[-+]?(0b[0-1_]+|0o[0-7_]+|0x[0-9a-fA-F_]+|[0-9][0-9_]*)$", id) or id == "true" or id == "True" or id == "TRUE" or id == "false" or id == "False" or id == "FALSE":
-                writer.write("\"" + id + "\":\n")
-            else:
-                writer.write(id + ":\n")
-            for layer_id in sorted(doc.layers):
-                writer.write("    ")
-                if isinstance(doc[layer_id].raw, str):
-                    writer.write(layer_id)
-                    writer.write(": ")
-                    writer.write(_yaml_str(doc[layer_id].raw))
-                else:
-                    writer.write(layer_id + ": ")
-                    writer.write(json.dumps(doc[layer_id].raw) + "\n")
-            for key, value in doc.metadata.items():
-                writer.write("    _" + key + ": " + _yaml_str(value))
-
-    def _dump_yaml_json(self, obj):
-        """
-        """
-        if obj is None:
-            return "null"
-        elif isinstance(obj, str):
-            return _yaml_str(obj)
-        else:
-            return json.dumps(obj) + "\n"
-
-    def to_json(self, path_or_buf):
-        """Write the corpus to a JSON file.
-
-        Args:
-            path_or_buf: str
-                The path to the json file or a buffer.
-
-        """
-        if self.corpus:
-            teangadb.write_corpus_to_json_file(path_or_buf, self.corpus)
-        else:
-            if isinstance(path_or_buf, str):
-                with open(path_or_buf, "w") as f:
-                    self._to_json(f)
-            else:
-                self._to_json(path_or_buf)
-
-    def to_json_str(self) -> str:
-        """
-        Write the corpus to a JSON string.
-
-        Examples:
-            >>> corpus = Corpus()
-            >>> corpus.add_layer_meta("text")
-            >>> doc = corpus.add_doc("This is a document.")
-            >>> corpus.to_json_str()
-            '{"_meta": {"text": {"type": "characters"}}, "_order": ["Kjco"], "Kjco": {"text": "This is a document."}}'
-         """
-        if self.corpus:
-            return teangadb.write_corpus_to_json_string(self.corpus)
-        else:
-            s = StringIO()
-            self._to_json(s)
-            return s.getvalue()
-
-    def _to_json(self, writer):
-        dct = {}
-        dct["_meta"] = {name: _from_layer_desc(data)
-                        for name, data in self.meta.items()
-                        if not name.startswith("_")}
-        dct["_order"] = list(self.doc_ids)
-        for doc_id, doc in self._docs.items():
-            dct[doc_id] = {layer_id: doc[layer_id].raw
-                           for layer_id in doc.layers}
-            dct[doc_id].update({"_" + key: value
-                                for key, value in doc.metadata.items()})
-        json.dump(dct, writer)
-
-    def to_tcf(self, path:str):
-        """Write the corpus to a TCF file.
-
-        Args:
-            path: str
-                The path to the TCF file.
-        """
-        if self.corpus:
-            teangadb.write_corpus_to_tcf(self.corpus, path)
-        else:
-            if not TEANGA_DB:
-                teanga_db_fail()
-            tmpfile = tempfile.mkstemp()[1]
-            self.to_json(tmpfile)
-            tmppath = tempfile.mkdtemp()
-            corpus = teangadb.read_corpus_from_json_file(tmpfile, tmppath)
-            teangadb.write_corpus_to_tcf(corpus, path)
-
     def apply(self, service : Service):
         """Apply a service to each document in the corpus.
 
@@ -836,76 +1064,6 @@ Kjco:\\n    text: This is a document.\\n'
         for doc in self.docs:
             service.execute(doc)
 
-
-    def lower(self) -> TransformedCorpus:
-        """Lowercase all the text in the corpus.
-
-        Examples:
-            >>> corpus = Corpus()
-            >>> corpus.add_layer_meta("text")
-            >>> doc = corpus.add_doc("This is a document.")
-            >>> corpus = corpus.lower()
-            >>> list(corpus.docs)
-            [Document('Kjco', {'text': 'this is a document.'})]
-        """
-        text_layers = [layer for layer in self.meta
-                       if self.meta[layer].layer_type == "characters"]
-        return TransformedCorpus(self, {layer: lambda x: x.lower()
-                                        for layer in text_layers})
-
-    def upper(self) -> TransformedCorpus:
-        """Uppercase all the text in the corpus.
-
-        Examples:
-            >>> corpus = text_corpus()
-            >>> doc = corpus.add_doc("This is a document.")
-            >>> corpus = corpus.upper()
-            >>> list(corpus.docs)
-            [Document('Kjco', {'text': 'THIS IS A DOCUMENT.'})]
-        """
-        text_layers = [layer for layer in self.meta
-                       if self.meta[layer].layer_type == "characters"]
-        return TransformedCorpus(self, {layer: lambda x: x.upper()
-                                        for layer in text_layers})
-
-    def transform(self, layer: str, transform:
-                  Callable[[str], str]) -> TransformedCorpus:
-        """Transform a layer in the corpus.
-
-        Args:
-            layer: str
-                The name of the layer to transform.
-            transform: Callable[[str], str]
-                The transformation function.
-
-        Examples:
-            >>> corpus = text_corpus()
-            >>> doc = corpus.add_doc("This is a document.")
-            >>> corpus = corpus.transform("text", lambda x: x[:10])
-            >>> list(corpus.docs)
-            [Document('Kjco', {'text': 'This is a '})]
-        """
-        return TransformedCorpus(self, {layer: transform})
-
-    def writer(self, buf) -> CorpusWriter:
-        """Create a writer object that can serialize documents in 
-        a streaming fashion.
-
-        Args:
-            buf: str
-                The buffer to write to.
-
-        Examples:
-            >>> import io
-            >>> corpus = text_corpus()
-            >>> doc = corpus.add_doc("This is a document.")
-            >>> string = io.StringIO()
-            >>> with corpus.writer(string) as writer:
-            ...     for doc in corpus.docs:
-            ...         writer.write(doc)
-        """
-        return CorpusWriter(buf, self.meta)
-
     def __eq__(self, other):
         """
         Compare two Teanga Corpora for equality
@@ -916,27 +1074,6 @@ Kjco:\\n    text: This is a document.\\n'
             return False
         return all(self.doc_by_id(doc_id) == other.doc_by_id(doc_id)
                    for doc_id in self.doc_ids)
-
-    def __str__(self):
-        """Return a string representation of the corpus."""
-        return f"Corpus with {len(self.doc_ids)} documents and {len(self.meta)} layers."
-
-    def _repr_html_(self):
-        """Return a HTML representation of the corpus."""
-        s = f"<h1>Corpus with {len(self.doc_ids)} documents</h1>"
-        s += f"<h2>Layers</h2>"
-        s += f"<table>"
-        s += "<tr><th>Name</th><th>Type</th><th>Base</th><th>Data</th><th>Link types</th><th>Target</th><th>Default</th></tr>"
-        for key, value in self.meta.items():
-            s += f"<tr><td>{key}</td><td>{value.layer_type}</td>"
-            s += f"<td>{value.base}</td>"
-            s += f"<td>{value.data}</td>"
-            s += f"<td>{value.link_types}</td>"
-            s += f"<td>{value.target}</td>"
-            s += f"<td>{value.default}</td></tr>"
-        s += "</table>"
-        return s
-
 
 def _yaml_str(s):
     """

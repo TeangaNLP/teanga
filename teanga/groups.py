@@ -1,18 +1,26 @@
-from typing import Union, Callable
+from typing import Union, Callable, KeysView, ItemsView
 from collections import Counter
 from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from teanga import Document
+from teanga import Document
+from .corpus import ImmutableCorpus
 
 class GroupedCorpus:
     """A corpus that is grouped by some criterion."""
 
     def __init__(self, corpus, groups):
+        """Create a new grouped corpus.
+
+        Args:
+            corpus: The corpus to group.
+            groups: A dictionary where keys are group IDs and values are lists of
+                    document IDs that belong to that group.
+        """
+
         self.corpus = corpus
         self.groups = groups
 
     @property
-    def docs(self) -> dict[str,list[tuple[str, 'Document']]]:
+    def docs(self) -> dict[str,ImmutableCorpus]:
         """Return the documents by group
 
         Returns:
@@ -34,12 +42,11 @@ class GroupedCorpus:
             >>> doc2.words = [(0, 4), (5, 7), (8, 15), (16, 25)]
             >>> doc2.author = ["Mary"]
             >>> group = corpus.by("author")
-            >>> group.docs.keys()
+            >>> group.keys()
             dict_keys(['John', 'Mary'])
         """
-        return {group_id: [(
-            doc_id, self.corpus.doc_by_id(doc_id))
-                 for doc_id in group]
+        from .filter import SubsetCorpus
+        return {group_id: SubsetCorpus(self.corpus, group)
                 for group_id, group in self.groups.items()}
 
     def text_freq(self, layer:str,
@@ -81,27 +88,27 @@ class GroupedCorpus:
         """
         if condition is None:
             return {id: Counter(word
-                for _, doc in group
+                for doc in group.docs
                 for word in doc[layer].text)
-                for id, group in self.docs.items()}
+                for id, group in self.items()}
         elif isinstance(condition, str):
             return {id: Counter(word
-                for _, doc in group
+                for doc in group.docs
                            for word in doc[layer].text
                            if word == condition)
-                for id, group in self.docs.items()}
+                for id, group in self.items()}
         elif callable(condition):
             return {id: Counter(word
-                for _, doc in group
+                for doc in group.docs
                 for word in doc[layer].text
                            if condition(word))
-                for id, group in self.docs.items()}
+                for id, group in self.items()}
         else:
             return {id: Counter(word
-                for _, doc in group
+                for doc in group.docs
                 for word in doc[layer].text
                            if word in condition)
-                for id, group in self.docs.items()}
+                for id, group in self.items()}
 
     def val_freq(self, layer:str,
                  condition = None) -> Counter:
@@ -139,26 +146,49 @@ class GroupedCorpus:
         """
         if condition is None:
             return {id: Counter(val
-                for _, doc in group
+                for doc in group.docs
                 for val in doc[layer].data)
-                for id, group in self.docs.items()}
+                for id, group in self.items()}
         elif isinstance(condition, str):
             return {id: Counter(val
-                for _, doc in group
+                for doc in group.docs
                 for val in doc[layer].data
                            if val == condition)
-                for id, group in self.docs.items()}
+                for id, group in self.items()}
         elif callable(condition):
             return {id: Counter(val
-                for _, doc in group
+                for doc in group.docs
                 for val in doc[layer].data
                            if condition(val))
-                for id, group in self.docs.items()}
+                for id, group in self.items()}
         else:
             return {id: Counter(val
-                for _, doc in group
+                for doc in group.docs
                 for val in doc[layer].data
                            if val in condition)
-                for id, group in self.docs.items()}
+                for id, group in self.items()}
 
+    def __getitem__(self, group_id: str) -> 'ImmutableCorpus':
+        """Get the documents in a specific group by its ID.
+
+        Args:
+            group_id: The ID of the group to retrieve.
+
+        Returns:
+            A list of tuples containing document IDs and their corresponding Document objects.
+        """
+        if group_id not in self.groups:
+            raise KeyError(f"Group ID {group_id} not found in grouped corpus.")
+        from .filter import SubsetCorpus
+        return SubsetCorpus(self.corpus, self.groups[group_id])
+
+    def items(self) -> ItemsView[str, ImmutableCorpus]:
+        """Return an iterator over the group IDs and their corresponding document subsets."""
+        from .filter import SubsetCorpus
+        return ({ group_id: SubsetCorpus(self.corpus, group)
+                for group_id, group in self.groups.items() }).items()
+
+    def keys(self) -> KeysView[str]:
+        """Return a list of group IDs in the grouped corpus."""
+        return self.groups.keys()
 
