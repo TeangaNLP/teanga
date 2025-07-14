@@ -1024,7 +1024,7 @@ class Corpus(ImmutableCorpus):
         """
         if isinstance(key, int):
             if self.corpus:
-                return self.doc_by_id[self.corpus.order[key]]
+                return self.doc_by_id(self.corpus.order[key])
             else:
                 return self.doc_by_id(list(self.doc_ids)[key])
         elif isinstance(key, slice):
