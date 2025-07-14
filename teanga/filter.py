@@ -41,7 +41,7 @@ class FilterCorpus(ImmutableCorpus):
 
         Args:
             corpus: The corpus to filter.
-            filter_func: A function that takes a document ID and returns True if the
+            filter_func: A function that takes a document object and returns True if the
                          document should be included in the filtered corpus.
         """
         self._corpus = corpus
