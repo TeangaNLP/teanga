@@ -1397,7 +1397,7 @@ Kjco:\\n    text: This is a document.\\n'
         if self.corpus:
             teangadb.write_corpus_to_tcf(self.corpus, path)
         else:
-            return super.to_tcf(path)
+            return super().to_tcf(path)
 
     def apply(self, service : Service):
         """Apply a service to each document in the corpus.
