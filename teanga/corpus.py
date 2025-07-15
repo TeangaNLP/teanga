@@ -1747,7 +1747,8 @@ def read_yaml(path_or_buf, db_file:str=None) -> Corpus:
             path_or_buf, db_file))
 
     else:
-        return _corpus_hook(yaml.load(open(path_or_buf), Loader=YamlLoader))
+        with open(path_or_buf) as f:
+            return _corpus_hook(yaml.load(f, Loader=YamlLoader))
 
 def read_yaml_str(yaml_str, db_file:str=None) -> Corpus:
     """Read a corpus from a yaml string.
@@ -1818,7 +1819,8 @@ def from_url(url:str, db_file:str=None) -> Corpus:
             with gzip.open(urlopen(url), "rt") as f:
                 return _corpus_hook(yaml.load(f, Loader=YamlLoader))
         else:
-            return _corpus_hook(yaml.load(urlopen(url), Loader=YamlLoader))
+            with urlopen(url) as f:
+                return _corpus_hook(yaml.load(f, Loader=YamlLoader))
 
 DOWNLOAD_URLS = [
         "https://teanga.io/corpora/",
