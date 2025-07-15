@@ -17,6 +17,10 @@ import shutil
 import os
 import json
 import yaml
+try:
+    from yaml import CLoader as YamlLoader
+except ImportError:
+    from yaml import FullLoader as YamlLoader
 import gzip
 import tempfile
 from io import StringIO
@@ -1743,7 +1747,7 @@ def read_yaml(path_or_buf, db_file:str=None) -> Corpus:
             path_or_buf, db_file))
 
     else:
-        return _corpus_hook(yaml.load(open(path_or_buf), Loader=yaml.FullLoader))
+        return _corpus_hook(yaml.load(open(path_or_buf), Loader=YamlLoader))
 
 def read_yaml_str(yaml_str, db_file:str=None) -> Corpus:
     """Read a corpus from a yaml string.
@@ -1769,7 +1773,7 @@ def read_yaml_str(yaml_str, db_file:str=None) -> Corpus:
         return Corpus(db_corpus=teangadb.read_corpus_from_yaml_string(
             yaml_str, db_file))
     else:
-        return _corpus_hook(yaml.load(yaml_str, Loader=yaml.FullLoader))
+        return _corpus_hook(yaml.load(yaml_str, Loader=YamlLoader))
     
 def parse(path_or_buf:str) -> CorpusStream:
     """Parse a corpus incrementally from a file or buffer. Note that you will need
@@ -1812,9 +1816,9 @@ def from_url(url:str, db_file:str=None) -> Corpus:
     else:
         if url.endswith(".gz"):
             with gzip.open(urlopen(url), "rt") as f:
-                return _corpus_hook(yaml.load(f, Loader=yaml.FullLoader))
+                return _corpus_hook(yaml.load(f, Loader=YamlLoader))
         else:
-            return _corpus_hook(yaml.load(urlopen(url), Loader=yaml.FullLoader))
+            return _corpus_hook(yaml.load(urlopen(url), Loader=YamlLoader))
 
 DOWNLOAD_URLS = [
         "https://teanga.io/corpora/",
