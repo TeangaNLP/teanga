@@ -1189,24 +1189,6 @@ class Corpus(ImmutableCorpus):
                 for val in doc[layer].data
                            if val in condition)
 
-    def by_doc(self) -> GroupedCorpus:
-        """Group the corpus by document to enable analysis such as frequency
-        analysis on a per document basis.
-        """
-        return GroupedCorpus(self,
-                             {doc_id: [doc_id] for doc_id in self.doc_ids})
-
-
-    def by(self, layer:str) -> GroupedCorpus:
-        """Group the corpus according to which documents have specific values
-        of a layer. Mostly used for metadata layers (e.g., "author", "genre")
-        """
-        grouping = defaultdict(list)
-        for doc in self.docs:
-            if layer in doc:
-                for value in doc[layer].data:
-                    grouping[value].append(doc.id)
-        return GroupedCorpus(self, grouping)
 
     def search(self, query=None, **kwargs) -> Iterator[str]:
         """Search for documents in the corpus.
