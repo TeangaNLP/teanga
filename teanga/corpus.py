@@ -399,7 +399,7 @@ class ImmutableCorpus(ABC):
     def text_freq(self, layer:str,
                   condition : Union[str,
             Callable[[str], bool], list] = None) -> dict[str, int]:
-        """Get the frequence of a text string in the corpus.
+        """Get the frequency of a text string in the corpus.
 
         Args:
             layer
