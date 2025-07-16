@@ -842,12 +842,12 @@ Kjco:\\n    text: This is a document.\\n'
                                 for key, value in doc.metadata.items()})
         json.dump(dct, writer)
 
-    def to_tcf(self, path:str):
-        """Write the corpus to a TCF file.
+    def to_cuac(self, path:str):
+        """Write the corpus to a Cuac file.
 
         Args:
             path: str
-                The path to the TCF file.
+                The path to the Cuac file.
         """
         if not TEANGA_DB:
             teanga_db_fail()
@@ -855,7 +855,7 @@ Kjco:\\n    text: This is a document.\\n'
         self.to_json(tmpfile)
         tmppath = tempfile.mkdtemp()
         corpus = teangadb.read_corpus_from_json_file(tmpfile, tmppath)
-        teangadb.write_corpus_to_tcf(corpus, path)
+        teangadb.write_corpus_to_cuac(corpus, path)
 
     def lower(self) -> 'TransformedCorpus':
         """Lowercase all the text in the corpus.
@@ -1239,7 +1239,17 @@ class Corpus(ImmutableCorpus):
     @meta.setter
     def meta(self, meta: dict[str, LayerDesc]):
         if self.corpus:
-            self.corpus.meta = meta
+            meta_mapped = {}
+            for k, v in meta.items():
+                if isinstance(v, LayerDesc):
+                    meta_mapped[k] = teangadb.layerdesc_from_dict(v._asdict())
+                elif type(v) is dict:
+                    meta_mapped[k] = teangadb.layerdesc_from_dict(v)
+                elif str(type(v)) == '<class \'builtins.PyLayerDesc\'>':
+                    meta_mapped[k] = v
+                else:
+                    raise Exception("Invalid type for layer meta: " + str(type(v)))
+            self.corpus.meta = meta_mapped
         else:
             self._meta = meta
 
@@ -1337,7 +1347,11 @@ class Corpus(ImmutableCorpus):
 
         """
         if self.corpus:
-            teangadb.write_corpus_to_yaml_file(path_or_buf, self.corpus)
+            if isinstance(path_or_buf, str):
+                teangadb.write_corpus_to_yaml(self.corpus, path_or_buf)
+            else:
+                yaml_str = teangadb.write_corpus_to_yaml_string(self.corpus)
+                path_or_buf.write(yaml_str)
         else:
             super().to_yaml(path_or_buf)
 
@@ -1367,7 +1381,11 @@ Kjco:\\n    text: This is a document.\\n'
 
         """
         if self.corpus:
-            teangadb.write_corpus_to_json_file(path_or_buf, self.corpus)
+            if isinstance(path_or_buf, str):
+                teangadb.write_corpus_to_json(self.corpus, path_or_buf)
+            else:
+                json_str = teangadb.write_corpus_to_json_string(self.corpus)
+                path_or_buf.write(json_str)
         else:
             super().to_json(path_or_buf)
 
@@ -1387,17 +1405,17 @@ Kjco:\\n    text: This is a document.\\n'
         else:
             return super().to_json_str()
 
-    def to_tcf(self, path:str):
-        """Write the corpus to a TCF file.
+    def to_cuac(self, path:str):
+        """Write the corpus to a Cuac file.
 
         Args:
             path: str
-                The path to the TCF file.
+                The path to the Cuac file.
         """
         if self.corpus:
-            teangadb.write_corpus_to_tcf(self.corpus, path)
+            teangadb.write_corpus_to_cuac(self.corpus, path)
         else:
-            return super().to_tcf(path)
+            return super().to_cuac(path)
 
     def apply(self, service : Service):
         """Apply a service to each document in the corpus.
@@ -1689,12 +1707,12 @@ def parallel_corpus(languages : list[str], db_file:str = None,
                                   data="link")
     return corpus
 
-def read_tcf(file:str, db_file:str=None) -> Corpus:
-    """Read a corpus from a TCF file. Requires TeangaDB module.
+def read_cuac(file:str, db_file:str=None) -> Corpus:
+    """Read a corpus from a Cuac file. Requires TeangaDB module.
 
     Args:
         file: str
-            The path to the TCF file.
+            The path to the Cuac file.
         db_file: str
             The path to the database file, if the corpus should be stored in a
             database.
@@ -1703,7 +1721,7 @@ def read_tcf(file:str, db_file:str=None) -> Corpus:
         teanga_db_fail()
     if not db_file:
         db_file = tempfile.mkdtemp()
-    return Corpus(db_corpus=teangadb.read_corpus_from_tcf_file(file, db_file))
+    return Corpus(db_corpus=teangadb.read_corpus_from_cuac_file(file, db_file))
 
 def teanga_db_fail():
     """

@@ -185,19 +185,19 @@ bAiu:
     _author: John P. McCrae
 """)
 
-def test_tcf():
+def test_cuac():
     try:
         import teangadb
     except ImportError:
-        print("Skipping TCF test as teangadb not available")
+        print("Skipping cuac test as teangadb not available")
         return
     corpus = teanga.Corpus()
     corpus.add_layer_meta("text")
     doc = corpus.add_doc("This is a document.")
-    # create a temporary TCF file
+    # create a temporary cuac file
     temp_file = tempfile.NamedTemporaryFile(delete=True)
-    corpus.to_tcf(temp_file.name)
-    corpus = teanga.read_tcf(temp_file.name)
+    corpus.to_cuac(temp_file.name)
+    corpus = teanga.read_cuac(temp_file.name)
 
 def test_teanga_id_2():
     corpus = teanga.Corpus()
