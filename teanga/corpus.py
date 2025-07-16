@@ -1241,7 +1241,7 @@ class Corpus(ImmutableCorpus):
         if self.corpus:
             meta_mapped = {}
             for k, v in meta.items():
-                if type(v) is LayerDesc:
+                if isinstance(v, LayerDesc):
                     meta_mapped[k] = teangadb.layerdesc_from_dict(v._asdict())
                 elif type(v) is dict:
                     meta_mapped[k] = teangadb.layerdesc_from_dict(v)
