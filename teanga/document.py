@@ -272,7 +272,8 @@ class Document:
             while self._meta[text_layer].layer_type != "characters":
                 text_layer = self._meta[text_layer].base
             indexes = self.layers[layer_name].indexes(text_layer)
-            return (self.layers[text_layer].text[0][start:end]
+            text = self.layers[text_layer].text[0]
+            return (text[start:end]
                     for start, end in indexes)
 
     def view(self, *args, start: int = 0, end: int = None, root_layer: str = None):
