@@ -5,6 +5,23 @@ description = "Teanga - Layer-based annotation of corpora with NLP"
 authors = ["John P. McCrae <john@mccr.ae>"]
 readme = "README.md"
 license = "LICENSE"
+classifiers = [
+    "Topic :: Text Processing",
+    "Topic :: Scientific/Engineering",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
+    "Intended Audience :: Information Technology",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: Apache Software License"
+    ]
+homepage = "https://github.com/teangaNLP/teanga.rs"
 
 [tool.poetry.dependencies]
 python = "^3.9.0"
@@ -27,6 +44,10 @@ jupyter = "^1.1.1"
 
 [tool.poetry.group.spacy.dependencies]
 spacy = "^3.7.5"
+
+
+[tool.poetry.group.pyo3.dependencies]
+teanga-pyo3 = "^0.1.0"
 
 [build-system]
 requires = ["poetry-core"]
