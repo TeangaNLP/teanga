@@ -1,4 +1,4 @@
-# Teanga Core and DB
+# Teanga Core - Text Processing Fast and Easy
 
 [Documentation](https://teanganlp.github.io/teanga/index.html)
 
@@ -10,7 +10,7 @@ models.
 Install with `pip` as follows:
 
 ```bash
-pip install git+https://github.com/teangaNLP/teanga2
+pip install teanga
 ```
 
 For persistent storage, you can install the Rust version from https://github.com/teangaNLP/teanga.rs
