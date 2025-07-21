@@ -16,14 +16,14 @@ pip install git+https://github.com/teangaNLP/teanga2
 For persistent storage, you can install the Rust version from https://github.com/teangaNLP/teanga.rs
 
 
-## Teanga 2 Data Model
+## Teanga Data Model
 
-The core idea of Teanga2 is the data model which descibes how the data is 
-represented and processed by services and stored in Teanga2 backends.
+The core idea of Teanga is the data model which descibes how the data is 
+represented and processed by services and stored in Teanga backends.
 
 ### Layers
 
-The Teanga2 data end consists of a set of layers that provide annotations.
+The Teanga data end consists of a set of layers that provide annotations.
 Layers are typed into the following kinds
 
 * **Character Layers**: These layers represent text. A character layer consists
@@ -46,7 +46,7 @@ Sequence layers are assumed to be in one-to-one correspondance with the indexes
 of the sublayer. These are typically used when there is a value for every 
 word (or sentence or paragraph) such as in part-of-speech tagging.
 
-![Examples of Teanga 2 Image Types](docs/img/Teanga_2_Layer_Types.png)
+![Examples of Teanga Image Types](docs/img/Teanga_2_Layer_Types.png)
 
 An example of each layer type is given in the above image and can be represented
 in YAML as follows:
@@ -79,7 +79,7 @@ VC90:
 
 ### Data
 
-Each annotation in a Teanga 2 layer can have data. The folllowing types of data
+Each annotation in a Teanga layer can have data. The folllowing types of data
 are available
 
 * **None**: No data is associated with annotation. This is frequently used for
@@ -127,7 +127,7 @@ layers as above
 
 ### Corpus Model
 
-The corpus model of Teanga2 consists of a (ordered)
+The corpus model of Teanga consists of a (ordered)
 sequence of documents which in turn
 consists of an (unordered) sequence of words. In addition, there are two meta
 properties `_meta` and `_order` which give the layer descriptions and the 
@@ -173,7 +173,7 @@ the document may be used instead of an explicit order.
 
 ### Documentation and RDF
 
-Teanga2 is linked-data-aware and this can be used to provide documentation to 
+Teanga is linked-data-aware and this can be used to provide documentation to 
 the user. This can be done with the special `_uri` property that can appear at
 several points in the document
 
