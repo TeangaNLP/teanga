@@ -20,10 +20,8 @@ classifiers = [
     "Intended Audience :: Information Technology",
     "Operating System :: OS Independent",
     "License :: OSI Approved :: Apache Software License"
-]
-
-[project.urls]
-"Homepage" = "https://github.com/teangaNLP/teanga.rs"
+    ]
+homepage = "https://github.com/teangaNLP/teanga.rs"
 
 [tool.poetry.dependencies]
 python = "^3.9.0"
