@@ -13,10 +13,10 @@ class Document:
 
     """
     def __init__(self, meta:dict[str,Union[LayerDesc,dict]],
-                 corpus=None, id=None, corpus_ref=None, **kwargs):
+                 _pyo3=None, id=None, corpus_ref=None, **kwargs):
         self._meta = meta
         self.layers = {}
-        self.corpus = None
+        self._pyo3 = None
         self.id = None
         self._corpus_ref = corpus_ref
         self.add_layers({key: value
@@ -26,11 +26,11 @@ class Document:
                          for key, value in kwargs.items()
                          if key.startswith("_")}
         self.id = id
-        self.corpus = corpus
+        self._pyo3 = _pyo3
 
     def copy(self):
         """Return a copy of the document."""
-        return Document(self._meta, self.corpus, self.id,
+        return Document(self._meta, self._pyo3, self.id,
                         **{key: value for key, value in self.layers.items()})
 
     @deprecated(reason="Use __setitem__ instead, e.g., doc['text'] = \
@@ -133,10 +133,10 @@ class Document:
         else:
             raise Exception("Unknown layer type " + self._meta[name].layer_type +
             " for layer " + name + ".")
-        if self.corpus and self.id:
+        if self._pyo3 and self.id:
             data_fields = {name: layer.raw
                            for (name,layer) in self.layers.items()}
-            self.corpus.update_doc(self.id, data_fields)
+            self._pyo3.update_doc(self.id, data_fields)
 
         return self.layers[name]
 
@@ -154,7 +154,7 @@ class Document:
 
     def __setattr__(self, name:str, value) -> None:
         """Set the value of a layer."""
-        if name != "layers" and name != "_meta" and name != "corpus" and name != "id" and name != "_metadata" and name != "_corpus_ref":
+        if name != "layers" and name != "_meta" and name != "_pyo3" and name != "id" and name != "_metadata" and name != "_corpus_ref":
             self.__setitem__(name, value)
         else:
             super().__setattr__(name, value)
@@ -353,9 +353,9 @@ class Document:
                 for layer_id in self.layers.keys()}
 
     @staticmethod
-    def from_json(json:dict, meta:dict, corpus=None, id=None) -> 'Document':
+    def from_json(json:dict, meta:dict, _pyo3=None, id=None) -> 'Document':
         """Return a document from its JSON representation."""
-        doc = Document(meta, corpus, id)
+        doc = Document(meta, _pyo3, id)
         doc.add_layers(json)
         return doc
 

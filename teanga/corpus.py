@@ -9,10 +9,10 @@ if TYPE_CHECKING:
 from .stream import CorpusStream, CorpusWriter
 
 try:
-    import teanga_pyo3.teanga as teangadb
-    TEANGA_DB = True
+    import teanga_pyo3.teanga as teanga_pyo3
+    TEANGA_PYO3 = True
 except ImportError:
-    TEANGA_DB = False
+    TEANGA_PYO3 = False
 import shutil
 import os
 import json
@@ -849,13 +849,13 @@ Kjco:\\n    text: This is a document.\\n'
             path: str
                 The path to the Cuac file.
         """
-        if not TEANGA_DB:
+        if not TEANGA_PYO3:
             teanga_db_fail()
         tmpfile = tempfile.mkstemp()[1]
         self.to_json(tmpfile)
         tmppath = tempfile.mkdtemp()
-        corpus = teangadb.read_corpus_from_json_file(tmpfile, tmppath)
-        teangadb.write_corpus_to_cuac(corpus, path)
+        corpus = teanga_pyo3.read_corpus_from_json_file(tmpfile, tmppath)
+        teanga_pyo3.write_corpus_to_cuac(corpus, path)
 
     def lower(self) -> 'TransformedCorpus':
         """Lowercase all the text in the corpus.
@@ -959,17 +959,17 @@ class Corpus(ImmutableCorpus):
     """
     def __init__(self, db=None, new=False, db_corpus=None):
         if db_corpus:
-            self.corpus = db_corpus
-            self.meta = self.corpus.meta
+            self._pyo3 = db_corpus
+            self.meta = self._pyo3.meta
         elif db:
-            if not TEANGA_DB:
+            if not TEANGA_PYO3:
                 teanga_db_fail()
             if new and os.path.exists(db):
                 shutil.rmtree(db)
-            self.corpus = teangadb.Corpus(db)
-            self.meta = self.corpus.meta
+            self._pyo3 = teanga_pyo3.Corpus(db)
+            self.meta = self._pyo3.meta
         else:
-            self.corpus = None
+            self._pyo3 = None
             self.meta = {}
             self._docs = {}
 
@@ -1032,8 +1032,8 @@ class Corpus(ImmutableCorpus):
             meta: dict
                 Metadata properties of the layer.
         """
-        if self.corpus:
-            self.corpus.add_layer_meta(
+        if self._pyo3:
+            self._pyo3.add_layer_meta(
                     name, layer_type, {}, base, data, link_types, target, default)
             return
         if name is None:
@@ -1073,8 +1073,8 @@ class Corpus(ImmutableCorpus):
         """
         if len(args) == 1 and isinstance(args[0], Document):
             doc = args[0]
-            if self.corpus:
-                self.corpus.add_doc({layer_id: doc[layer_id].raw
+            if self._pyo3:
+                self._pyo3.add_doc({layer_id: doc[layer_id].raw
                                      for layer_id in doc.layers})
             else:
                 self._docs[doc.id] = doc
@@ -1089,9 +1089,9 @@ class Corpus(ImmutableCorpus):
                 doc_id = teanga_id_for_doc(self.doc_ids,
                         **{char_layers[0]: args[0]})
                 doc = Document(self.meta, id=doc_id, corpus_ref=self, **{char_layers[0]: args[0]})
-                if self.corpus:
-                    self.corpus.add_doc({ char_layers[0]: args[0] })
-                    doc.corpus = self.corpus
+                if self._pyo3:
+                    self._pyo3.add_doc({ char_layers[0]: args[0] })
+                    doc._pyo3 = self._pyo3
                 else:
                     self._docs[doc_id] = doc
                 return doc
@@ -1099,9 +1099,9 @@ class Corpus(ImmutableCorpus):
                 doc_id = teanga_id_for_doc(self.doc_ids,
                                            **kwargs)
                 doc = Document(self.meta, id=doc_id, corpus_ref=self, **kwargs)
-                if self.corpus:
-                    self.corpus.add_doc(**kwargs)
-                    doc.corpus = self.corpus
+                if self._pyo3:
+                    self._pyo3.add_doc(**kwargs)
+                    doc._pyo3 = self._pyo3
                 else:
                     self._docs[doc_id] = doc
                 return doc
@@ -1117,9 +1117,9 @@ class Corpus(ImmutableCorpus):
                 doc_id = teanga_id_for_doc(self.doc_ids,
                                            **kwargs)
                 doc = Document(self.meta, id=doc_id, corpus_ref=self, **kwargs)
-                if self.corpus:
-                    self.corpus.add_doc(kwargs)
-                    doc.corpus = self.corpus
+                if self._pyo3:
+                    self._pyo3.add_doc(kwargs)
+                    doc._pyo3 = self._pyo3
                 else:
                     self._docs[doc_id] = doc
                 return doc
@@ -1139,8 +1139,8 @@ class Corpus(ImmutableCorpus):
         Returns:
             The identifier of the new document.
         """
-        if self.corpus:
-            new_doc_id = self.corpus.update_doc(old_id,
+        if self._pyo3:
+            new_doc_id = self._pyo3.update_doc(old_id,
                              {name: layer.raw
                                     for (name, layer) in doc.layers.items()})
             return new_doc_id
@@ -1163,8 +1163,8 @@ class Corpus(ImmutableCorpus):
             ['Kjco']
 
         """
-        if self.corpus:
-            return self.corpus.order
+        if self._pyo3:
+            return self._pyo3.order
         else:
             return self._docs.keys()
 
@@ -1178,11 +1178,11 @@ class Corpus(ImmutableCorpus):
             >>> list(corpus.docs)
             [Document('Kjco', {'text': 'This is a document.'})]
         """
-        if self.corpus:
-            for doc_id in self.corpus.order:
-                yield Document(self.meta, id=doc_id, corpus=self.corpus,
+        if self._pyo3:
+            for doc_id in self._pyo3.order:
+                yield Document(self.meta, id=doc_id, _pyo3=self._pyo3,
                                corpus_ref=self,
-                               **self.corpus.get_doc_by_id(doc_id))
+                               **self._pyo3.get_doc_by_id(doc_id))
         else:
             for doc in self._docs.items():
                 yield doc[1]
@@ -1201,15 +1201,15 @@ class Corpus(ImmutableCorpus):
             >>> corpus.doc_by_id("Kjco")
             Document('Kjco', {'text': 'This is a document.'})
 
-            >>> if TEANGA_DB:
+            >>> if TEANGA_PYO3:
             ...   corpus = Corpus("tmp",new=True)
             ...   corpus.add_layer_meta("text")
             ...   doc = corpus.add_doc("This is a document.")
         """
-        if self.corpus:
-            return Document(self.meta, id=doc_id, corpus=self.corpus,
+        if self._pyo3:
+            return Document(self.meta, id=doc_id, _pyo3=self._pyo3,
                             corpus_ref=self,
-                            **self.corpus.get_doc_by_id(doc_id))
+                            **self._pyo3.get_doc_by_id(doc_id))
         else:
             if doc_id in self._docs:
                 return self._docs[doc_id]
@@ -1226,30 +1226,30 @@ class Corpus(ImmutableCorpus):
             >>> corpus.meta
             {'text': LayerDesc(layer_type='characters', base=None, data=None, link_types=None, target=None, default=None, meta={})}
         """
-        if self.corpus:
+        if self._pyo3:
             return {
                     key: LayerDesc(layer_type=layer.layer_type, base=layer.base,
                                   data=layer.data, link_types=layer.link_types,
                                   target=layer.target, default=layer.default,
                                   meta=layer.meta)
-                    for key, layer in self.corpus.meta.items() }
+                    for key, layer in self._pyo3.meta.items() }
         else:
             return self._meta
 
     @meta.setter
     def meta(self, meta: dict[str, LayerDesc]):
-        if self.corpus:
+        if self._pyo3:
             meta_mapped = {}
             for k, v in meta.items():
                 if isinstance(v, LayerDesc):
-                    meta_mapped[k] = teangadb.layerdesc_from_dict(v._asdict())
+                    meta_mapped[k] = teanga_pyo3.layerdesc_from_dict(v._asdict())
                 elif type(v) is dict:
-                    meta_mapped[k] = teangadb.layerdesc_from_dict(v)
+                    meta_mapped[k] = teanga_pyo3.layerdesc_from_dict(v)
                 elif str(type(v)) == '<class \'builtins.PyLayerDesc\'>':
                     meta_mapped[k] = v
                 else:
                     raise Exception("Invalid type for layer meta: " + str(type(v)))
-            self.corpus.meta = meta_mapped
+            self._pyo3.meta = meta_mapped
         else:
             self._meta = meta
 
@@ -1327,12 +1327,12 @@ class Corpus(ImmutableCorpus):
         """
         if kwargs and query:
             raise Exception("Cannot specify both query and kwargs.")
-        if self.corpus:
+        if self._pyo3:
             if kwargs:
                 query = self.normalise_query(kwargs)
             else:
                 query = self.normalise_query(query)
-            for result in self.corpus.search(query):
+            for result in self._pyo3.search(query):
                 yield result
         else:
             for result in super().search(query, **kwargs):
@@ -1346,11 +1346,11 @@ class Corpus(ImmutableCorpus):
                 The path to the yaml file or a buffer.
 
         """
-        if self.corpus:
+        if self._pyo3:
             if isinstance(path_or_buf, str):
-                teangadb.write_corpus_to_yaml(self.corpus, path_or_buf)
+                teanga_pyo3.write_corpus_to_yaml(self._pyo3, path_or_buf)
             else:
-                yaml_str = teangadb.write_corpus_to_yaml_string(self.corpus)
+                yaml_str = teanga_pyo3.write_corpus_to_yaml_string(self._pyo3)
                 path_or_buf.write(yaml_str)
         else:
             super().to_yaml(path_or_buf)
@@ -1367,8 +1367,8 @@ class Corpus(ImmutableCorpus):
             '_meta:\\n    text:\\n        type: characters\\n\
 Kjco:\\n    text: This is a document.\\n'
         """
-        if self.corpus:
-            return teangadb.write_corpus_to_yaml_string(self.corpus)
+        if self._pyo3:
+            return teanga_pyo3.write_corpus_to_yaml_string(self._pyo3)
         else:
             return super().to_yaml_str()
 
@@ -1380,11 +1380,11 @@ Kjco:\\n    text: This is a document.\\n'
                 The path to the json file or a buffer.
 
         """
-        if self.corpus:
+        if self._pyo3:
             if isinstance(path_or_buf, str):
-                teangadb.write_corpus_to_json(self.corpus, path_or_buf)
+                teanga_pyo3.write_corpus_to_json(self._pyo3, path_or_buf)
             else:
-                json_str = teangadb.write_corpus_to_json_string(self.corpus)
+                json_str = teanga_pyo3.write_corpus_to_json_string(self._pyo3)
                 path_or_buf.write(json_str)
         else:
             super().to_json(path_or_buf)
@@ -1400,8 +1400,8 @@ Kjco:\\n    text: This is a document.\\n'
             >>> corpus.to_json_str()
             '{"_meta": {"text": {"type": "characters"}}, "_order": ["Kjco"], "Kjco": {"text": "This is a document."}}'
          """
-        if self.corpus:
-            return teangadb.write_corpus_to_json_string(self.corpus)
+        if self._pyo3:
+            return teanga_pyo3.write_corpus_to_json_string(self._pyo3)
         else:
             return super().to_json_str()
 
@@ -1412,8 +1412,8 @@ Kjco:\\n    text: This is a document.\\n'
             path: str
                 The path to the Cuac file.
         """
-        if self.corpus:
-            teangadb.write_corpus_to_cuac(self.corpus, path)
+        if self._pyo3:
+            teanga_pyo3.write_corpus_to_cuac(self._pyo3, path)
         else:
             return super().to_cuac(path)
 
@@ -1513,9 +1513,9 @@ def read_json_str(json_str:str, db_file:str=None) -> Corpus:
     "characters"}},"Kjco": {"text": "This is a document."}}')
     """
     if db_file:
-        if not TEANGA_DB:
+        if not TEANGA_PYO3:
             teanga_db_fail()
-        return Corpus(db_corpus=teangadb.read_corpus_from_json_string(
+        return Corpus(db_corpus=teanga_pyo3.read_corpus_from_json_string(
             json_str, db_file))
     else:
         return json.loads(json_str, object_hook=_corpus_hook)
@@ -1531,9 +1531,9 @@ def read_json(path_or_buf, db_file:str=None) -> Corpus:
             database.
     """
     if db_file:
-        if not TEANGA_DB:
+        if not TEANGA_PYO3:
             teanga_db_fail()
-        return Corpus(db_corpus=teangadb.read_corpus_from_json_file(
+        return Corpus(db_corpus=teanga_pyo3.read_corpus_from_json_file(
             path_or_buf, db_file))
     else:
         return json.load(path_or_buf, object_hook=_corpus_hook)
@@ -1549,9 +1549,9 @@ def read_yaml(path_or_buf, db_file:str=None) -> Corpus:
             database.
     """
     if db_file:
-        if not TEANGA_DB:
+        if not TEANGA_PYO3:
             teanga_db_fail()
-        return Corpus(db_corpus=teangadb.read_corpus_from_yaml_file(
+        return Corpus(db_corpus=teanga_pyo3.read_corpus_from_yaml_file(
             path_or_buf, db_file))
 
     else:
@@ -1577,9 +1577,9 @@ def read_yaml_str(yaml_str, db_file:str=None) -> Corpus:
         >>> corpus = read_yaml_str(yaml_str)
     """
     if db_file:
-        if not TEANGA_DB:
+        if not TEANGA_PYO3:
             teanga_db_fail()
-        return Corpus(db_corpus=teangadb.read_corpus_from_yaml_string(
+        return Corpus(db_corpus=teanga_pyo3.read_corpus_from_yaml_string(
             yaml_str, db_file))
     else:
         return _corpus_hook(yaml.load(yaml_str, Loader=YamlLoader))
@@ -1618,9 +1618,9 @@ def from_url(url:str, db_file:str=None) -> Corpus:
             database.
     """
     if db_file:
-        if not TEANGA_DB:
+        if not TEANGA_PYO3:
             teanga_db_fail()
-        return Corpus(db_corpus=teangadb.read_corpus_from_yaml_url(
+        return Corpus(db_corpus=teanga_pyo3.read_corpus_from_yaml_url(
             url, db_file))
     else:
         if url.endswith(".gz"):
@@ -1708,7 +1708,7 @@ def parallel_corpus(languages : list[str], db_file:str = None,
     return corpus
 
 def read_cuac(file:str, db_file:str=None) -> Corpus:
-    """Read a corpus from a Cuac file. Requires TeangaDB module.
+    """Read a corpus from a Cuac file. Requires teanga_pyo3 module.
 
     Args:
         file: str
@@ -1717,11 +1717,11 @@ def read_cuac(file:str, db_file:str=None) -> Corpus:
             The path to the database file, if the corpus should be stored in a
             database.
     """
-    if not TEANGA_DB:
+    if not TEANGA_PYO3:
         teanga_db_fail()
     if not db_file:
         db_file = tempfile.mkdtemp()
-    return Corpus(db_corpus=teangadb.read_corpus_from_cuac_file(file, db_file))
+    return Corpus(db_corpus=teanga_pyo3.read_corpus_from_cuac_file(file, db_file))
 
 def teanga_db_fail():
     """
