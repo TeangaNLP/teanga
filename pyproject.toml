@@ -36,10 +36,10 @@ pyo3 = ["teanga-pyo3>=0.1.0,<0.2"]
 spacy = ["spacy>=3.7.5"]
 
 [project.urls]
-Homepage = "https://github.com/teangaNLP/teanga2"
+Homepage = "https://github.com/teangaNLP/teanga"
 Documentation = "https://teanganlp.github.io/teanga/index.html"
-Repository = "https://github.com/teangaNLP/teanga2"
-Issues = "https://github.com/teangaNLP/teanga2/issues"
+Repository = "https://github.com/teangaNLP/teanga"
+Issues = "https://github.com/teangaNLP/teanga/issues"
 
 # Python range used only when locking: spaCy publishes an upper bound on the
 # Python versions it supports, so the lock file cannot cover every Python.

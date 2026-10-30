@@ -21,7 +21,7 @@ pip install teanga
 
 ### pip from git
 ```bash
-pip install git+https://github.com/teangaNLP/teanga2
+pip install git+https://github.com/teangaNLP/teanga
 ```
 
 Teanga also has Rust integration providing advanced features, it can be installed
