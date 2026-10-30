@@ -1,36 +1,50 @@
-[tool.poetry]
+[project]
 name = "teanga"
-version = "0.1.0"
+version = "0.1.1"
 description = "Teanga - Layer-based annotation of corpora with NLP"
-authors = ["John P. McCrae <john@mccr.ae>"]
+authors = [{ name = "John P. McCrae", email = "john@mccr.ae" }]
 readme = "README.md"
-license = "LICENSE"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
 classifiers = [
     "Topic :: Text Processing",
     "Topic :: Scientific/Engineering",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Education",
     "Intended Audience :: Information Technology",
     "Operating System :: OS Independent",
-    "License :: OSI Approved :: Apache Software License"
-    ]
-homepage = "https://github.com/teangaNLP/teanga.rs"
+]
+dependencies = [
+    "pyyaml>=6.0.1",
+    "requests>=2.31.0",
+    "rdflib>=7.0.0",
+    "deprecated>=1.2.14",
+    "conllu>=6.0.0",
+    "regex>=2024.11.6",
+]
 
+[project.optional-dependencies]
+pyo3 = ["teanga-pyo3>=0.1.0,<0.2"]
+spacy = ["spacy>=3.7.5"]
+
+[project.urls]
+Homepage = "https://github.com/teangaNLP/teanga2"
+Documentation = "https://teanganlp.github.io/teanga/index.html"
+Repository = "https://github.com/teangaNLP/teanga2"
+Issues = "https://github.com/teangaNLP/teanga2/issues"
+
+# Python range used only when locking: spaCy publishes an upper bound on the
+# Python versions it supports, so the lock file cannot cover every Python.
 [tool.poetry.dependencies]
-python = "^3.9.0"
-pyyaml = "^6.0.1"
-requests = "^2.31.0"
-rdflib = "^7.0.0"
-deprecated = "^1.2.14"
-conllu = "^6.0.0"
-regex = "^2024.11.6"
+python = ">=3.10,<3.16"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.2"
@@ -41,14 +55,6 @@ mkdocs-gen-files = "^0.5.0"
 flake8 = "^7.1.1"
 jupyter = "^1.1.1"
 
-
-[tool.poetry.group.spacy.dependencies]
-spacy = "^3.7.5"
-
-
-[tool.poetry.group.pyo3.dependencies]
-teanga-pyo3 = "^0.1.0"
-
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,43 @@
+# Publishes teanga to PyPI when a `v*` tag is pushed.
+#
+# Publishing uses PyPI trusted publishing: configure a publisher for the
+# `teanga` project on PyPI with this repository, the workflow file
+# `publish.yml` and the environment `pypi`.
+
+name: Publish to PyPI
+
+on:
+  push:
+    tags: [ "v*" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
+    - name: Check tag matches package version
+      run: |
+        version=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+        test "v$version" = "$GITHUB_REF_NAME"
+    - name: Build sdist and wheel
+      run: pipx run build
+    - uses: actions/upload-artifact@v4
+      with:
+        name: dist
+        path: dist
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        name: dist
+        path: dist
+    - uses: pypa/gh-action-pypi-publish@release/v1
