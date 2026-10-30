@@ -13,7 +13,18 @@ Install with `pip` as follows:
 pip install teanga
 ```
 
-For persistent storage, you can install the Rust version from https://github.com/teangaNLP/teanga.rs
+For persistent storage (`Corpus(db=...)`) and the Cuac file format, install
+the Rust extension from [teanga.rs](https://github.com/teangaNLP/teanga.rs):
+
+```bash
+pip install teanga[pyo3]
+```
+
+Prebuilt wheels are available for Linux, macOS and Windows; on other
+platforms a [Rust toolchain](https://rustup.rs/) is needed to build it.
+
+For the spaCy service, install `teanga[spacy]`. Teanga requires Python 3.10
+or later.
 
 
 ## Teanga Data Model

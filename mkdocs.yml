@@ -1,7 +1,7 @@
 docs_dir: mkdocs-docs/src
 site_name: teanga2
-repo_url: https://github.com/TeangaNLP/teanga2
-repo_name: TeangaNLP/teanga2
+repo_url: https://github.com/TeangaNLP/teanga
+repo_name: TeangaNLP/teanga
 
 
 theme:

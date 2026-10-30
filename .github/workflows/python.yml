@@ -7,31 +7,58 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
-
+  lint:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
-        python-version: "3.10"
-    - name: Setup Poetry
-      uses: abatilo/actions-poetry@v2
-    - name: Install flake8
-      run: pip install flake8
+        python-version: "3.13"
     - name: Lint with flake8
       run: |
+        pip install flake8
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Setup Extra Dependencies
-      run: |
-        poetry install --with spacy
-        poetry run python -m spacy download en_core_web_sm
+
+  # Core library only, on every supported Python version
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Setup Poetry
+      run: pipx install poetry
     - name: Test with pytest
       run: |
+        poetry env use python
         poetry install --with dev
+        poetry run pytest --doctest-modules --ignore=teanga/spacy --ignore=tests/test_spacy.py
+
+  # With the Rust (teanga-pyo3) and spaCy extras, on each OS
+  test-extras:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - name: Setup Poetry
+      run: pipx install poetry
+    - name: Test with pytest
+      run: |
+        poetry env use python
+        poetry install --with dev --all-extras
+        poetry run python -m spacy download en_core_web_sm
+        poetry run python -c "import teanga.corpus as c; assert c.TEANGA_PYO3"
         poetry run pytest --doctest-modules
